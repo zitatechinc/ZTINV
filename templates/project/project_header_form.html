@@ -1,0 +1,219 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+
+<form method="post" action="{{ form_action_url }}" novalidate>
+    {% csrf_token %}
+
+    <div class="row mb-2 mt-2">
+        <div class="col-12 col-md-12 text-end">
+            <button type="button" id="openSaveModal" class="btn btn-sm app-btn-primary">
+                <i class="fa fa-save fa-lg"></i> Save
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-md-12">
+            <div class="app-card app-card-settings shadow-md">
+                <div class="app-card-body p-4">
+
+                    <!-- Project Code & Name -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.project }}
+                                <label class="form-label">{{ form.project.label_tag }}</label>
+                                {% if form.project.errors %}
+                                    <ul class="errorlist list-unstyled text-danger">
+                                        {% for error in form.project.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.customer }}
+                                <label class="form-label">{{ form.customer.label_tag }}</label>
+                                {% if form.customer.errors %}
+                                    <ul class="errorlist list-unstyled text-danger">
+                                        {% for error in form.customer.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Customer & Location -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.location }}
+                                <label class="form-label">{{ form.location.label_tag }}</label>
+                                {% if form.location.errors %}
+                                    <ul class="errorlist list-unstyled text-danger">
+                                        {% for error in form.location.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.sub_location }}
+                                <label class="form-label">{{ form.sub_location.label_tag }}</label>
+                                {% if form.sub_location.errors %}
+                                    <ul class="errorlist list-unstyled text-danger">
+                                        {% for error in form.sub_location.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sub Location & Item Status -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.item_status }}
+                                <label class="form-label">{{ form.item_status.label_tag }}</label>
+                                {% if form.item_status.errors %}
+                                    <ul class="errorlist list-unstyled text-danger">
+                                        {% for error in form.item_status.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.status }}
+                                <label class="form-label">{{ form.status.label_tag }}</label>
+                                {% if form.status.errors %}
+                                    <ul class="errorlist list-unstyled text-danger">
+                                        {% for error in form.status.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Description & Search Keywords -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.description }}
+                                <label for="floatingDescription" class="form-label">{{ form.description.label_tag }}</label>
+                                {% if form.description.errors %}
+                                    <ul class="errorlist" style="list-style: none !important;">
+                                        {% for error in form.description.errors %}
+                                            <li class="text-danger">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.search_keywords }}
+                                <label for="floatingMetaKeyword" class="form-label">{{ form.search_keywords.label_tag }}</label>
+                                {% if form.search_keywords.errors %}
+                                    <ul class="errorlist" style="list-style: none !important;">
+                                        {% for error in form.search_keywords.errors %}
+                                            <li class="text-danger">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</form>
+
+{% endblock content %}
+
+{% block pagecss %}
+
+<link href="{% static 'default/css/select2.min.css' %}" rel="stylesheet" />
+
+<style>
+  .select2-container .select2-selection--single {
+    height: 58px;
+    /* padding: 5px 10px; */
+    padding-top: 1.625rem;
+    padding-bottom: .625rem;
+    border-color: #e0e0e0 !important;
+  }
+  .select2-selection__rendered {
+    line-height: 26px !important;
+  }
+  .select2-selection__arrow {
+    height: 36px !important;
+  }
+</style>
+
+
+{% endblock pagecss %}
+
+{% block pagejs %}
+<script>
+    $(document).ready(function() {
+        // Apply Select2 to the location field
+        $('#id_project').select2({
+            placeholder: "Select a project",
+            allowClear: false ,// Optional: enables a clear button
+            width: '100%'
+        });
+    });
+
+    $(document).ready(function() {
+        // Apply Select2 to the location field
+        $('#id_customer').select2({
+            placeholder: "Select a customer",
+            allowClear: false ,// Optional: enables a clear button
+            width: '100%'
+        });
+    });
+
+    $(document).ready(function() {
+        // Apply Select2 to the location field
+        $('#id_location').select2({
+            placeholder: "Select a location",
+            allowClear: false ,// Optional: enables a clear button
+            width: '100%'
+        });
+    });
+
+    $(document).ready(function() {
+        // Apply Select2 to the location field
+        $('#id_sub_location').select2({
+            placeholder: "Select a sub location",
+            allowClear: false ,// Optional: enables a clear button
+            width: '100%'
+        });
+    });
+</script>
+
+<script src="{% static 'default/js/select2.min.js' %}"></script>
+
+{% endblock pagejs %}
+

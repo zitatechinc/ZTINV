@@ -1,0 +1,125 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="row mb-2 mt-0">
+  <div class="col-6 col-md-6"></div>
+  <div class="col-6 col-md-6">
+    <div class="button-group" style="float:right;">
+      <a href="{% url 'bom-attachment-create' object.pk %}" class="btn btn-sm app-btn-primary">
+        <i class="fa fa-plus"></i> Add {{ model_name }}
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="col-12 col-md-12">
+  <div class="app-card app-card-settings shadow-md">
+    {% include 'project/bom_menu.html' %}
+    <div class="app-card-body p-1">
+      {% if not form_status %}
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Title</th>
+              <th>BOM</th>
+              <th>File Name / URL</th>
+              <th>File Size (bytes)</th>
+              <th>Status</th>
+              <th>Last Modified</th>
+              <th>Modified User</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% if object_list %}
+              {% for attachment in object_list %}
+                <tr>
+                  <!-- Type Column with Icons and Name -->
+                  <td>
+                    {% if attachment.attachment_type == 'URL' %}
+                      <i class="fa fa-link" title="URL"></i> URL
+                    {% elif attachment.attachment_type == 'FILE' %}
+                      <i class="fa fa-file" title="File"></i> File
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+
+                  <!-- Title Column -->
+                  <td>{{ attachment.title }}</td>
+
+                  <!-- BOM Column -->
+                  <td>{{ attachment.bom }}</td>
+
+                  <!-- File Name / URL Column -->
+                  <td>
+                    {% if attachment.attachment_type == 'URL' %}
+                      <a href="{{ attachment.url }}" target="_blank">{{ attachment.url }}</a>
+                    {% elif attachment.file_name %}
+                      <a href="{% url 'bom-attachment-download' object.pk attachment.pk %}" target="_blank">{{ attachment.file_name }}</a>
+                    {% else %}
+                      -
+                    {% endif %}
+                  </td>
+
+                  <!-- File Size Column -->
+                  <td>{{ attachment.file_size|default:"-" }}</td>
+
+                  <!-- Status Column -->
+                  <td class="cell {{ attachment.status_name }}">{{ attachment.status_name }}</td>
+
+                  <!-- Updated At Column -->
+                  <td>{{ attachment.last_modified_at }}</td>
+
+                  <!-- Modified By Column -->
+                  <td>{{ attachment.last_modified_user }}</td>
+
+                  <!-- Action Column (View, Download / Open) -->
+                  <td>
+                    <!-- View -->
+                    <a href="{% url 'bom-attachment-view' object.pk attachment.pk %}" class="badge app-btn-primary">
+                      <i class="fa fa-eye"></i> View
+                    </a>
+
+                    <!-- Open Button for URL -->
+                    {% if attachment.attachment_type == 'URL' %}
+                      <a href="{{ attachment.url|safe }}" target="_blank" class="badge app-btn-primary">
+                        <i class="fa fa-external-link-alt"></i>&nbsp;Open
+                      </a>
+                    {% elif attachment.attachment_type == 'FILE' and attachment.file_name %}
+                      <a href="{% url 'bom-attachment-download' object.pk attachment.pk %}" class="badge bg-success">
+                        <i class="fa fa-download"></i> Download
+                      </a>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="9" class="text-center">No attachments found</td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% include 'core/pagination.html' %}
+      {% endif %}
+
+      {% if form_status %}
+      <div class="row">
+        <div class="col-md-12">
+          {% include 'project/b_o_m_attachments_form.html' %}
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}

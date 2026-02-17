@@ -1,0 +1,201 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="container">
+    <div class="custom-header">Inventory Dashboard</div>
+
+
+    <!-- Total Vendors, Products, and Serial Numbers -->
+    <div class="row mb-4">
+        <!-- Total Inventory Count -->
+        <div class="col-12 col-md-3">
+            <div class="app-card total-inventory-card">
+                <div class="card-content">
+                    <i class="fa fa-cogs fa-3x"></i>
+                    <div class="count-wrapper">
+                        <h2>{{ total_inventory_count }}</h2>
+                        <p>Total Inventory's</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Vendors -->
+        <div class="col-12 col-md-3">
+            <div class="app-card total-vendors-card">
+                <div class="card-content">
+                    <i class="fa fa-industry fa-3x"></i>
+                    <div class="count-wrapper">
+                        <h2>{{ total_vendors }}</h2>
+                        <p>Total Vendors</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Products -->
+        <div class="col-12 col-md-3">
+            <div class="app-card total-products-card">
+                <div class="card-content">
+                    <i class="fa fa-cube fa-3x"></i>
+                    <div class="count-wrapper">
+                        <h1>{{ total_products }}</h1>
+                        <p>Total Products</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Customers -->
+        <div class="col-12 col-md-3">
+            <div class="app-card total-customers-card">
+                <div class="card-content">
+                    <i class="fa fa-users fa-3x"></i>
+                    <div class="count-wrapper">
+                        <h1>{{ total_customers }}</h1>
+                        <p>Total Customers</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block pagecss %}
+<style>
+    /* General Card Styles */
+    .app-card {
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;  /* Aligns content on opposite sides */
+        color: white;
+        transition: transform 0.3s ease-in-out;
+        background-color: #ffffff; /* White background for cards */
+        margin-bottom: 20px;
+        height: 150px;
+    }
+    
+    .custom-header {
+        font-size: 2em; /* Making it larger than h1 */
+        font-weight: bold;
+        color: #000000; /* Black color */
+        text-align: left; /* Aligning the text to the left */
+        margin-left: 20px; /* Optional: Add some space from the left edge */
+    }
+    .app-card:hover {
+        transform: translateY(-10px);
+    }
+
+    /* Card content container */
+    .card-content {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        width: 100%;
+    }
+
+    /* Icon styles */
+    .card-content i {
+        font-size: 70px; /* Icon size */
+        color: white;
+        margin-right: 20px;  /* Space between icon and count */
+    }
+
+    /* Count wrapper styles */
+    .count-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        text-align: left;
+    }
+
+    /* Count number styling */
+    .count-wrapper h2 {
+        font-size: 6em; /* Large count number */
+        font-weight: bold;
+        margin: 0;
+        color: #333; /* Dark color for contrast */
+    }
+
+    /* Label styling */
+    .count-wrapper p {
+        font-size: 1.2em;
+        font-weight: normal;
+        color: #fff;
+        margin-top: 10px;
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 15px;
+    }
+
+    /* Total Inventory Card */
+    .total-inventory-card {
+        background-color: #007bff; /* Blue */
+    }
+
+    .total-inventory-card i {
+        color: #ffffff;
+    }
+
+    /* Total Vendors Card */
+    .total-vendors-card {
+        background-color: #28a745; /* Green */
+    }
+
+    .total-vendors-card i {
+        color: #ffffff;
+    }
+
+    /* Apply dark color for count text */
+    .total-vendors-card .count-wrapper h2 {
+        color: #2c3e50; /* Dark color for Total Vendors count */
+        font-size: 10em; /* Increase font size */
+    }
+
+    /* Total Products Card */
+    .total-products-card {
+        background-color: #6f42c1; /* Purple */
+    }
+
+    .total-products-card i {
+        color: #ffffff;
+    }
+
+    /* Total Customers Card */
+    .total-customers-card {
+        background-color: #fd7e14; /* Orange */
+    }
+
+    .total-customers-card i {
+        color: #ffffff;
+    }
+
+    /* Responsive behavior for smaller screens */
+    @media (max-width: 767px) {
+        .app-card {
+            height: auto; /* Allow cards to expand on smaller screens */
+            text-align: center;
+        }
+
+        .card-content {
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .card-content i {
+            margin-right: 0; /* Remove margin on smaller screens */
+            margin-bottom: 10px; /* Add space between the icon and the count */
+        }
+    }
+</style>
+
+<!-- Add Font Awesome CDN for Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+{% endblock %}

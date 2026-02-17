@@ -1,0 +1,86 @@
+
+<div class="gm-history-table" style="background:#fff; padding:10px; border-radius:4px; font-size: 0.9rem;">
+    <!-- Header info row showing selected product/location/sub-location and total quantity -->
+    <div class="app-card-body p-2" style="background-color: #ffffff;">
+        <div class="table-responsive" style="max-height:360px; overflow:auto;">
+            <table class="table table-bordered mt-0">
+                <tr>
+                    <th>Product</th>
+                    <td>{% if product %}{{ product.code }}{% else %}-{% endif %}</td>
+                    <th>Product Name</th>
+                    <td>{% if product %}{{ product.name }}{% else %}-{% endif %}</td>
+                    <th>Location</th>
+                    <td>{% if location %}{{ location.code }}{% else %}-{% endif %}</td>
+                    <th>Location Name</th>
+                    <td>{% if location %}{{ location.name }}{% else %}-{% endif %}</td>
+                    <th>Sub Location</th>
+                    <td>{% if sub_location %}{{ sub_location.code }}{% else %}-{% endif %}</td>
+                    <th>Total Quantity</th>
+                    <td>{{ total_qty|floatformat:0 }}</td>
+                </tr>
+            </table>
+
+            <!-- Goods Movement history table -->
+            <!-- <table id="app_table_data" class="table table-bordered mt-0"> -->
+            <table id="app_table_data" class="table table-bordered text-center">
+                <thead>
+                    <tr>
+                        <th>GM Doc</th>
+                        <th>GM Date</th>
+                        <th>UOM</th>
+                        <th>Type</th>
+                        <th>Qty</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if gm_items %}
+                        {% for g in gm_items %}
+                        {% if g.quantity > 0 %}
+                            <tr>
+                            <td style="padding:6px 8px; white-space: left:">{{ g.document_number.code }}</td>
+                            <td style="padding:6px 8px; white-space: normal;">{{ g.document_number.gm_date }}</td>
+                            <td style="padding:6px 8px; white-space: normal;">{{ g.uom }}</td>
+                            <td style="padding:6px 8px; white-space: normal;">{{ g.gm_type }}</td>
+                            <td style="padding:6px 8px; white-space: normal;">{{ g.quantity|floatformat:0 }}</td>
+                            </tr>
+                        {% endif %}
+                        {% endfor %}
+                    {% else %}
+                        <tr><td colspan="6" style="padding:6px 8px;"><em>No goods movements found.</em></td></tr>
+                    {% endif %}
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Make text wrap naturally in table cells */
+table th, table td {
+    white-space: normal; /* allows wrapping */
+    word-break: break-word; /* long words break into new line if needed */
+    vertical-align: top; /* align text at the top */
+}
+
+/* Optional: make table responsive horizontally if text is too long */
+.table-responsive {
+    overflow-x: auto;
+}
+</style>
+
+<!-- <style>
+/* Tighten GM history table spacing */
+#app_table_data {
+    border-collapse: collapse;
+    table-layout: auto;   /* let columns size based on content */
+    width: auto;          /* do NOT stretch full width */
+}
+
+#app_table_data th,
+#app_table_data td {
+    padding: 4px 6px;     /* reduce inner spacing */
+    white-space: nowrap;  /* keep content on one line */
+    border: 1px solid #dee2e6;
+}
+</style> -->
+

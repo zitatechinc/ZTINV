@@ -1,0 +1,746 @@
+<!-- Extends all features from the parent template -->
+{% extends 'ims/index.html' %}
+
+<!-- Loads static files -->
+{% load static %}
+
+<!-- Loads custom_tags.py file from template tags folder to apply filters -->
+{% load custom_tags %}
+
+<!-- This block content is inserted into the parent template (index.html) -->
+{% block mainblock %}
+<div class="container py-2 px-2 px-sm-3" style="max-width: 100%;">
+   
+    <!-- PROJECT FILTER DROPDOWN -->
+    <div class="row justify-content-center mb-2">
+        <div class="col-12 col-sm-auto d-flex align-items-center gap-2 flex-wrap">
+            <label for="projectFilter" class="form-label small text-muted mb-0 d-flex align-items-center">
+                <i class="bi bi-kanban me-1 text-primary fs-5"></i>
+                <span class="fw-bold fs-6">Project</span>
+            </label>
+            <select id="projectFilter" class="form-select form-select-sm w-auto">
+                <option value="all">All Projects</option>
+                {% for project in all_projects.projects %}
+                <option value="{{ project.project_id }}">{{ project.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+    </div>
+    
+        
+    <!-- DASHBOARD METRICS SECTION -->
+    <div class="row g-3" id="dashboardMetrics" style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">
+        <div class="d-flex flex-wrap gap-2 justify-content-start" style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">
+
+      <!-- Total Procurements -->
+      <div href="{% url 'aapr' %}" class="text-decoration-none text-dark" id="procurements-link" style="cursor: pointer;" title=" Your Recommended PR's">
+        <div class="dashboard-card p-3">
+          <div class="card-icon bg-procurement">
+            <i class="bi bi-bag-check"></i>
+          </div>
+          <h6 class="text-muted mb-1">Procurements</h6>
+          <div class="card-metric text-success" id="card-procurements">
+            {{ all_projects.total_procurements|indian_notation }}
+          </div>
+        </div>
+      </div>
+
+
+    <!-- Enquiry Stage Card -->
+    <div href="{% url 'aapr' %}" class="text-decoration-none text-dark" id="enquiry-approval-link" style="cursor: pointer;" title=" when Imm approves Enquiry count Increase"> 
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-warning">
+          <i class="bi bi-search"></i>
+        </div>
+        <h6 class="text-muted mb-1">Enquiry Approval</h6>
+        <div class="card-metric text-warning" id="card-enquiry">{{ all_projects.stage_summary|get_item:"enquiry_approval.count"|indian_notation }}</div>
+      </div>
+    </div>
+
+    <!-- CST Stage Card -->
+    <div href="{% url 'aapr' %}" class="text-decoration-none text-dark" id="cst-approval-link" style="cursor: pointer;" title="when Imm approves CST count Increase">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-purple">
+          <i class="bi bi-file-earmark-bar-graph-fill"></i>
+        </div>
+        <h6 class="text-muted mb-1">CST</h6>
+        <div class="card-metric" style="color: #6f42c1;" id="card-cst">{{ all_projects.stage_summary.CST_approval_new.count|indian_notation }}</div>
+      </div>
+    </div>
+
+    <!-- Negotiation Stage Card -->
+    <div href="{% url 'negotiation_approval' %}" class="text-decoration-none text-dark" id="negotiation-approval-link" style="cursor: pointer;" title=" when AA approves the all particular Items for that particular pr is count Increase">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-primary">
+          <i class="bi bi-journal-check"></i>
+        </div>
+        <h6 class="text-muted mb-1">For Negotiation</h6>
+        <div class="card-metric text-primary" id="card-negotiation">{{ all_projects.stage_summary.count|get_item:"Negotiation_approval"|indian_notation }}</div>
+      </div>
+    </div>
+    <!-- DPO Created Stage Card -->
+    <div href="{% url 'dpo_acc_approval' %}" class="text-decoration-none text-dark" id="dpo-approval-link" style="cursor: pointer;" title="when AA approval count Increase">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-info">
+          <i class="bi bi-file-earmark"></i>
+        </div>
+      <h6 class="text-muted mb-1">DPO</h6>
+      <div class="card-metric text-info" id="card-dpo">{{ all_projects.stage_summary.DPO_approval.count|indian_notation }}</div>
+    </div>
+    </div>
+
+    <!-- PO Issued Stage Card -->
+    <div href="{% url 'aapr' %}" class="text-decoration-none text-dark" id="po-approval-link" style="cursor: pointer;" title="when PO approval is done count Increase">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-success">
+          <i class="bi bi-bag-check-fill"></i>
+        </div>
+      <h6 class="text-muted mb-1">PO</h6>
+      <div class="card-metric text-success" id="card-po">{{ all_projects.stage_summary.PO.count|indian_notation}}</div>
+    </div>
+    </div>
+
+    <!-- Delivery Stage Card -->
+    <div class="dashboard-card p-3">
+      <div class="card-icon bg-danger">
+        <i class="bi bi-truck"></i>
+      </div>
+      <h6 class="text-muted mb-1">Delivery</h6>
+      <div class="card-metric text-danger" id="card-delivery">{{ all_projects.delivered_procurements|indian_notation }}</div>
+    </div>
+
+     <div class="dashboard-card p-3">
+        <div class="card-icon bg-primary" data-bs-toggle="tooltip" 
+        title="Total allocated budget for the selected project.">
+          <i class="bi bi-cash-stack"></i>
+        </div>
+        <h6 class="text-muted mb-1">Allocated Budget</h6>
+        <div class="card-metric text-primary" id="card-allocated" data-bs-toggle="tooltip" title="₹ {{ total_allocated_budget}}">₹ {{ total_allocated_budget|indian_notation }}</div>
+      </div>
+
+       <div class="dashboard-card p-3">
+        <div class="card-icon bg-warning" data-bs-toggle="tooltip" 
+        title="Allocated amouont minus committed amount">
+          <i class="bi bi-piggy-bank"></i>
+        </div>
+        <h6 class="text-muted mb-1">Available Budget</h6>
+        <div class="card-metric text-warning" id="card-remaining" data-bs-toggle="tooltip" title="₹ {{ total_remaining_budget}}">₹ {{ total_remaining_budget|indian_notation }}</div>
+      </div>
+
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-success" data-bs-toggle="tooltip" 
+        title="Sum of Total committed amount in all the approved POs for the selected project.">
+          <i class="bi bi-wallet2"></i>
+        </div>
+        <h6 class="text-muted mb-1">Committed Budget</h6>
+        <div class="card-metric text-success" id="card-used" data-bs-toggle="tooltip" title="₹ {{ total_used_budget}}">₹ {{ total_used_budget|indian_notation }}</div>
+      </div>
+      </div>
+    </div>
+
+    <!-- VENDOR TABLE AND PROCUREMENT CHART -->
+    <div class="row g-2 mt-2">
+        <!-- Vendor Table -->
+        <div class="col-12 col-md-6 d-flex">
+            <div class="table-dashboard-card p-2 flex-fill d-flex flex-column">
+                <h6 class="fw-bold fs-5">Top 5 Vendors</h6>
+                <div class="table-responsive" style="overflow-x: auto;">
+                    <table class="table table-sm table-bordered text-center align-middle compact-table">
+                        <thead class="table-light" style="font-size: 0.85rem;">
+                            <tr>
+                                <th>Vendor</th>
+                                <th>Procurements</th>
+                                <th>Avg. Days</th>
+                                <th>Total Committed</th>
+                                <th>Expenditure</th>
+                            </tr>
+                        </thead>
+                        <tbody id="vendorTableBody">
+                            <!-- JS fills this -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Procurement Chart -->
+        <div class="col-12 col-md-6 d-flex">
+            <div class="table-dashboard-card p-2 flex-fill d-flex flex-column">
+                <h6 class="fw-bold fs-5">Procurement Status</h6>
+                <div id="procurementChart" style="width: 100%; height: 330px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styleblock %}
+<style>
+    /* === Card Layouts === */
+    .dashboard-card {
+    flex: 0 0 160px;
+    min-width: 125px;
+    max-width: 100%;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #fff;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+  }
+    .table-dashboard-card {
+        max-width: 100%;
+        background: #fff;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        text-align: center;
+    }
+
+    .dashboard-card:hover,
+    .table-dashboard-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+    }
+
+    .card-icon {
+        width: 38px;
+        height: 38px;
+        margin: 0 auto 0.75rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        border-radius: 0.5rem;
+        color: #fff;
+    }
+
+    .card-metric {
+        font-size: 1.4rem;
+        font-weight: 600;
+        word-wrap: break-word;
+        word-break: break-word;
+    }
+
+    /* === Background Variants === */
+    .bg-vendor { background-color: #0d6efd; }
+    .bg-procurement { background-color: #198754; }
+    .bg-project { background-color: #ffc107; color: #212529; }
+    .bg-status, 
+    .bg-purple { background-color: #6f42c1; color: white;}
+
+    .text-purple {
+  color: #6f42c1 !important;
+}
+ 
+    /* === Table Styling === */
+    .compact-table th,
+    .compact-table td {
+        padding: 0.35rem 0.4rem !important;
+        font-size: 0.85rem;
+        vertical-align: middle;
+        white-space: nowrap;
+    }
+
+    .compact-table th {
+        font-weight: 600;
+    }
+
+    .compact-table td:first-child {
+        text-align: center;
+        padding-left: 0.6rem;
+        padding-right: 0.6rem;
+    }
+
+    .compact-table .badge {
+        font-size: 0.75rem;
+        padding: 0.3em 0.55em;
+    }
+
+    /* === Mobile Fixes === */
+    @media (max-width: 576px) {
+        .dashboard-card {
+            width: 100% !important;
+            margin-bottom: 1rem;
+        }
+
+        .card-metric {
+            font-size: 1.1rem;
+        }
+
+        .compact-table th,
+        .compact-table td {
+            font-size: 0.75rem;
+            padding: 0.25rem;
+        }
+    }
+</style>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+  
+  // helper function to convert large values into Indian notation
+  function indianNotation(value) {
+    value = parseFloat(value);
+    if (isNaN(value)) return value;
+
+    if (value >= 10000000) {
+      return (value / 10000000).toFixed(2) + ' Cr';
+    } else if (value >= 100000) {
+      return (value / 100000).toFixed(2) + ' L';
+    } else if (value >= 1000) {
+      return (value / 1000).toFixed(2) + ' K';
+    } else {
+      return Math.round(value).toString();
+    }
+  }
+
+  // Return badge color class based on delivery days
+  function getBadgeColor(days) {
+    if (days < 15) return 'success';
+    if (days < 30) return 'warning text-dark';
+    return 'danger';
+  }
+
+  function indianFormat(value) {
+    const num = Number(value);
+    return isNaN(num) ? '0' : num.toLocaleString('en-IN');
+  }
+
+  function updateTextContent(id, value, prefix = '') {
+    const el = document.getElementById(id);
+    if (el) el.textContent = prefix + indianFormat(value);
+  }
+
+  function submitPrIdsAndRedirect(prids, url) {
+    showLoader();
+    $.ajax({
+        url: "",   // same page POST
+        type: "POST",
+        data: {
+            stage_action: "filter_by_prids",
+            prids: prids,
+            url: url,   
+            csrfmiddlewaretoken: $('#csrf_token').val()
+        },
+        success: function (response) {
+            console.log("POST successful:", response);
+
+            // ✅ ACTUAL REDIRECT
+            if (response.status === "success" && response.redirect_url) {
+                window.location.href = response.redirect_url;
+                hideLoader();
+            }
+        },
+        error: function (xhr) {
+            console.error("POST filter failed:", xhr.responseText);
+            hideLoader();
+        }
+    });
+}
+
+  document.addEventListener("DOMContentLoaded", () => {
+
+    //tooltip
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    const filterSelect = document.getElementById("projectFilter");
+
+    // Data injected from Django, JSON format and safe output
+    var allProjects = {{ all_projects| safe }} || {};
+    var projectDataMap = {{ projects_data| safe }} || {};
+
+    // Render dashboard cards (metrics + budget)
+    function renderCards(data) {
+      const container = document.getElementById('dashboardMetrics');
+      if (!data) {
+        container.innerHTML = '<p>No data available</p>';
+        return;
+      }
+
+      const summary = data.stage_summary || {};
+      const totalProcurements = data.total_procurements || 0;
+      const deliveredProcurements = data.delivered_procurements || 0;
+      const allocated = data.total_allocated_budget || 0;
+      const remaining = data.total_remaining_budget || 0;
+      const used = data.total_used_budget || 0;
+
+      const stages = ['enquiry_approval', 'CST_approval_new', 'Negotiation_approval', 'DPO_approval', 'PO'];
+      // Get all procurement IDs returned by backend
+      const allPRs = data.all_procurement_ids || [];
+
+      // Build query string: prids=PR001,PR002,PR003
+      const prQuery = allPRs.join(",");
+
+  
+      const enquiryapprovalprs = data.stage_summary["enquiry_approval"].pr_ids || [];
+      const prenqQuery = enquiryapprovalprs.join(",");
+
+      const cstapprovalprs = data.stage_summary["CST_approval_new"].pr_ids || [];
+      const pcstQuery = cstapprovalprs.join(",");
+
+      // Negotiation Approval PRs with particulars
+        const negotiationapprovalprs = data.stage_summary["Negotiation_approval"].pr_ids || [];
+        const partPairs = data.stage_summary["Negotiation_approval"].pr_ids || [];
+        const partQuery = partPairs.join(",");
+
+
+      const dpoapprovalprs2 = data.stage_summary["DPO_approval"].vendor_pairs || [];
+
+      
+      const dpoPairs = dpoapprovalprs2
+          .map(item => `${item.pr_id}-${item.vendor_id}`)
+          .join(",");
+
+    const dpoQuery = data.stage_summary["DPO_approval"].pr_ids || [];
+
+      const poVendors = data.stage_summary["PO"].vendors || [];
+
+      const poPairs = poVendors
+          .map(item => `${item.pr_id}-${item.vendor_id}`)
+          .join(",");
+
+
+      // Update the <a> tag href
+      //const procLink = document.getElementById("procurements-link");
+      //const enquiryLink = document.getElementById("enquiry-approval-link");
+      //const cstLink = document.getElementById("cst-approval-link");
+      //const negotiationLink = document.getElementById("negotiation-approval-link");
+      //const dpoLink = document.getElementById("dpo-approval-link");
+      //const poLink = document.getElementById("po-approval-link");
+      /*if (procLink) {
+          procLink.href = `/AApr/?prids=${prQuery}`;
+      }*/
+      // Procurements Link
+$('#procurements-link').css("cursor", (data.all_procurement_ids?.length || 0) === 0 ? "default" : "pointer");
+$('#procurements-link').off("click").on('click', function (e) {
+    if ((data.all_procurement_ids?.length || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(prQuery, "/ims/AApr/");
+});
+
+// Enquiry Approval Link
+$('#enquiry-approval-link').css("cursor", (data.stage_summary?.enquiry_approval?.count || 0) === 0 ? "default" : "pointer");
+$('#enquiry-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.enquiry_approval?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(prenqQuery, "/ims/AApr/");
+});
+
+// CST Approval Link
+$('#cst-approval-link').css("cursor", (data.stage_summary?.CST_approval_new?.count || 0) === 0 ? "default" : "pointer");
+$('#cst-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.CST_approval_new?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(pcstQuery, "/ims/AApr/");
+});
+
+// Negotiation Approval Link
+$('#negotiation-approval-link').css("cursor", (data.stage_summary?.Negotiation_approval?.count || 0) === 0 ? "default" : "pointer");
+$('#negotiation-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.Negotiation_approval?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(partQuery, "/ims/negotiation_approval/");
+});
+
+// DPO Approval Link
+$('#dpo-approval-link').css("cursor", (data.stage_summary?.DPO_approval?.count || 0) === 0 ? "default" : "pointer");
+$('#dpo-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.DPO_approval?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(dpoPairs, "/ims/dpo_acc_approval/");
+});
+
+// PO Approval Link
+$('#po-approval-link').css("cursor", (data.stage_summary?.PO?.count || 0) === 0 ? "default" : "pointer");
+$('#po-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.PO?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(poPairs, "/ims/AApr/");
+});
+
+      updateTextContent("card-procurements", totalProcurements);
+      updateTextContent("card-allocated", allocated);
+      updateTextContent("card-remaining", remaining);
+      updateTextContent("card-used", used);
+      updateTextContent("card-enquiry", summary["enquiry_approval"].count || 0);
+      updateTextContent("card-cst", summary["CST_approval_new"].count || 0);
+      updateTextContent("card-negotiation", summary["Negotiation_approval"].count || 0);
+      updateTextContent("card-dpo", summary["DPO_approval"].count || 0);
+      updateTextContent("card-po", summary["PO"].count || 0);
+      updateTextContent("card-delivery", summary["Delivered"] || 0);
+
+      document.getElementById("card-allocated").textContent = '₹ '+ allocated;
+      document.getElementById("card-remaining").textContent = '₹ '+ remaining;
+      document.getElementById("card-used").textContent = '₹ '+ used;
+    }
+
+    // Render vendors table
+    function renderVendors(vendors = []) {
+      const tbody = document.getElementById('vendorTableBody');
+
+      // Handler when there is no data
+      if (!Array.isArray(vendors) || vendors.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5">No vendors available</td></tr>`;
+        return;
+      }
+
+      // Append data to the vendor table
+      const rows = vendors.map(v => `
+        <tr style="font-size: 1rem;">
+          <td>${v.vendor_name || ''}</td>
+          <td><span class="badge bg-primary">${indianNotation(v.procurement_count || 0)}</span></td>
+          <td><span class="badge bg-${getBadgeColor(v.avg_delivery_days || 0)}">${v.avg_delivery_days || 0}</span></td>
+          <td><span class="fw-medium">₹${indianNotation(v.total_committed_price || 0)}</span></td>
+          <td><span class="text-success fw-medium">₹${indianNotation(v.total_expenditure_price || 0)}</span></td>
+        </tr>
+      `).join('');
+      tbody.innerHTML = rows;
+    }
+
+    // Render procurement status chart using Plotly
+    function renderChart(updates = []) {
+
+      // Only Mapped Remarks are shown for the corresponding bars
+      const stageRemarkFilter = {
+        'Indentor': ['PR Raised', 'PR Modified', 'Recommended'],
+        'Recommending Authority': ['Recommended', 'Returned'],
+        'IMM': ['Recommended', 'Returned'],
+        'Accounts': ['Recommended', 'Returned'],
+        'Approving Authority': ['Recommended', 'Returned']
+      };
+
+      // Intialize Stage Counts to zero
+      const stageCounts = {};
+      for (const stage in stageRemarkFilter) {
+        stageCounts[stage] = {};
+        stageRemarkFilter[stage].forEach(remark => {
+          stageCounts[stage][remark] = 0;
+        });
+      }
+
+      // Fetch the Stage Counts based on the remark type
+      updates.forEach(({ stage, remarktype }) => {
+        if (stageRemarkFilter[stage]?.includes(remarktype)) {
+          stageCounts[stage][remarktype]++;
+        }
+      });
+
+      const remarkTypes = ['PR Raised', 'Recommended', 'Returned', 'PR Modified'];
+      // CSS for the remark types
+      const remarkColors = {
+        'PR Raised': 'blue',
+        'Recommended': 'green',
+        'Returned': 'red',
+        'PR Modified': 'orange'
+      };
+
+      const rawStages = Object.keys(stageCounts);
+
+      // Wrap large names - for display
+      const stages = rawStages.map(stage =>
+        stage === 'Recommending Authority'
+          ? 'Recommending<br>Authority'
+          : stage === 'Approving Authority'
+            ? 'Approving<br>Authority'
+            : stage
+      );
+
+      // bar chart customization
+      const data = remarkTypes.map(remark => ({
+        x: stages,
+        y: rawStages.map(stage => stageCounts[stage][remark] || 0),
+        name: remark,
+        type: 'bar',
+        marker: { color: remarkColors[remark] },
+        text: rawStages.map(stage => stageRemarkFilter[stage].includes(remark) ? `${remark}: ${stageCounts[stage][remark] || 0}` : ''),
+        hovertemplate: '%{text}<extra></extra>'
+      }));
+
+      // Layout options
+      const layout = {
+        barmode: 'stack',
+        xaxis: {
+          title: { text: 'Stage', standoff: 40 }
+        },
+        yaxis: {
+          title: { text: 'Procurement Count', standoff: 10 },
+          rangemode: 'tozero',        // Ensures axis starts at 0
+          range: [0, null]            // Explicitly sets minimum to 0
+        },
+        legend: {
+          orientation: 'v',   // vertical layout
+          x: 1,               // place it outside the plot on the right
+          xanchor: 'left',
+          y: 0.5,             // vertically center
+          font: {
+            size: 14
+          }
+        },
+        margin: {
+          b: 100,
+          r: 150              // give extra space on the right for the legend
+        }
+      };
+      // Initialize Plotly
+      Plotly.newPlot('procurementChart', data, layout, { responsive: true, displaylogo: false });
+    }
+
+    // Handle project filter change
+    function onFilterChange() {
+      const selectedProject = document.getElementById("projectFilter").value;
+      const data = selectedProject === 'all' ? allProjects : projectDataMap[selectedProject];
+      // Call the renderDashboard to get the data related to the selected project filter
+      renderDashboard(data, selectedProject);
+    }
+
+    // Handles the data based on the Project Filter
+    function renderDashboard(data, selectedProject) {
+      debugger;
+
+      if (!data) {
+        console.warn(`No data found for project: ${selectedProject}`);
+        renderCards(null);
+        renderVendors([]);
+        renderChart([]);
+        return;
+      }
+
+      // Normalize data if nested under 'dashboard_data'
+      console.log('Rendering dashboard for project:', selectedProject, data);
+      const baseData = data.dashboard_data || data;
+
+      // Compose dashboard data object along with the budget cards
+      const dashboardData = {
+        
+        ...baseData,
+        total_allocated_budget: selectedProject === 'all'
+          ? indianNotation(total_allocated_budget)
+          : indianNotation(projectDataMap[selectedProject].allocated_budget),
+        total_remaining_budget: selectedProject === 'all'
+          ? indianNotation(total_remaining_budget)
+          : indianNotation(projectDataMap[selectedProject].remaining_budget),
+        total_used_budget: selectedProject === 'all'
+          ? indianNotation(total_used_budget)
+          : indianNotation(projectDataMap[selectedProject].spent_budget)
+      };
+
+      // Render cards with updated data for that filter
+      renderCards(dashboardData);
+
+      // Use vendors from normalized data
+      renderVendors(dashboardData.top_vendors || []);
+
+      // Parse updates safely (handle if updates is string or array)
+      let updates = [];
+      if (dashboardData.updates) {
+        if (typeof dashboardData.updates === 'string') {
+          try {
+            updates = JSON.parse(dashboardData.updates);
+          } catch (e) {
+            console.warn('Failed to parse updates JSON:', e);
+          }
+        } else if (Array.isArray(dashboardData.updates)) {
+          updates = dashboardData.updates;
+        }
+      }
+
+      // Render chart for the updated data for that filter
+      renderChart(updates);
+    }
+
+    // Attach event listener
+    filterSelect.addEventListener('change', onFilterChange);
+
+    // Update Project Filter dropdown when new data is received
+    function updateProjectDropdown(allProjects, selectedProjectId) {
+      const projectSelect = document.getElementById("projectFilter");
+      if (!projectSelect || !allProjects.projects) return;
+
+      // Clear existing options
+      projectSelect.innerHTML = '';
+
+      // Add "All Projects" option
+      const defaultOption = document.createElement("option");
+      defaultOption.value = 'all';
+      defaultOption.textContent = 'All Projects';
+      projectSelect.appendChild(defaultOption);
+
+      allProjects.projects.forEach(project => {
+        const option = document.createElement("option");
+        option.value = project.project_id;
+        option.textContent = project.name;
+
+        if (project.project_id === selectedProjectId) {
+          option.selected = true;
+        }
+
+        projectSelect.appendChild(option);
+      });
+    }
+
+    // Websocket url routing
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const AAdashboardsocket = new WebSocket(`${wsScheme}://${window.location.host}/ws/aa-dashboard/`);
+
+    // When Socket is not Open or not in readyState
+    if (!AAdashboardsocket || AAdashboardsocket.readyState !== WebSocket.OPEN) {
+
+      // Handler when socket is open
+      AAdashboardsocket.onopen = function () {
+        console.log("AA Dashboard WebSocket connected.");
+      };
+
+      // Handler when data is received on the socket
+      AAdashboardsocket.onmessage = function (event) {
+        const message = JSON.parse(event.data);
+
+        allProjects = message.all_projects;
+        projectDataMap = message.projects_data;
+        total_allocated_budget = message.total_allocated_budget;
+        total_remaining_budget = message.total_remaining_budget;
+        total_used_budget = message.total_used_budget;
+        const selectedProject = document.getElementById("projectFilter")?.value || 'all';
+
+        // Update the Project Filter 
+        updateProjectDropdown(allProjects, selectedProject);
+        // Render the dashboard with the updated data based on selected filter
+        onFilterChange();
+      };
+
+      // Handler when the socket is closed
+      AAdashboardsocket.onclose = function () {
+        console.warn("AA Dashboard WebSocket disconnected.");
+      };
+
+      // Handler when there is a socket error
+      AAdashboardsocket.onerror = function (error) {
+        console.error("AA Dashboard WebSocket error:", error);
+      };
+    }
+    
+});
+</script>
+
+{% endblock scripts %}

@@ -1,0 +1,626 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+{% block mainblock %}
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+    :root {
+        --primary-color: #4361ee;
+        --primary-light: #e0e7ff;
+        --secondary-color: #3f37c9;
+        --accent-color: #4895ef;
+        --dark-color: #1a1a2e;
+        --light-color: #f8f9ff;
+        --text-color: #2b2d42;
+        --text-light: #8d99ae;
+        --success-color: #4cc9f0;
+        --warning-color: #f8961e;
+        --danger-color: #f72585;
+        --border-radius: 12px;
+        --box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    }
+    
+    .feedback-section {
+        font-family: 'Poppins', sans-serif;
+        background-color: var(--light-color);
+        color: var(--text-color);
+    }
+    
+    .feedback-container {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        overflow: hidden;
+        margin-top: 2rem;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+    
+    .form-section {
+        padding: 2.5rem;
+        background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .form-section::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 100px;
+        height: 100px;
+        background: #007080;
+        border-radius: 0 0 0 100px;
+        z-index: 0;
+    }
+    
+    .display-section {
+        padding: 2.5rem;
+        background-color: white;
+        position: relative;
+    }
+    
+    .feedback-scroll {
+        max-height: 60vh;
+        overflow-y: auto;
+        padding-right: 15px;
+        scroll-behavior: smooth;
+    }
+    
+    .feedback-card {
+        background-color: white;
+        border-radius: var(--border-radius);
+        padding: 1.75rem;
+        margin-bottom: 1.5rem;
+        {% comment %} box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03); {% endcomment %}
+        border: 1px solid rgba(0, 0, 0, 0.03);
+        transition: var(--transition);
+        position: relative;
+        border-color: #7cc2e6;
+    }
+    
+ 
+    
+    .feedback-card:not(:last-child)::after {
+        content: '';
+        position: absolute;
+        bottom: -0.75rem;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 80%;
+        height: 1px;
+        background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(67,97,238,0.2) 50%, rgba(0,0,0,0) 100%);
+    }
+    
+    .feedback-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        {% comment %} margin-bottom: 1rem; {% endcomment %}
+    }
+    
+    .feedback-title {
+        font-weight: 600;
+        color: var(--dark-color);
+        font-size: 1.1rem;
+        margin-bottom: 0.5rem;
+        position: relative;
+        display: inline-block;
+    }
+    
+    .feedback-title::after {
+        content: '';
+        position: absolute;
+        bottom: -3px;
+        left: 0;
+        {% comment %} width: 40px; {% endcomment %}
+        height: 3px;
+        background: var(--primary-color);
+        border-radius: 3px;
+    }
+    
+    .feedback-user {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .user-avatar {
+        {% comment %} width: 32px; {% endcomment %}
+        height: 32px;
+        border-radius: 50%;
+        {% comment %} background-color: var(--primary-light); {% endcomment %}
+        color: var(--primary-color);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 0.75rem;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .user-name {
+        font-weight: 500;
+        color: var(--text-color);
+        font-size: 0.95rem;
+    }
+    
+    .feedback-date {
+        font-size: 0.8rem;
+        color: var(--text-light);
+        display: flex;
+        align-items: center;
+    }
+    
+    .feedback-date i {
+        margin-right: 0.4rem;
+        font-size: 0.9rem;
+    }
+    
+    .feedback-content {
+        color: var(--text-color);
+        line-height: 1.7;
+        font-size: 0.95rem;
+    }
+    
+    .section-title {
+        font-weight: 700;
+        color: var(--dark-color);
+        margin-bottom: 1.5rem;
+        position: relative;
+        display: inline-block;
+        font-size: 1.5rem;
+    }
+    
+    .section-title i {
+        margin-right: 0.75rem;
+        color: var(--primary-color);
+    }
+    
+    .section-title::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 0;
+        {% comment %} width: 50px; {% endcomment %}
+        height: 4px;
+        background: var(--primary-color);
+        border-radius: 2px;
+    }
+    
+    .form-group {
+        margin-bottom: 1.5rem;
+        position: relative;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+        color: var(--text-color);
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 0.75rem 1rem;
+        font-size: 0.95rem;
+        border: 1px solid rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        transition: var(--transition);
+        background-color: rgba(255, 255, 255, 0.8);
+    }
+    
+    .form-control:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        outline: none;
+    }
+    
+    textarea.form-control {
+        min-height: 120px;
+        resize: vertical;
+    }
+    
+    .btn-submit {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 0.85rem 2rem;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: var(--transition);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        font-size: 1rem;
+        letter-spacing: 0.5px;
+    }
+    
+    .btn-submit:hover {
+        background-color: var(--secondary-color);
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(67, 97, 238, 0.3);
+    }
+    
+    .btn-submit i {
+        margin-right: 0.75rem;
+    }
+    
+    .empty-state {
+        text-align: center;
+        padding: 3rem 0;
+    }
+    
+    .empty-state i {
+        font-size: 3.5rem;
+        color: var(--text-light);
+        margin-bottom: 1.5rem;
+        opacity: 0.6;
+    }
+    
+    .empty-state p {
+        color: var(--text-light);
+        font-size: 1.1rem;
+    }
+    
+    .error-message {
+        color: var(--danger-color);
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    
+    .error-message i {
+        margin-right: 0.5rem;
+        font-size: 0.9rem;
+    }
+    
+    .is-invalid {
+        border-color: var(--danger-color) !important;
+    }
+    
+    .is-invalid:focus {
+        box-shadow: 0 0 0 3px rgba(247, 37, 133, 0.15) !important;
+    }
+    
+    /* Custom scrollbar */
+    .feedback-scroll::-webkit-scrollbar {
+        width: 6px;
+    }
+    
+    .feedback-scroll::-webkit-scrollbar-track {
+        background: rgba(0, 0, 0, 0.02);
+        border-radius: 3px;
+    }
+    
+    .feedback-scroll::-webkit-scrollbar-thumb {
+        background: rgba(67, 97, 238, 0.3);
+        border-radius: 3px;
+    }
+    
+    .feedback-scroll::-webkit-scrollbar-thumb:hover {
+        background: rgba(67, 97, 238, 0.5);
+    }
+    
+    /* Floating action button */
+    .fab {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 60px;
+        height: 60px;
+        background: var(--primary-color);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        box-shadow: 0 10px 30px rgba(67, 97, 238, 0.3);
+        cursor: pointer;
+        z-index: 100;
+        transition: var(--transition);
+        border: none;
+    }
+    
+    .fab:hover {
+        transform: translateY(-5px) scale(1.05);
+        background: var(--secondary-color);
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 992px) {
+        .form-section {
+            border-right: none;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+        }
+        
+        .feedback-container {
+            margin-top: 1rem;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .form-section, .display-section {
+            padding: 1.75rem;
+        }
+        
+        .section-title {
+            font-size: 1.3rem;
+        }
+    }
+    
+    /* Animation */
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .feedback-card {
+        animation: fadeIn 0.4s ease-out forwards;
+    }
+    
+    /* Badge for new feedback */
+    .new-badge {
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        background: var(--success-color);
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.7rem;
+        font-weight: bold;
+        box-shadow: 0 3px 10px rgba(76, 201, 240, 0.3);
+    }
+</style>
+
+<div class="feedback-section" >
+    <div class="">
+        <div class="row feedback-container" style="border-color: #7cc2e6; width: 100%;  max-height: 77vh; margin-left: 0;">
+            <!-- Left Side - Form Section -->
+            <div class="col-lg-6 col-md-12 form-section">
+                <h2 class="section-title"><i class="fas fa-comment-dots" style="color: #007080;"></i>Share Your Thoughts</h2>
+                
+                <form id="feedbackForm">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        {% comment %} <label for="title">Feedback Title</label>
+                        <input type="text" class="form-control" id="title" name="title" placeholder="What's your feedback about?" required> {% endcomment %}
+                        <div id="title-error" class="error-message" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span></span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Your Feedback</label>
+                        <textarea class="form-control" id="description" name="description" rows="4" 
+                                  placeholder="Please share your detailed feedback with us..." required></textarea>
+                        <div id="description-error" class="error-message" style="display: none;">
+                            <i class="fas fa-exclamation-circle"></i>
+                            <span></span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary"style="background-color: #007080; border-color: #007080;">Submit</button>
+                </form>
+            </div>
+            
+            <!-- Right Side - Display Section -->
+            <div class="col-lg-6 col-md-12 display-section">
+                <h2 class="section-title"><i class="fas fa-comments" style="color: #007080;"></i>Community Feedback</h2>
+
+                <div class="feedback-scroll" id="feedbackList">
+                    {% for feedback in feedbacks %}
+                    <div class="feedback-card">
+                        <div class="feedback-header">
+                            <div>
+                                <div class="feedback-user">
+                                    <div class="user-avatar" style="color: #007080;">
+                                        {{ feedback.user.emp_id }} - {{ feedback.user.user.first_name }} {{ feedback.user.user.last_name }}
+
+
+                                    </div>
+                                    
+                                </div>
+                                <h5 class="feedback-title">{{ feedback.title }}</h5>
+                                
+                            </div>
+                            <div class="feedback-date">
+                                <i class="far fa-clock"></i><b>{{ feedback.created_at|date:"M d, Y H:i" }}</b>
+                            </div>
+                        </div>
+                        <div class="feedback-content">
+                            {{ feedback.description }}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="empty-state">
+                        <i class="fas fa-comment-slash"></i>
+                        <p>No feedback yet. Be the first to share your thoughts!</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Floating action button for mobile -->
+<button class="fab d-lg-none" id="scrollToForm">
+    <i class="fas fa-comment-alt"></i>
+</button>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{% static "js/jquery-3.6.0.min.js" %}"></script>
+<script src="{% static "js/sweetalert2@11.js" %}"></script>
+<script>
+    
+$(document).ready(function() {
+    // Form submission with AJAX
+    $('#feedbackForm').on('submit', function(e) {
+        e.preventDefault();
+        
+        // Clear previous errors
+        $('.error-message').hide();
+        $('.form-control').removeClass('is-invalid');
+        
+        // Get form data
+        var formData = {
+            
+            'description': $('#description').val().trim(),
+            'csrfmiddlewaretoken': $('input[name=csrfmiddlewaretoken]').val()
+        };
+        
+        // Validation
+        var isValid = true;
+       
+        
+        if (!formData.description) {
+            $('#description-error span').text('Please enter your feedback');
+            $('#description-error').show();
+            $('#description').addClass('is-invalid');
+            isValid = false;
+        } else if (formData.description.length < 20) {
+            $('#description-error span').text('Feedback should be at least 20 characters');
+            $('#description-error').show();
+            $('#description').addClass('is-invalid');
+            isValid = false;
+        }
+        
+        if (!isValid) return;
+        
+        // Show loading state
+        const submitBtn = $('#feedbackForm button[type="submit"]');
+        submitBtn.html('<i class="fas fa-spinner fa-spin"></i> Submitting...');
+        submitBtn.prop('disabled', true);
+        
+        // Submit form
+        $.ajax({
+            type: 'POST',
+            url: '{% url "feedback" %}',
+            contentType: 'application/json',
+            data: JSON.stringify(formData),
+            headers: {
+                'X-CSRFToken': $('input[name=csrfmiddlewaretoken]').val()
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    // Add new feedback to the top of the list
+                    var feedback = response.feedback;
+                    var feedbackHtml = `
+                        <div class="feedback-card" style="opacity: 0;">
+                            <span class="new-badge">NEW</span>
+                            <div class="feedback-header">
+                                <div>
+                                    <div class="feedback-user">
+                                        <div class="user-avatar" style="color: #7cc2e6;">
+                                            ${feedback.user_full_name}
+
+                                        </div>
+                                        
+                                    </div>
+                                    {% comment %} <h5 class="feedback-title">${feedback.title}</h5> {% endcomment %}
+                                    
+                                </div>
+                                <div class="feedback-date">
+                                    <i class="far fa-clock"></i><b>${feedback.created_at}</b>
+                                </div>
+                            </div>
+                            <div class="feedback-content">
+                                ${feedback.description}
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Prepend to the list
+                    if ($('#feedbackList .empty-state').length) {
+                        $('#feedbackList').html(feedbackHtml);
+                    } else {
+                        $('#feedbackList').prepend(feedbackHtml);
+                    }
+                    
+                    // Animate the new card
+                    $('#feedbackList .feedback-card').first().animate({
+                        opacity: 1
+                    }, 300);
+                    
+                    // Clear the form
+                    $('#feedbackForm')[0].reset();
+                    
+                    // Show success message
+                    
+                    showSuccessAlert('Thank You! Your feedback has been submitted successfully.');
+
+                    // Scroll to the new feedback
+                    $('html, body').animate({
+                        scrollTop: $('#feedbackList').offset().top - 20
+                    }, 500);
+                }
+            },
+            error: function(xhr, errmsg, err) {
+                try {
+                    var errors = xhr.responseJSON;
+                    if (errors.message) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Submission Failed',
+                            text: errors.message
+                        });
+                    }
+                } catch(e) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Error',
+                        text: 'An error occurred while submitting feedback.'
+                    });
+                }
+            },
+            complete: function() {
+                submitBtn.html(' Submit');
+                submitBtn.prop('disabled', false);
+            }
+        });
+    });
+    
+    // Remove validation errors when user starts typing
+    $('input, textarea').on('input', function() {
+        $(this).removeClass('is-invalid');
+        $(this).next('.error-message').hide();
+    });
+    
+    // Floating action button for mobile
+    $('#scrollToForm').on('click', function() {
+        $('html, body').animate({
+            scrollTop: $('#feedbackForm').offset().top - 20
+        }, 500);
+    });
+    
+    // Show/hide FAB based on scroll position
+    $(window).scroll(function() {
+        if ($(this).scrollTop() > 200) {
+            $('#scrollToForm').fadeIn();
+        } else {
+            $('#scrollToForm').fadeOut();
+        }
+    });
+    
+    // Initialize - hide FAB initially
+    $('#scrollToForm').hide();
+});
+</script>
+{% endblock %}

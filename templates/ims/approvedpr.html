@@ -1,0 +1,664 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+{% block styleblock%}
+
+
+<style>
+    .list-group-item.active {
+        background-color: #00B2CC !important; /* Light blue for highlighting */
+        border: 3px solid white;
+        position: relative;
+        overflow: hidden;
+        animation: glow-shadow 2s linear infinite;
+      }
+      
+      @keyframes glow-shadow {
+        0% {
+          box-shadow: 0 0 5px 2px white;
+        }
+        50% {
+          box-shadow: 0 0 15px 5px white;
+        }
+        100% {
+          box-shadow: 0 0 5px 2px white;
+        }
+      }
+    .stage-note {
+        border: 1px solid #ddd; /* Light grey border */
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        background-color: #f9f9f9; /* Light background */
+    }
+    #tracking-list .stage-note {
+        margin-bottom: 20px;
+    }
+    
+    .note-header {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    
+    .note-header h5 {
+        margin: 0;
+    }
+   
+    .list-group-item:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+   
+    .table,
+    .table-bordered,
+    .table-bordered th,
+    .table-bordered td {
+        background-color: transparent !important;
+        border: 1px solid rgba(0,0,0,0.1); /* Optional: maintain light border */
+    }
+     body{
+        overflow-y: hidden; 
+      }
+
+
+</style>
+{% endblock %}
+{% block previewcontent%}
+<div id="previewContent" style="padding: 20px; position: relative;margin-bottom:calc(-.0 * var(--bs-gutter-x));"></div>
+
+        <div class="modal fade" id="procurementModal" tabindex="-1" role="dialog" aria-labelledby="procurementModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="procurementModalLabel">Procurement Details</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <!-- Content will be populated dynamically -->
+                        <div id="procurementDetailsContent">
+                            <h5>Particulars</h5>
+                            <ul id="particulars-list"></ul>
+                            <h5>Procurement Tracking</h5>
+                            <ul id="tracking-list"></ul>
+                            <h5>Remarks</h5>
+                            <ul id="remarks-list"></ul>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+
+{% endblock %}
+
+{% block scripts %}
+
+<script src="{% static "js/jspdf.umd.min.js" %}"></script>
+<script src="{% static "js/html2canvas.min.js" %}"></script>
+
+
+<script id="stagesData" type="application/json">
+    {{ stages_data|json_script:"stagesData" }}
+
+    
+</script>
+
+
+<script type="text/javascript">
+    
+     $(document).ready(function() {
+        // Initialize DataTables for the procurement table
+        $('#procurementTable').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true
+        });
+        
+        function capitalizeFirstLetter(string) {
+            if (string) {
+                return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();  // Capitalizes the first letter of a string and converts the rest to lowercase
+            }
+            return string;
+        }
+        let previousSelected = null;
+        //Click function for the procurement side bar.
+        $("#procurementSidebar").on('click', '.view-pr-id', function(e) {
+           
+            e.preventDefault();
+           
+        
+            if (previousSelected) {
+                previousSelected.className = "list-group-item"; 
+            }
+         
+            this.parentElement.className = "list-group-item active";
+            
+            showLoader();
+            previousSelected = this.parentElement;
+            
+        
+            var procurementId = $(this).data('id');
+            var formData = { id: procurementId,stage_action :"getdata" }; 
+            
+
+            $.ajax({
+                url: '/ims/approvedpr/', 
+                type: 'POST',
+                data: formData,  
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(data) {
+                   
+                    console.log(data,'data')
+                    console.log(data.procurement_date);
+                    var data1 = data.procurement_data[0]
+                    var moddata = data1.moddata || []; 
+                    console.log(data1, isModified);
+                    var isModified = data1.modifiedpr_id ? true : false;  
+                    var modifycount = 0
+                    
+                    const downloadButton = document.getElementById("downloadBtn");
+                    const procurename = data1?.procurement_id;
+                    const formattedProcurementId = procurename
+                    const stageDatetime = (data.stages && data.stages.length > 0) ? data.stages[0].datetime : null;
+                    let formattedDate = '';  // Declare formattedDate here
+                    hideLoader();
+                    if (stageDatetime) {
+                        const dateObj = new Date(stageDatetime);  // Create a Date object from the UTC datetime string
+                        const options = { 
+                            timeZone: 'Asia/Kolkata', // Set the timezone to IST (Indian Standard Time)
+                            year: 'numeric', 
+                            month: '2-digit', 
+                            day: '2-digit', 
+                            hour: '2-digit', 
+                            minute: '2-digit', 
+                            second: '2-digit',
+                            hour12: false
+                        };
+                        formattedDate = dateObj.toLocaleString('en-IN', options); // Assign to formattedDate
+                        console.log(stageDatetime, 'naveen');
+                    } else {
+                        console.error("Stage datetime is missing or undefined");
+                    } 
+                    console.log(formattedProcurementId,'formattedProcurementId]]');
+                    if (downloadButton) {
+                        downloadButton.setAttribute("data-id", formattedProcurementId);
+                    }
+
+                    // Users dropdown for  Recommending  
+                    var users = '<label for="approvedUserSelect">Approved Users:</label>' +
+                    '<select name="approved_user" id="approvedUserSelect" class="form-control">' +
+                    '<option value="">Choose</option>' +
+                    (data.approved_users ? data.approved_users.map(user => `<option value="${user}">${user}</option>`).join('') : '') +
+                    '</select>';
+                    var previewHtml = '';
+
+                    const modifiedStages = data.stages.filter(stage => stage.remarktype === 'Modified').slice(-1);
+
+                    if (modifiedStages.length === 0) {
+                        var totalEstimatedValue = data.particulars.reduce((sum, particular) => {
+                            // Sum the estimated_value, ensuring it's treated as a number
+                            const value = parseFloat(particular.estimated_value) || 0; 
+                            return sum + value;
+                        }, 0);
+                    //The procurement and particular details for the specific procurement id after click function -->If modified the last modified note will be displayed ,if not the normal procurement details will be displayed.
+                    var previewHtml = `
+                    <button class="btn btn-primary" id="downloadBtn" data-id=${procurename} style="position: absolute; top: 16px; right: 20px;border-color:#007080;background-color:#007080;">Download</button>
+                   <h4 style="text-align:center;color : #800000;"><b>NOTE 1</b></h4>
+                    <div class="background-image-container">
+                        <div id="previewContentHeader">
+                            <h4 style="text-align: center; font-weight: bold; text-decoration: underline;">
+                                PURCHASE REQUISITION
+                            </h4>
+                           <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                <div style="text-align: left;">
+                                    <p><b>Material:</b> ${capitalizeFirstLetter(data1.procurement_type__Procurement_name) || '_________________________'}<br>
+                                   <b>Project</b>: ${data1.project__name || '_________________________'}</p>
+                                </div>
+                                <div style="text-align: right;">
+                                    <p><b>REF</b>: ${data1.procurement_id ? data1.procurement_id.slice(0, -3) + "<b>" + data1.procurement_id.slice(-3) + "</b>" : '_________________________'}<br>
+                                    <b>Date</b>: ${data1.datetime ? formatDateTime(data1.datetime) : '_________________________'}</p>
+                                </div>
+                            </div>
+                            <p><b>TO:</b> <br>Head of IMM</p>
+                        </div>
+                        
+                        <table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align: left;margin-left:-0%;">
+                            <thead>
+                                <tr>
+                                    <th>S.No</th>
+                                    <th>Description</th>
+                                    <th>Delivery Type</th>
+                                    <th>Part/Model No.</th>
+                                    <th>Unit</th>
+                                    <th>Make</th>
+                                    <th>Total Qty Required</th>
+                                    <th>Estimated Value</th>
+                                    <th>Reasons for Procurement</th>
+                                    <th>Items Required by</th>
+                                    <th>Specification</th>
+                                    <th>Quotation Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody id="particularsTableBody">
+                                ${data.particulars.map((particular, index) => `
+                                    <tr>
+                                        <td>${index + 1}</td>
+                                        <td>${particular.description}</td>
+                                        <td>${particular.delivery_name ? particular.delivery_name : 'No Delivery Info'}</td>
+                                         
+                                        <td class="partno">
+                                            ${particular.partno}
+                                        </td>
+                                        <td>${particular.unitname}</td>
+                                         <td>${particular.make}</td>
+                                        <td>${particular.total_qty_required}</td>
+                                        <td>${particular.estimated_value}</td>
+                                       <td class="reasons-cell">
+                                            ${particular.reasons_for_procurement 
+                                                ? `<span class="reasons-text">${particular.reasons_for_procurement}</span>` 
+                                                : '____________________'}
+                                            
+                                            ${particular.reasons_for_procurement && particular.reasons_document 
+                                                ? ' - ' 
+                                                : ''}
+                                            
+                                            ${particular.reasons_document 
+                                                ? `<a href="${particular.reasons_document}" target="_blank" class="reasons-document-link">${particular.reasons_document.split('/').pop()}</a>` 
+                                                : ''}
+                                        </td>
+                                        <td>
+                                        ${particular.items_to_be_positioned_by.map(item => {
+                                            // Format the expected date as day-month-year (1-03-2025)
+                                            const formatDate = (date) => {
+                                            const d = new Date(date);
+                                            const day = d.getDate().toString().padStart(2, '0'); // Ensure day is two digits
+                                            const month = (d.getMonth() + 1).toString().padStart(2, '0'); // Ensure month is two digits
+                                            const year = d.getFullYear();
+                                            return `${day}-${month}-${year}`;
+                                            };
+
+                                            // Check if both quantity and expected_date exist, and format accordingly
+                                            if (item.quantity && item.expected_date) {
+                                            return `${item.quantity} - ${formatDate(item.expected_date)}`;
+                                            } else if (item.quantity) {
+                                            return `${item.quantity}`;
+                                            } else if (item.expected_date) {
+                                            return `${formatDate(item.expected_date)}`;
+                                            }
+                                            return '';  // Return an empty string if neither quantity nor expected date is provided
+                                        }).join("<br>")}
+                                        </td>
+                                           
+                                        <td class="specification-cell">
+                                        <!-- Show item_specification if available -->
+                                        ${particular.item_specification ? `<span class="specification-text">${particular.item_specification}</span>` : '____________________'}
+                                        
+                                        <!-- Add the specification document if available -->
+                                        ${particular.spec_document ? `<a href="${particular.spec_document}" target="_blank" class="spec-document-link">${particular.spec_document.split('/').pop()}</a>` : ''}
+                                    </td>
+                                      <td class="quot_file">
+                                            ${(() => {
+                                                if (particular.quot_file) {
+                                                const fullName = particular.quot_file.split('/').pop();
+                                                return `<a href="${particular.quot_file}" target="_blank" class="spec-document-link">${fullName}</a>`;
+                                                }
+                                                return 'No File';
+                                            })()}
+                                            </td>
+                                                                        </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                        
+                          <div id="previewContentFooter">
+                            <!-- New Section for Quality Document and Certificates -->
+                          
+
+                            <!-- Existing Section for Source of Supplies, Tender Type, etc. -->
+                            <div style="display: flex; justify-content: space-between;">
+                                <div style="flex: 1; padding-right: 10px;">
+                                <p><b>Quality Document</b>: ${data1.quality_document_url ? `<a href="${data1.quality_document_url}" target="_blank">View Document</a>` : '____________________'}</p>
+                   
+                             <p><b>Source of supplies</b>: ${data.suppliers ? data.suppliers.join(', ') : '____________________'}</p>
+                              <p><b>Tender Type</b>: ${data1.tender_type__tender_type || '_________________________'}</p>
+                                <p><b>Post Facto</b>: ${(data1.is_delivered === true || data1.is_delivered === 'true' || data1.is_delivered === 'yes') ? 'Yes' : 'No'}</p>
+                                
+                                    
+                                    <p><b>Online Order</b>: ${data1.pr_events === "Online_order" ? "Yes" : "No"}</p>
+                                    
+                                </div>
+                                <div style="flex: 1; padding-left: 10px;">
+                                 <p><b>Quality Certificates Required (if any)</b>: ${data1.quality_certificates_required || '____________'}</p>
+                                    <p><b>Earlier Procurement Details (if any)</b>: ${data1.earlier_procurement_details || '_________'}</p>
+                                    <p><b>Import / Indigenous</b>: ${data1.import_indigenous__source_type || '_________________________'}</p>
+                                   <p><b>Total Estimated Value</b>: <span style="color: blue;">${totalEstimatedValue.toFixed(2)}</span></p>
+                                   <p><b>Category Event</b>: ${data1.category_events || '_________________________'}</p>
+                                </div>
+                            </div>
+
+                            <!-- Indentor Information -->
+                            <div style="text-align: right;">
+                                <p><b>Indentor Name</b>: ${data1.user__first_name || '_________________________'}<br>
+                                <b>Indentor Emp Id</b>: ${data1.user__username || '_________________________'}<br>
+                                <b>Department</b>: ${data1.department__dept_name || '_________________________'}</p>
+                            </div>
+                        </div>
+                    </div><br>`;
+                    } else {
+                     previewHtml = `
+  
+                     <div id="tracking-list">
+                    ${modifiedStages.map((stage, index) => {
+                        let partsno = 0
+                        
+                        const remarkDisplay = stage.remarktype === 'Approval' ? 'Recommended' : 
+                                            (stage.remarktype === 'Reject' ? 'Returned' : stage.remarktype);
+                        
+                        let stageName = '';
+                        
+                        if (stage.stage === "stage2") {
+                            stageName = 'Recommending Authority';
+                        } else if(stage.stage === "stage3") {
+                            stageName = 'IMM';
+                        } else if(stage.stage === "stage4") {
+                            stageName = 'Accounts';
+                        } else if (stage.stage === "stage5") {
+                            stageName = 'Approving Authority';
+                        } 
+                        
+                        //If the stage remarktype is modified ,the below condition satifisfies and displays the data related to modification
+                        if (stage.remarktype === 'Modified') {
+                                    debugger
+                                    const modifiedData = data.modified_procurement_data
+                                    const modifiedSuppliers = data.modified_suppliers;
+                                    var mymoddate = modifiedData.filter(function(evt){
+                                        return evt.modifiedpr_id == stage.modified_prno
+                                    })
+                                
+                                    let totalEstimatedValue = 0;
+
+                                    data.modified_paticular.forEach((particular) => {
+                                        if (mymoddate[0]?.modifiedpr_id === particular.modpr && particular.estimated_value) {
+                                            totalEstimatedValue += parseFloat(particular.estimated_value) || 0;
+                                        }
+                                    });
+
+                                    console.log(mymoddate,'mymoddate')
+                                    //const modifiedData = moddata.find(item => item.modifiedpr_id === stage.modifiedpr_id); // Assuming 'modifiedpr_id' is available in stage
+                                    var partsno2 = 0
+                                    const particulars = modifiedData ? modifiedData.particulars : [];
+                                    return `
+                                        <div class="note-header">
+                                                            <button class="btn btn-primary" id="downloadBtn" data-id=${procurename} style="position: absolute; top: 16px; right: 20px;border-color:#007080;background-color:#007080;">Download</button>
+                                            <h4 style="color:#800000;"><strong>NOTE 1</strong></h4>
+                                        </div>
+                                        <div class="stage-note background-image-container">
+                                            {% comment %} <h4>Modified Procurement</h4> {% endcomment %}
+                                            <p><strong>Status: </strong> ${remarkDisplay}</p>
+                                            {% comment %} <p><strong>Remarks:</strong> ${stage.remarks || 'N/A'}</p> {% endcomment %}
+                                            
+                                            <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                                            <!-- Left side: Material and Project -->
+                                            <div style="text-align: left;">
+                                                <p><strong>Material:</strong> ${mymoddate[0]?.procurement_type__Procurement_name || '_________________________'}<br>
+                                                <strong>Project:</strong> ${mymoddate[0]?.project__name || '_________________________'}</p>
+                                            </div>
+
+                                            <!-- Right side: REF and Date -->
+                                            <div style="text-align: right;">
+                                                <p><strong>REF:</strong> ${data?.procurement_id ? data.procurement_id.slice(0, -3) + "<b>" + data.procurement_id.slice(-3) + "</b>" : '_________________________'}<br>
+                                                <strong>Date:</strong> ${stage.datetime ? formatDateTime(stage.datetime) : '_________________________'}</p>
+                                            </div>
+                                        </div>
+
+
+                                            <p><b>TO:</b> <br>Head of IMM</p>
+                                            <table class="table table-bordered">
+                                                <thead>
+                                                    <tr>
+                                                        <th>S.No</th>
+                                                        <th>Description</th>
+                                                        <th>Delivery Type</th>
+                                                        <th>Part/Model No.</th>
+                                                        <th>Unit</th>
+                                                        <th>Make</th>
+                                                        <th>Total Qty Required</th>
+                                                        <th>Estimated Value</th>
+                                                        <th>Reasons for Procurement</th>
+                                                        <th>Items Required by</th>
+                                                        <th>specification</th>
+                                                        <th>Quotation Reference</th>
+                                                        
+                                                    </tr>
+                                                </thead>
+                                                <tbody id="particularsTableBody">
+                                                ${data.modified_paticular.map((particular) => {
+                                                        
+                                                        debugger  
+                                                            if(particular.modpr == stage.modified_prno){
+                                                                partsno2 = partsno2+1;
+                                                        return `
+                                                            <tr>
+                                                                <td>${partsno2}</td>
+                                                                <td>${particular.description}</td>
+                                                                <td class="partno">${particular.partno}</td>
+                                                                <td>${particular.delivery_name ? particular.delivery_name : 'No Delivery Info'}</td>
+                                                                <td>${particular.unitname}</td>
+                                                                <td>${particular.make}</td>
+                                                                <td>${particular.total_qty_required}</td>
+                                                                <td>${particular.estimated_value}</td>
+                                                                <td class="reasons-cell">
+                                                                    ${particular.reasons_for_procurement ? `<span class="reasons-text">${particular.reasons_for_procurement}</span>` : '____________________'} -
+                                                                    ${particular.reasons_document ? `<a href="${particular.reasons_document}" target="_blank" class="reasons-document-link">${particular.reasons_document.split('/').pop()}</a>` : ''}
+                                                                </td>
+                                                            <td>
+                                                                    ${particular.items_to_be_positioned_by.map(item => {
+                                                                                const formatDate = (date) => {
+                                                                                    const d = new Date(date);
+                                                                                    const day = d.getDate().toString().padStart(2, '0');
+                                                                                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                                                                                    const year = d.getFullYear();
+                                                                                    return `${day}-${month}-${year}`;
+                                                                                };
+
+                                                                                const q = item.quantity;
+
+                                                                                // Treat 0, null, undefined, "NA", "null", and "0" as invalid
+                                                                                const isValidQuantity = q !== null && q !== undefined &&
+                                                                                                        q !== 0 && q !== "0" &&
+                                                                                                        q !== "NA" && q !== "null";
+
+                                                                                if (isValidQuantity && item.expected_date) {
+                                                                                    return `${q} - ${formatDate(item.expected_date)}`;
+                                                                                } else if (isValidQuantity) {
+                                                                                    return `${q}`;
+                                                                                } else if (item.expected_date) {
+                                                                                    return `${formatDate(item.expected_date)}`;
+                                                                                }
+
+                                                                                return '';
+                                                                            }).filter(str => str).join("<br>")}
+
+                                                                </td>
+                                                                <td class="specification-cell">
+                                                                    ${particular.item_specification ? `<span class="specification-text">${particular.item_specification}</span>` : '____________________'}
+                                                                    ${particular.spec_document ? `<a href="${particular.spec_document}" target="_blank" class="spec-document-link">${particular.spec_document.split('/').pop()}</a>` : ''}
+                                                                </td>
+                                                                 <td class="quotation-cell">
+                                                        ${(() => {
+                                                            if (!particular.quot_file) {
+                                                            return '____________________';  // No file
+                                                            }
+
+                                                            // Extract just the file name from the full path
+                                                            const fullName = particular.quot_file.split('/').pop();
+
+                                                            // Return clickable file name only
+                                                            return `<a href="${particular.quot_file}" target="_blank" class="spec-document-link">${fullName}</a>`;
+                                                        })()}
+                                                        </td>
+                                                            </tr>
+                                                        `;
+                                                                }
+                                                    }).join('')}
+                                            </tbody>
+
+
+                                            </table>
+                                            <div style="display: flex; justify-content: space-between;">
+                                                <div>
+                                                        <p><strong>Quality Document:</strong> ${
+                                                    modifiedData[0]?.quality_document
+                                                        ? (() => {
+                                                            let url = modifiedData[0].quality_document;
+
+                                                            // Extract just the filename from the original URL
+                                                            let filename = url.split('/').pop();
+
+                                                            // Use the current location origin dynamically
+                                                            let baseUrl = `${window.location.origin}/media/quan_doc/`;
+
+                                                            return `<a href="${baseUrl}${filename}" target="_blank">View Document</a>`;
+                                                        })()
+                                                        : '___________________'
+                                                }</p>
+                                                    <p><strong>Source of Supplies:</strong> 
+                                                    ${modifiedSuppliers.length > 0 
+                                                        ? modifiedSuppliers
+                                                            .filter(entry => entry.modpr === stage.modified_prno)
+                                                            .flatMap(entry => entry.suppliers.map(s => s.company_name))
+                                                            .join(', ')
+                                                        : '____________________'}
+                                                    </p>
+                                                <p><strong>Tender Type:</strong> ${modifiedData[0]?.tender_type__tender_type || '___________________'}</p>
+                                                 <p><b>Online Order</b>: ${modifiedData[0]?.pr_events === "Online_order" ? "Yes" : "No"}</p>
+                                                 <p><b>Category Event</b>: ${modifiedData[0]?.category_events || '_________________________'}</p>
+                                                </div>
+                                                <div style="text-align: left; padding-left: 10px;">
+                                                <p><strong>Quality Certificates:</strong> ${mymoddate[0]?.quality_certificates_required || '___________________'}</p>
+                                                    <p><strong>Earlier Procurement Details:</strong> ${mymoddate[0]?.earlier_procurement_details || '___________________'}</p>
+                                                    <p><strong>Import / Indigenous:</strong> ${modifiedData[0]?.import_indigenous__source_type || '___________________'}</p>
+                                                    <p><b>Post Facto</b>: ${(modifiedData[0]?.is_delivered === true || modifiedData[0]?.is_delivered === 'true' || modifiedData[0]?.is_delivered === 'yes') ? 'Yes' : 'No'}</p>
+                                                <div style="text-align: right; margin-top: 10px;">
+                                                    <p><strong>Total Estimated Value:</strong> <span style="color: blue;"> ${totalEstimatedValue.toLocaleString('en-IN')}</span></p>
+                                                    
+                                                    
+                                                </div>
+
+
+                                                </div>
+
+                                            </div>
+                                            <div style="text-align: right;">
+                                                        <p><b>Indentor Name</b>: ${data1.user__first_name || '_________________________'}<br>
+                                                        <b>Indentor Emp Id</b>: ${data1.user__username || '_________________________'}<br>
+                                                        <b>Department</b>: ${data1.department__dept_name || '_________________________'}</p>
+                                                        
+                                                        
+                                                    </div>
+                                        </div>
+                                        `;
+                                        }
+                                        return '';
+                                    }).join('')}
+                                </div>
+                            `;
+                        }
+                        //The button displayes based on the condition (Hiding and showing)
+                        if(data.showbutton){
+                            $('#divbutton').css("padding","0px")
+                            previewHtml += `
+                                {% comment %} <button class="btn btn-success approve-btn" data-id="${procurementId}">Recommend</button> {% endcomment %}
+                                `;
+                        }
+            
+                    // Insert the generated preview HTML into the preview content section
+                    $('#previewContent').html(previewHtml).show();
+                    $('#divbutton').show();
+                    //Download function for the preview 
+                    $('#downloadBtn').off('click').on('click', async function () {
+                        const { jsPDF } = window.jspdf;
+                        const content = document.querySelector('#previewContent');
+                        const procurementId = $("#downloadBtn").attr("data-id");
+                        const pdf = new jsPDF();
+                        
+
+                        showLoader();
+
+                        html2canvas(content, {
+                            ignoreElements: function (element) {
+                                return element.classList.contains('approve-btn') || element.classList.contains('reject-btn') ||  element.id === 'downloadBtn';
+                            }
+                        }).then(canvas => {
+                            const imgData = canvas.toDataURL('image/png');
+                            const pdfWidth = pdf.internal.pageSize.getWidth();
+                            const imgHeight = (canvas.height * pdfWidth) / canvas.width;
+
+                            pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+
+                            let totalPages = Math.ceil(imgHeight / pdf.internal.pageSize.getHeight());
+                            for (let i = 1; i < totalPages; i++) {
+                                pdf.addPage();
+                                pdf.addImage(imgData, 'PNG', 0, -i * pdf.internal.pageSize.getHeight(), pdfWidth, imgHeight);
+                            }
+
+                            hideLoader();
+
+                            pdf.save(`REF:${procurementId}.pdf`);
+                        }).catch(error => {
+                            console.error("PDF generation error:", error);
+                            hideLoader();
+                        });
+                    });
+
+                   
+ 
+                     
+                    
+  
+                
+                },
+                error: function() {
+                    showWarningAlert('An error occurred while fetching the procurement details.');
+                    hideLoader();
+                }
+            });
+        });
+   
+
+       
+        
+       
+       
+ 
+        });   
+        function adjustButtonPosition() {
+            const trackingData = document.getElementById('trackingdata');
+            const button = document.getElementById('divbutton');
+            
+            
+            const trackingHeight = trackingData.offsetHeight;
+            const buttonTop = trackingHeight + 20; // Adding a margin of 20px
+            
+            button.style.top = `${buttonTop}px`;
+        }
+        
+        // This function can be called when the notes are added or whenever the content updates
+        window.addEventListener('load', adjustButtonPosition);  // On page load
+        window.addEventListener('resize', adjustButtonPosition); // On window resize
+        
+        // If notes are added dynamically, you can call adjustButtonPosition() after the content update.
+        
+            
+</script>
+
+
+
+{% endblock %}

@@ -1,0 +1,168 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <title>{% if page_title %}{{ page_title }} | {% endif %} {{ app.name }}</title>
+      <!-- Meta -->
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="description" content="{{ app.name }}">
+      <meta name="author" content="User">
+      
+      <!-- Favicon -->
+      <link rel="shortcut icon" href="/media/{{ app.favicon }}">
+
+      <!-- Base theme styles -->
+      <link id="theme-style" rel="stylesheet" href="{% static 'default/theme/assets/css/portal.css' %}">
+
+      {% include 'core/custom_css.html' %}  <!-- Custom styles if any -->
+
+      <!-- Plotly.js for rendering charts -->
+      <!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
+      <script src="{% static 'default/js/ploty.js' %}"></script>
+
+      <!-- Block for page-specific CSS (if needed) -->
+      {% block pagecss %}{% endblock %}
+   </head>
+
+<body class="app">
+   <header class="app-header fixed-top">
+      {% include 'core/header.html' %}
+   </header>
+   <!--//app-header-->
+   <div class="app-wrapper mb-3">
+      <div class="app-content pt-1 p-md-3 p-lg-4 mb-3">
+         <div class="container-fluid ">
+
+         {% if messages or form.errors %}
+            <div class="app-card alert alert-dismissible shadow-sm border-left-decoration" role="alert">
+               <div class="inner">
+                  <div class="app-card-body">
+                     <div class="row gx-5 gy-3">
+                        <div class="col-12 col-lg-9">
+                           <ul class="errorlist" style="list-style: none !important;" >
+                           {% if messages %}
+                        {% for eachmsg in messages %}
+                        
+                           <li  class="text-{{eachmsg.tags}}"><i class="fa fa-info-circle"></i> {{eachmsg}}</li>
+                        
+                        {%endfor%}
+
+                        {%endif%}
+
+                        {% if form.non_field_errors  %}
+                        {% for eachformmsg in form.non_field_errors %}
+                           <li class="text-danger">{{eachformmsg}}</li>
+                        
+                        {%endfor%}
+                        {%endif%}
+
+                        <div class="hide" style="display: none !important;">
+                        {% if form.errors  %}
+                        {% for key, val in form.errors.items %}
+                           <li class="text-danger">{{key}} : {{val}}</li>
+                        {%endfor%}
+                        {%endif%}
+                        </div>
+                     </ul>
+                        </div><!--//col-->
+                     </div><!--//row-->
+                     <button type="button" class="btn-close mt-2" data-bs-dismiss="alert" aria-label="Close" ></button>
+                  </div><!--//app-card-body-->
+                  
+               </div><!--//inner-->
+         </div><!--//app-card-->
+         {%endif%}
+
+         {% include 'core/bread_crum.html' %}
+            {% block content %}
+            {% endblock %}
+         
+         </div>
+         <!--//container-fluid-->
+      </div>
+      <!--//app-content-->
+      
+      <!--//app-footer-->
+   </div>
+   <!--//app-wrapper--> 
+   <div style="min-height: 100px !important;">&nbsp;</div>
+
+   <!-- ================= SAVE CONFIRM MODAL ================= -->
+   <div class="modal fade" id="saveConfirmModal" tabindex="-1">
+   <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+
+         <div class="modal-header">
+         <h5 class="modal-title">Confirm Save</h5>
+         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+         </div>
+
+         <div class="modal-body">
+         Are you sure you want to save this record?
+         </div>
+
+         <div class="modal-footer">
+         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+            Cancel
+         </button>
+         <button type="button" id="confirmSaveBtn" class="btn btn-primary">
+            Yes, Save
+         </button>
+         </div>
+
+      </div>
+   </div>
+   </div>
+
+
+   <footer class="app-footer fixed-bottom mt-3"
+         style="background: {{ app.theme.footer_bg_color|default:'#fff' }} !important; border-top: 1px #eee solid;">
+      {% include 'core/footer.html' %}
+   </footer>
+
+
+   <script src="{% static 'default/theme/assets/plugins/popper.min.js' %}"></script>
+   <script src="{% static 'default/theme/assets/plugins/bootstrap/js/bootstrap.min.js' %}"></script>
+   <script defer src="{% static 'default/theme/assets/plugins/fontawesome/js/all.min.js' %}"></script>  
+   <script src="{% static 'default/js/jquery-3.7.1.js' %}"></script> 
+   <script src="{% static 'default/theme/assets/js/app.js' %}"></script>   
+   <script src="{% static 'default/js/ploty.js' %}"></script>  <!-- Plotly.js for rendering charts -->    
+   <script src="{% static 'default/js/sweetalert.js' %}"></script>      <!-- Edit popup -->  
+   <script src="{% static 'default/js/select2.min.js' %}"></script>      
+   
+   <script>
+   document.addEventListener("DOMContentLoaded", function () {
+
+      var form = document.getElementsByTagName("form")[0];
+
+      document.getElementById("openSaveModal").addEventListener("click", function () {
+
+         if (!form.checkValidity()) {
+               form.reportValidity();
+               return;
+         }
+
+         Swal.fire({
+               text: "Do you want to save this record?",
+               showCancelButton: true,
+               confirmButtonText: 'Yes, Save',
+               cancelButtonText: 'Cancel',
+               width: 350
+         }).then((result) => {
+               if (result.isConfirmed) {
+                  form.submit();
+               }
+         });
+
+      });
+
+   });
+   </script>
+
+
+   {% block pagejs %}
+   {% endblock %}
+</body>
+

@@ -1,0 +1,1825 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+
+{% block styleblock%}
+
+<style>
+   
+    .table,
+    .table-bordered,
+    .table-bordered th,
+    .table-bordered td {
+        background-color: transparent !important;
+        border: 1px solid rgba(0,0,0,0.1); /* Optional: maintain light border */
+    }
+    
+    table, th, td {
+        background-color: transparent !important;
+        border: 1px solid #ccc; /* Border to make table edges visible if needed */
+    }
+    th, td {
+        background-color: transparent !important; /* Make table headers and cells transparent */
+        {% comment %} color: #fff; /* Text color for better readability if needed */ {% endcomment %}
+    }
+    /* Optional: To make borders less intrusive */
+    td, th {
+        border: 1px solid rgba(255, 255, 255, 0.5); /* Semi-transparent border */
+    }
+
+    .list-group-item:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+ 
+      body{
+        overflow-y: hidden; 
+      }
+
+      .list-group-item.active {
+        background-color: #00B2CC !important; /* Light blue for highlighting */
+        border: 3px solid white;
+        position: relative;
+        overflow: hidden;
+        animation: glow-shadow 2s linear infinite;
+      }
+      
+      @keyframes glow-shadow {
+        0% {
+          box-shadow: 0 0 5px 2px white;
+        }
+        50% {
+          box-shadow: 0 0 15px 5px white;
+        }
+        100% {
+          box-shadow: 0 0 5px 2px white;
+        }
+      }
+    .stage-note {
+        border: 1px solid #ddd; /* Light grey border */
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        background-color:white; /* Light background */
+    }
+    #tracking-list .stage-note {
+        margin-bottom: 20px;
+    }
+    
+    .note-header {
+        text-align: center;
+        margin-bottom: 10px;
+    }
+    
+    .note-header h5 {
+        margin: 0;
+    }
+
+    
+    
+   
+
+      
+</style>
+{%endblock%}
+{% block previewcontent%}
+    
+<div id="previewContent" style="padding: 20px; position: relative;margin-bottom:calc(-.0 * var(--bs-gutter-x));"></div>
+    
+
+<div id="procurementInfo" data-procurement-id="{{procuremnet.procurement_id}}">
+    <span id="procurement_id">{{ procurement.procurement_id }}</span>
+</div>
+<!-- Noting details after recommend ,reject-->
+<div class="modal fade" id="procurementModal" tabindex="-1" role="dialog" aria-labelledby="procurementModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="procurementModalLabel">Procurement Details</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <!-- Content will be populated dynamically -->
+                <div id="procurementDetailsContent">
+                    <h5>Particulars</h5>
+                    <ul id="particulars-list"></ul>
+                    <h5>Procurement Tracking</h5>
+                    <ul id="tracking-list"></ul>
+                    <h5>Remarks</h5>
+                    <ul id="remarks-list"></ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+    
+</div>   
+{% endblock %}
+
+{% block scripts %}
+
+<link rel="stylesheet" href="{% static "css/jquery-ui.css" %}">
+<script src="{% static "js/html2canvas.min.js" %}"></script>
+<script src="{% static "js/jspdf.umd.min.js" %}"></script>
+<!-- jQuery UI JS -->
+<script src="{% static "js/jquery-ui.js" %}"></script>
+<script src="{% static "js/jspdf.umd.min.js" %}"></script>
+<script src="{% static "js/html2canvas.min.js" %}"></script>
+
+<script id="stagesData" type="application/json">
+    {{ stages_data|json_script:"stagesData" }} 
+</script>
+<script type="text/javascript">
+  
+ 
+let previousSelected = null;
+var particulars='';
+$(document).ready(function() {
+
+        // Initialize DataTables for the procurement table
+        $('#procurementTable').DataTable({
+            "paging": true,
+            "searching": true,
+            "ordering": true,
+            "info": true
+        });
+         // Capitalizes the first letter of a string and converts the rest to lowercase
+        function capitalizeFirstLetter(string) {
+            if (string) {
+                return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase(); 
+            }
+            return string;
+        }
+        
+        //Procurement id sidebar click function
+        $("#procurementSidebar").on('click', '.view-pr-id', function(e) {
+                debugger;
+            
+                e.preventDefault();
+                
+            
+                if (previousSelected) {
+                    previousSelected.className = "list-group-item"; 
+                }
+            
+                this.parentElement.className = "list-group-item active";
+                
+            
+                previousSelected = this.parentElement;
+                
+                showLoader();
+                var procurementId = $(this).data('id');
+                var formData = { id: procurementId,stage_action :"getdata" }; 
+            
+                
+
+                $.ajax({
+                    url: '', 
+                    type: 'POST',
+                    data: formData,  
+                    headers: {
+                        'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    success: function(data) {
+                    debugger
+                        console.log(data,'data')
+                        console.log(data.procurement_date);
+                        var data1 = data.procurement_data[0]
+                        var moddata = data1.moddata || []; 
+                        console.log(data1, isModified);
+                        var isModified = data1.modifiedpr_id ? true : false; 
+                        hideLoader();
+                        const stageDatetime = (data.stages && data.stages.length > 0) ? data.stages[0].datetime : null;
+                        let formattedDate = '';  // Declare formattedDate here
+                        $("#Accounts option ").show()
+                        $("#Accounts option[value="+data1.user__username+"]").hide()
+
+                        if (stageDatetime) {
+                            const dateObj = new Date(stageDatetime);  // Create a Date object from the UTC datetime string
+                            const options = { 
+                                timeZone: 'Asia/Kolkata', // Set the timezone to IST (Indian Standard Time)
+                                year: 'numeric', 
+                                month: '2-digit', 
+                                day: '2-digit', 
+                                hour: '2-digit', 
+                                minute: '2-digit', 
+                                second: '2-digit',
+                                hour12: false
+                            };
+                            formattedDate = dateObj.toLocaleString('en-IN', options); // Assign to formattedDate
+                            console.log(stageDatetime, 'naveen');
+                        } else {
+                            console.error("Stage datetime is missing or undefined");
+                        } 
+                        const downloadButton = document.getElementById("downloadBtn");
+                        const procurename = data1?.procurement_id;
+                        const formattedProcurementId = procurename
+                    
+                        console.log(formattedProcurementId,'formattedProcurementId]]');
+                        if (downloadButton) {
+                            downloadButton.setAttribute("data-id", formattedProcurementId);
+                        }
+                            
+                        var modifycount = 0
+                        //users dropdown for rejection process
+                        var users = '<label for="rejectedUserSelect">Rejected Users:</label>' +
+                        '<select name="rejected_user" id="rejectedUserSelect" class="form-control">' +
+                        '<option value="">Select User</option>' +
+                        (data.rejected_users ? data.rejected_users.map(user => `<option value="${user}">${user}</option>`).join('') : '') +
+                        '</select>';
+                        //displaying the procurement id related procurement and particulars information
+                        var previewHtml = `
+                        <button class="btn btn-primary" id="downloadBtn" data-id=${procurename} style="position: absolute; top: 16px; right: 20px;background-color:#007080;border-color:#007080;">Download</button>
+                        <h4 style="text-align:center;color : #800000;"><b>NOTE 1</b></h4>
+                        <div class="background-image-container">
+                            <div id="previewContentHeader">
+                                <h4 style="text-align: center; font-weight: bold; text-decoration: underline;">
+                                    PURCHASE REQUISITION 
+                                </h4>
+                                <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                    <div style="text-align: left;">
+                                        <p><b>Material:</b> ${capitalizeFirstLetter(data1.procurement_type__Procurement_name) || '_________________________'}<br>
+                                    <b>Project</b>: ${data1.project__name || '_________________________'}</p>
+                                    </div>
+                                    <div style="text-align: right;">
+                                        <p><b>REF</b>: ${data1.procurement_id ? data1.procurement_id.slice(0, -3) + "<b>" + data1.procurement_id.slice(-3) + "</b>" : '_________________________'}<br>
+                                        <b>Date</b>: ${data1.datetime ? formatDateTime(data1.datetime) : '_________________________'}</p>
+                                    </div>
+                                </div>
+                                <p><b>TO:</b> <br>Head of IMM</p>
+                            </div>
+                            <div class="table-responsive">
+                                <table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align: left;margin-left:0%; background-color: transparent;">
+                                    <thead>
+                                        <tr>
+                                            <th>S.No</th>
+                                            <th>Description</th>
+                                            <th>Delivery</th>
+                                            <th>Part/Model No.</th>
+                                            <th>Unit</th>
+                                            {% comment %} <th>Material Code</th> {% endcomment %}
+                                            <th>Make</th>
+                                            <th>Total Qty Required</th>
+                                            <th>Estimated Value</th>
+                                            <th>Reasons for Procurement</th>
+                                            <th>Items Required by</th>
+                                            <th>Specific-<br>ation</th>
+                                        </tr>
+                                    </thead>
+                                        <tbody id="particularsTableBody">
+                                            ${data.particulars.map((particular, index) => `
+                                                <tr>
+                                                <td>${index + 1}</td>
+                                                
+                                                <!-- Description -->
+                                                <td>
+                                                    ${renderExpandableText(particular.description, 100)}
+                                                </td>
+                                                
+                                                <td>${particular.delivery_name ? particular.delivery_name : 'No Delivery Info'}</td>
+                                                
+                                                <!-- Part Number -->
+                                                <td class="partno">
+                                                    ${renderExpandableText(particular.partno, 30)}
+                                                </td>
+                                                
+                                                <td>${particular.unitname}</td>
+                                                
+                                                <!-- Make -->
+                                                <td>
+                                                    ${renderExpandableText(particular.make, 50)}
+                                                </td>
+                                                
+                                                <td>${particular.total_qty_required}</td>
+                                                <td>${particular.estimated_value}</td>
+                                                
+                                                <!-- Justification (reasons_for_procurement) -->
+                                                <td class="reasons-cell">
+                                                    ${(() => {
+                                                        // Compose the combined text + link HTML as plain text with suffix
+                                                        let combinedText = particular.reasons_for_procurement || '';
+                                                        let suffix = '';
+
+                                                        if (particular.reasons_document) {
+                                                        const fullName = particular.reasons_document.split('/').pop();
+                                                        const dotIndex = fullName.lastIndexOf('.');
+                                                        const name = dotIndex !== -1 ? fullName.slice(0, dotIndex) : fullName;
+                                                        const ext = dotIndex !== -1 ? fullName.slice(dotIndex) : '';
+
+                                                        suffix = ` - <a href="${particular.reasons_document}" target="_blank" class="reasons-document-link">${name}${ext}</a>`;
+                                                        }
+
+                                                        // If there's no text or file, show placeholder
+                                                        if (!combinedText && !suffix) return '____________________';
+
+                                                        // Call renderExpandableText with combinedText and suffix (suffix is HTML but will be escaped)
+                                                        // So let's tweak renderExpandableText to allow raw HTML suffix or pass suffix as argument that renders raw
+
+                                                        return renderExpandableText(combinedText, 80, suffix, true);
+                                                    })()}
+                                                </td>
+                                                <td>
+                                                    ${particular.items_to_be_positioned_by.map(item => {
+                                                    const formatDate = (date) => {
+                                                        const d = new Date(date);
+                                                        const day = d.getDate().toString().padStart(2, '0');
+                                                        const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                                                        const year = d.getFullYear();
+                                                        return `${day}-${month}-${year}`;
+                                                    };
+                                                    if (item.quantity && item.expected_date) return `${item.quantity} - ${formatDate(item.expected_date)}`;
+                                                    if (item.quantity) return `${item.quantity}`;
+                                                    if (item.expected_date) return `${formatDate(item.expected_date)}`;
+                                                    return '';
+                                                    }).join('<br>')}
+                                                </td> 
+                                                
+                                                <!-- Specification -->
+                                                <td class="specification-cell">
+                                                    ${(() => {
+                                                        let combinedText = particular.item_specification || '';
+                                                        let suffix = '';
+
+                                                        if (particular.spec_document) {
+                                                        const fullName = particular.spec_document.split('/').pop();
+                                                        suffix = ` - <a href="${particular.spec_document}" target="_blank" class="spec-document-link">${fullName}</a>`;
+                                                        }
+
+                                                        if (!combinedText && !suffix) return '____________________';
+
+                                                        return renderExpandableText(combinedText, 100, suffix, true);
+                                                    })()}
+                                                </td>
+                                                </tr>
+                                            `).join('')}
+                                        </tbody>
+                                </table>
+                            </div>
+                                    <div id="specDocumentsSection">
+                            
+                            <div id="previewContentFooter">
+                                            <!-- New Section for Quality Document and Certificates -->
+                                            <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                            <div style="flex: 1; padding-right: 10px;">
+                                                    <p><b>Quality Document</b>: 
+                                                        ${data1.quality_document?.includes('media') 
+                                                            ? `<a href="${data1.quality_document}" target="_blank">View Document</a>` 
+                                                            : (data1.quality_document_url?.includes('media') 
+                                                                ? `<a href="${data1.quality_document_url}" target="_blank">View Document</a>` 
+                                                                : '____________________')}
+                                                    </p>
+                                                </div>
+                                                <div style="flex: 1; padding-left: 10px;">
+                                                    <p><b>Quality Certificates Required (if any)</b>: ${data1.quality_certificates_required || '____________'}</p>
+                                            </div>
+                                    </div>
+
+                                <!-- Existing Section for Source of Supplies, Tender Type, etc. -->
+                                <div style="display: flex; justify-content: space-between;">
+                                    <div style="flex: 1; padding-right: 10px;">
+                                        <p><b>Source of Supplies</b>: ${data.suppliers ? data.suppliers.join(', ') : '____________________'}</p>
+                                        <p><b>Tender Type</b>: ${data1.tender_type__tender_type || '_________________________'}</p>
+                                    </div>
+                                    <div style="flex: 1; padding-left: 10px;">
+                                        <p><b>Earlier Procurement Details (if any)</b>: ${data1.earlier_procurement_details || '_________'}</p>
+                                        <p><b>Import / Indigenous</b>: ${data1.import_indigenous__source_type || '_________________________'}</p>
+                                    </div>
+                                </div>
+
+                                <!-- Indentor Information -->
+                                <div style="text-align: right;">
+                                    <p><b>Indentor Name</b>: ${data1.user__first_name || ''} ${data1.user__last_name || ''}<br>
+                                    <b>Indentor Emp Id</b>: ${data1.user__username || '_________________________'}<br>
+                                    <b>Department</b>: ${data1.department__dept_name || '_________________________'}</p>
+                                    ${data.stages[0].forwarded_to ? `
+                                                <p><strong>Forwarded To:</strong> 
+                                                    ${data.stages[0].forwarded_to_name || 'Unknown'} (${data.stages[0].forwarded_to})
+                                                </p>
+                                            ` : ''}
+                                </div>
+                            </div>
+
+                        </div>
+                        </div>
+                    
+                        <div id="tracking-list">
+                                        ${data.stages.map((stage, index) => {
+                                            //Filtering the data related and based on the stagesnames and staageno
+                                            let partsno = 0
+                                            const remarkDisplay = stage.stage === 'stage5' && stage.remarktype === 'Approval'
+                                            ? 'Approved' 
+                                            : (stage.remarktype === 'Approval' 
+                                                ? 'Recommended' 
+                                                : (stage.remarktype === 'Reject' 
+                                                    ? 'Returned' 
+                                                    : stage.remarktype));
+                                            let stageName = '';
+                                            
+                                            if (stage.stage === "stage2") {
+                                                stageName = 'Recommending Authority';
+                                            } else if(stage.stage === "stage3") {
+                                                stageName = 'IMM';
+                                            } else if(stage.stage === "stage4") {
+                                                stageName = 'Accounts';
+                                            } else if (stage.stage === "stage5") {
+                                                stageName = 'Approving Authority';
+                                            }else if (stage.stage === "stage1") {
+                                                stageName = 'Indentor';
+                                            }else if (stage.stage === "stage10") {
+                                                stageName = 'IMM';
+                                            }else if (stage.stage === "stage6") {
+                                                stageName = 'IMM';
+                                            }
+                                            let attachmentHtml = '';
+                                            if (stage.stage !== "stage10") {
+
+                                                if (stage.attachment) {
+                                                    const attachmentUrl = stage.attachment.startsWith('/media/') || stage.attachment.startsWith('http') 
+                                                            ? stage.attachment 
+                                                            : `/media/${stage.attachment}`;
+
+                                                        const fullFileName = stage.attachment.split('/').pop(); // e.g. Djangoforbegginers_9Gsb4yU.pdf
+
+                                                        // Split off extension first
+                                                        const fileExtension = fullFileName.includes('.') ? '.' + fullFileName.split('.').pop() : '';
+
+                                                        // Remove extension to get base name
+                                                        const nameWithoutExt = fullFileName.replace(/\.[^/.]+$/, '');
+
+                                                        // Take only the first part before any underscore
+                                                        const baseName = nameWithoutExt.split('_')[0];
+
+                                                        // Final clean display name
+                                                        const displayFileName = `${baseName}${fileExtension}`;
+                                                        
+
+                                                    attachmentHtml = `
+                                                        <div style="
+                                                            background-color: #f0f4f8;
+                                                            border: 1px solid #d0d7de;
+                                                            padding: 10px 14px;
+                                                            margin-bottom: 9px;
+                                                            border-radius: 6px;
+                                                            display: flex;
+                                                            align-items: center;
+                                                            gap: 10px;
+                                                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                                            max-width: 420px;
+                                                            width: 38%;
+                                                            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+                                                        ">
+                                                            <strong style="font-size: 14px; color: #333;">Attachment:</strong>
+                                                            <a href="${attachmentUrl}" target="_blank" style="
+                                                                display: inline-flex;
+                                                                align-items: center;
+                                                                gap: 6px;
+                                                                color: #007bff;
+                                                                font-size: 14px;
+                                                                text-decoration: none;
+                                                                transition: color 0.2s ease;
+                                                            " title="View Attachment">
+                                                                <img src="https://cdn-icons-png.flaticon.com/512/709/709612.png" alt="View" width="18" height="18" style="filter: grayscale(40%);">
+                                                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">
+                                                                    ${displayFileName}
+                                                                </span>
+                                                            </a>
+                                                        </div>
+                                                    `;
+                                                } else {
+                                                    attachmentHtml = `
+                                                        <div style="
+                                                            background-color: #fff3f3;
+                                                            border: 1px solid #ffc9c9;
+                                                            padding: 10px 14px;
+                                                            margin-bottom: 9px;
+                                                            border-radius: 6px;
+                                                            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                                                            max-width: 420px;
+                                                            font-size: 14px;
+                                                            color: #a94442;
+                                                        ">
+                                                            <strong>Attachment:</strong> N/A
+                                                        </div>
+                                                    `;
+                                                }
+                                                } else {
+                                                    // If the stage is "stage10", just don't render the attachment field.
+                                                    attachmentHtml = '';  // Do nothing, leave the attachmentHtml empty.
+                                                }
+                                        
+                                                //Filtering the information based on the status modified.
+                                                if (stage.remarktype === 'Modified') {
+                                                    debugger
+                                                    const modifiedData = data.modified_procurement_data
+                                                    const modifiedSuppliers = data.modified_suppliers;
+                                                    console.log(stage.modified_prno,stage,'stage.modified_prno')
+                                                    var mymoddate = modifiedData.filter(function(evt){
+                                                        return evt.modifiedpr_id == stage.modified_prno
+                                                    })
+                                                    console.log(modifiedData,'modifiedData')
+                                                    //const modifiedData = moddata.find(item => item.modifiedpr_id === stage.modifiedpr_id); // Assuming 'modifiedpr_id' is available in stage
+                                                    var partsno2 = 0
+                                                    const particulars = modifiedData ? modifiedData.particulars : [];
+                                                    return `
+
+                                                        <div class="note-header">
+                                                            <h4 style="color:#800000;"><strong>NOTE ${index + 1}</strong></h4>
+                                                        </div>
+                                                        <div  class="stage-note background-image-container">
+                                                            {% comment %} <h4>Modified Procurement</h4> {% endcomment %}
+                                                            <p><strong>Status: </strong> ${remarkDisplay}</p>
+                                                            {% comment %} <p><strong>Remarks:</strong> ${stage.remarks || 'N/A'}</p> {% endcomment %}
+                                                            
+                                                        <div style="display: flex; justify-content: space-between; align-items: flex-start; width: 100%;">
+                                                            <!-- Left side: Material and Project -->
+                                                            <div style="text-align: left;">
+                                                                <p><strong>Material:</strong> ${mymoddate[0]?.procurement_type__Procurement_name || '_________________________'}<br>
+                                                                <strong>Project:</strong> ${mymoddate[0]?.project__name || '_________________________'}</p>
+                                                            </div>
+
+                                                            <!-- Right side: REF and Date -->
+                                                            <div style="text-align: right;">
+                                                                <p><strong>REF:</strong> ${data?.procurement_id ? data.procurement_id.slice(0, -3) + "<b>" + data.procurement_id.slice(-3) + "</b>" : '_________________________'}<br>
+                                                                <strong>Date&Time</strong> ${stage.datetime ? formatDateTime(stage.datetime) : '_________________________'}</p>
+                                                            </div>
+                                                        </div>
+
+
+                                                            <p><b>TO:</b> <br>Head of IMM</p>
+                                                            <div class="table-responsive">
+                                                            <table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align: left;margin-left:0%; background-color: transparent;">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>S.No</th>
+                                                                        <th>Description</th>
+                                                                        <th>Delivery</th>
+                                                                        <th>Part/Model No.</th>
+                                                                        <th>Unit</th>
+                                                                        <th>Make</th>
+                                                                        <th>Total Qty Required</th>
+                                                                        <th>Estimated Value</th>
+                                                                        <th>Reasons for Procurement</th>
+                                                                        <th>Items Required by</th>
+                                                                        <th>Specification</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody id="particularsTableBody">
+                                                                    ${data.modified_paticular.map((particular) => {
+                                                                        
+                                                                        debugger  
+                                                                            if(particular.modpr == stage.modified_prno){
+                                                                                partsno2 = partsno2+1;
+                                                                        return `
+                                                                            <tr>
+                                                                                <td>${partsno2}</td>
+                                                                                <td>${renderExpandableText(particular.description,100)}</td>
+                                                                                <td>${particular.delivery_name ? particular.delivery_name : 'No Delivery Info'}</td>
+                                                                                <td class="partno">${renderExpandableText(particular.partno,30)}</td>
+                                                                                <td>${particular.unitname}</td>
+                                                                                <td>${renderExpandableText(particular.make,30)}</td>
+                                                                                <td>${particular.total_qty_required}</td>
+                                                                                <td>${particular.estimated_value}</td>
+                                                                                <td class="reasons-cell">
+                                                                                ${(() => {
+                                                                                    // Compose the combined text + link HTML as plain text with suffix
+                                                                                    let combinedText = particular.reasons_for_procurement || '';
+                                                                                    let suffix = '';
+
+                                                                                    if (particular.reasons_document) {
+                                                                                    const fullName = particular.reasons_document.split('/').pop();
+                                                                                    const dotIndex = fullName.lastIndexOf('.');
+                                                                                    const name = dotIndex !== -1 ? fullName.slice(0, dotIndex) : fullName;
+                                                                                    const ext = dotIndex !== -1 ? fullName.slice(dotIndex) : '';
+
+                                                                                    suffix = ` - <a href="${particular.reasons_document}" target="_blank" class="reasons-document-link">${name}${ext}</a>`;
+                                                                                    }
+
+                                                                                    // If there's no text or file, show placeholder
+                                                                                    if (!combinedText && !suffix) return '____________________';
+
+                                                                                    // Call renderExpandableText with combinedText and suffix (suffix is HTML but will be escaped)
+                                                                                    // So let's tweak renderExpandableText to allow raw HTML suffix or pass suffix as argument that renders raw
+
+                                                                                    return renderExpandableText(combinedText, 80, suffix, true);
+                                                                                })()}
+                                                                            </td>
+                                                                            <td>
+                                                                                    ${particular.items_to_be_positioned_by.map(item => {
+                                                                                                const formatDate = (date) => {
+                                                                                                    const d = new Date(date);
+                                                                                                    const day = d.getDate().toString().padStart(2, '0');
+                                                                                                    const month = (d.getMonth() + 1).toString().padStart(2, '0');
+                                                                                                    const year = d.getFullYear();
+                                                                                                    return `${day}-${month}-${year}`;
+                                                                                                };
+
+                                                                                                const q = item.quantity;
+
+                                                                                                // Treat 0, null, undefined, "NA", "null", and "0" as invalid
+                                                                                                const isValidQuantity = q !== null && q !== undefined &&
+                                                                                                                        q !== 0 && q !== "0" &&
+                                                                                                                        q !== "NA" && q !== "null";
+
+                                                                                                if (isValidQuantity && item.expected_date) {
+                                                                                                    return `${q} - ${formatDate(item.expected_date)}`;
+                                                                                                } else if (isValidQuantity) {
+                                                                                                    return `${q}`;
+                                                                                                } else if (item.expected_date) {
+                                                                                                    return `${formatDate(item.expected_date)}`;
+                                                                                                }
+
+                                                                                                return '';
+                                                                                            }).filter(str => str).join("<br>")}
+
+                                                                                </td>
+                                                                                <td class="specification-cell">
+                                                                                ${(() => {
+                                                                                    let combinedText = particular.item_specification || '';
+                                                                                    let suffix = '';
+
+                                                                                    if (particular.spec_document) {
+                                                                                    const fullName = particular.spec_document.split('/').pop();
+                                                                                    suffix = ` - <a href="${particular.spec_document}" target="_blank" class="spec-document-link">${fullName}</a>`;
+                                                                                    }
+
+                                                                                    if (!combinedText && !suffix) return '____________________';
+
+                                                                                    return renderExpandableText(combinedText, 100, suffix, true);
+                                                                                })()}
+                                                                            </td>
+
+                                                                            </tr>
+                                                                        `;
+                                                                                }
+                                                                    }).join('')}
+                                                            </tbody>
+                                                            </table>
+                                                            </div>
+                                                        <div style="display: flex; justify-content: space-between; margin-bottom: 15px;">
+                                                                <div style="flex: 1; padding-right: 10px;">
+                                                                    <p><strong>Quality Document:</strong> ${
+                                                                    modifiedData[0]?.quality_document
+                                                                        ? (() => {
+                                                                            let url = modifiedData[0].quality_document;
+
+                                                                            // Extract just the filename from the original URL
+                                                                            let filename = url.split('/').pop();
+
+                                                                            // Use the current location origin dynamically
+                                                                            let baseUrl = `${window.location.origin}/media/quan_doc/`;
+
+                                                                            return `<a href="${baseUrl}${filename}" target="_blank">View Document</a>`;
+                                                                        })()
+                                                                        : '___________________'
+                                                                    }</p>
+
+                                                                    <p><strong>Source of Supplies:</strong> ${
+                                                                    modifiedSuppliers.length > 0
+                                                                        ? modifiedSuppliers
+                                                                            .filter(entry => entry.modpr === stage.modified_prno)
+                                                                            .flatMap(entry => entry.suppliers.map(s => s.company_name))
+                                                                            .join(', ')
+                                                                        : '____________________'
+                                                                    }</p>
+
+                                                                    <p><strong>Tender Type:</strong> ${mymoddate[0]?.tender_type__tender_type || '___________________'}</p>
+                                                                </div>
+
+                                                                <div style="flex: 1; padding-left: 10px;">
+                                                                    <p><strong>Quality Certificates:</strong> ${mymoddate[0]?.quality_certificates_required || '___________________'}</p>
+
+                                                                    <p><strong>Earlier Procurement Details:</strong> ${mymoddate[0]?.earlier_procurement_details || '___________________'}</p>
+
+                                                                    <p><strong>Import / Indigenous:</strong> ${modifiedData[0]?.import_indigenous__source_type || '___________________'}</p>
+                                                                    
+                                                                    <!-- If you want to keep Tender Type here as well, you can remove this if duplicate -->
+                                                                    <!-- <p><strong>Tender Type:</strong> ${modifiedData[0]?.tender_type__tender_type || '___________________'}</p> -->
+                                                                </div>
+                                                                </div>
+                                                        <div style="text-align: right;">
+                                                                        <p><b>Indentor Name</b>: ${data1.user__first_name || ''} ${data1.user__last_name || ''}<br>
+                                                                        <b>Indentor Emp Id</b>: ${data1.user__username || '_________________________'}<br>
+                                                                        <b>Department</b>: ${data1.department__dept_name || '_________________________'}</p>
+                                                                        ${stage.forwarded_to ? `
+                                                                        <p><strong>Forwarded To:</strong> 
+                                                                            ${stage.forwarded_to_name || 'Unknown'} (${stage.forwarded_to})
+                                                                        </p>
+                                                                    ` : ''}
+                                                                        
+                                                                    </div>
+                                                        </div>
+                                                    `;
+                                                }
+                                                 // Get the CST data from the response
+                                                else if (stage.remarktype === 'CST') {
+                                                   
+                                                    const cstData = data.cstData || {};
+                                                    const enquiryNo = cstData.enquiryNo || 'N/A';
+                                                    const projectName = cstData.projectName || 'N/A';
+                                                    const userData = cstData.userData || { full_name: 'N/A' };
+                                                    const vendors = cstData.vendors || [];
+                                                    const particulars = cstData.particulars || [];
+                                                    const saved_cst = cstData.saved_cst || {};
+                                                    const additionalInfo = cstData.additionalInfo || '';
+                                                    const levels = cstData.levels || [];
+                                                    console.log('Levels data:', levels);
+                                                    
+                                                    let cstForm = `
+                                                        <div class="note-header">
+                                                            <h4 style="color:#800000;"><strong>NOTE ${index + 2}</strong></h4>
+                                                        </div>
+                                                        <div class="stage-note" style=" padding: 20px; border-radius: 8px;  width: 100%; max-width: 1200px; margin: 0 auto;">
+                                                            <h1 style="text-align: center; margin-bottom: 20px; font-size: 24px; color: #333;"><b>COMPARATIVE STATEMENT (CST)</b></h1>
+                                                            <div style="width: 100%; margin-bottom: 20px; font-size: 14px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; color: black;">
+                                                                <div><strong>Enquiry No:</strong> ${enquiryNo}</div>
+                                                                <div><strong>Date:</strong> ${new Date().toLocaleDateString('en-GB')}</div>
+                                                                <div><strong>Project:</strong> ${projectName}</div>
+                                                                <div><strong>Indentor:</strong> ${userData.full_name}</div>
+                                                            </div>
+                                                            <div style="width: 100%; overflow-x: auto; margin-bottom: 20px;">
+                                                                <table class="cst-table" style="width: 100%; border-collapse: collapse; font-size: 14px; color: black;">
+                                                                    <thead>
+                                                                        <tr>
+                                                                            <th  style="width: 5%; border: 1px solid #ddd; padding: 8px; ">S.No</th>
+                                                                            <th style="width: 30%; border: 1px solid #ddd; padding: 8px; ">Description of item / Part no</th>
+                                                                            <th style="width: 10%; border: 1px solid #ddd; padding: 8px;">Qty</th>
+
+                                                                            ${vendors.map(vendor =>
+                                                                                `<th style="width: auto; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;" data-vendor-id="${vendor.vendor_id}">M/s ${vendor.company_name}</th>`
+                                                                            ).join('')}
+                                                                        </tr>
+                                                                    </thead>
+                                                                    <tbody>
+                                                                        ${particulars.map((particular, index) => `
+                                                                            <tr data-particular-id="${particular.id}">
+                                                                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${index + 1}</td>
+                                                                                <td style="border: 1px solid #ddd; padding: 8px;">${particular.item_name} / ${particular.partno}</td>
+                                                                                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${particular.total_qty_required}</td>
+                                                                                ${vendors.map(vendor => {
+                                                                                    const vendorData = saved_cst[vendor.vendor_id] || { items: {}, terms: {} };
+                                                                                    const savedValue = vendorData.items[particular.id] ?? '';
+                                                                                    return `<td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${savedValue}</td>`;
+                                                                                }).join('')}
+                                                                            </tr>
+                                                                        `).join('')}
+                                                                    </tbody>
+                                                                    <tfoot>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">
+                                                                                Quotation Reference: <span style="color:red;">*</span>
+                                                                            </td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const savedValue = saved_cst[vendor.vendor_id]?.terms?.quotation_reference || '';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${savedValue}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Validity of offer:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const savedValue = vendorData.terms.validityoffer || '';
+                                                                                const isValidDate = /^\d{4}-\d{2}-\d{2}$/.test(savedValue);
+                                                                                const formattedDate = isValidDate ? new Date(savedValue).toLocaleDateString('en-GB') : savedValue;
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${formattedDate}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Discount offered:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const savedValue = vendorData.terms.discount || '';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${savedValue}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Delivery Timelines:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const savedValue = vendorData.terms.deliverytimeline || '';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${savedValue}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">GST:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const savedValue = vendorData.terms.gst || '';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${savedValue}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Delivery terms:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const savedValue = vendorData.terms.deliveryterms || '';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${savedValue}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Payment terms:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const savedValue = vendorData.terms.paymentterms || '';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${savedValue}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Packaging Charges:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const savedValue = vendorData.terms.packaging_charges || '';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${savedValue}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Insurance Charges:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const savedValue = vendorData.terms.insurance_charges || '';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${savedValue}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Customs Duty:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const savedValue = vendorData.terms.customs_duty || '';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px;">${savedValue}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">CoC:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const checked = vendorData.terms.coc ? 'Yes' : 'No';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${checked}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                        <tr>
+                                                                            <td colspan="3" style="font-weight: bold; border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Material Test Report Required:</td>
+                                                                            ${vendors.map(vendor => {
+                                                                                const vendorData = saved_cst[vendor.vendor_id] || { terms: {} };
+                                                                                const checked = vendorData.terms.material_test_report ? 'Yes' : 'No';
+                                                                                return `<td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${checked}</td>`;
+                                                                            }).join('')}
+                                                                        </tr>
+                                                                    </tfoot>
+                                                                </table>
+                                                            </div>
+                                                            <div class="additional-info" style="margin-top: 20px;">
+                                                                <label for="additionalInfo" style="display: block; font-weight: bold; margin-bottom: 5px; color: black;">Additional Information (if any):</label>
+                                                                <div id="additionalInfo" name="additional_info" style="width: 100%; min-height: 100px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; color: black;">${additionalInfo}</div>
+                                                            </div>`
+                                                            if (levels.length > 0) {
+                                                                // Sort levels based on numeric part of levelname
+                                                                levels.sort((a, b) => {
+                                                                    const numA = parseInt(a.levelname.replace(/\D/g, '')) || 0;
+                                                                    const numB = parseInt(b.levelname.replace(/\D/g, '')) || 0;
+                                                                    return numA - numB;
+                                                                });
+                                                            
+                                                                cstForm += `
+                                                                    <div style="margin-top: 20px;">
+                                                                        <h3 style="text-align: center; margin-bottom: 15px; font-size: 18px; color: #333;"><strong>Status of Vendors</strong></h3>
+                                                                        <table style="width: 100%; border-collapse: collapse; font-size: 14px; color: black; margin-bottom: 20px;">
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Vendor</th>
+                                                                                    <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Level</th>
+                                                                                    <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Time</th>
+                                                                                    <th style="border: 1px solid #ddd; padding: 8px; background-color: #f2f2f2;">Amount</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                ${levels.map((level, index) => `
+                                                                                    <tr>
+                                                                                        <td style="border: 1px solid #ddd; padding: 8px;">${level.cstmain__sources__company_name || 'N/A'}</td>
+                                                                                        <td style="border: 1px solid #ddd; padding: 8px;">Lowest${index + 1}</td>
+                                                                                        <td style="border: 1px solid #ddd; padding: 8px;">T${index + 1}</td>
+                                                                                        <td style="border: 1px solid #ddd; padding: 8px;">${level.amount || 'N/A'}</td>
+                                                                                    </tr>
+                                                                                `).join('')}
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                    <p><strong>Remarks:</strong> ${stage.remarks || 'N/A'}</p>
+                                                                    <span class="status-user-right">
+                                                                        <div><strong> IMM Name: </strong>${stage.user && (stage.user.first_name || stage.user.last_name) 
+                                                            ? `${stage.user.first_name || ''} ${stage.user.last_name || ''}`.trim() 
+                                                            : 'N/A'} </div>
+                                                                        <div><strong> IMM Emp id:</strong> ${stage.userid || 'N/A'}</div>
+                                                                        <div><strong>Department: </strong>${stage.userdept || 'N/A'}</div>  
+                                                                        ${stage.forwarded_to ? `
+                                                                                    <p><strong>Forwarded To:</strong> 
+                                                                                        ${stage.forwarded_to_name || 'Unknown'} (${stage.forwarded_to})
+                                                                                    </p>
+                                                                                ` : ''}
+                                                                    </span>
+                                                                    </div><br>
+                                                                `;
+                                                            }
+
+
+                                                    return cstForm;
+                                                }
+                                                else if (stage.remarktype === 'DPO') {
+                                                    const dpo = data.dpo_data?.[0] || {};
+                                                    const particulars = dpo.particulars || [];
+                                                    const vendor = dpo.vendor_data?.[0] || {};
+
+                                                    let totalValue = 0;
+
+                                                    const updatedParticulars = particulars.map(p => ({ ...p }));
+
+                                                    // Handle splitting negotiated_value when it contains two comma-separated values
+                                                    updatedParticulars.forEach((p, index) => {
+                                                        const rawVal = (p.negotiated_value || '').toString();
+                                                        const parts = rawVal.split(',');
+
+                                                        if (parts.length === 2 && updatedParticulars[index + 1]) {
+                                                            updatedParticulars[index].negotiated_value = parts[0].trim();
+                                                            updatedParticulars[index + 1].negotiated_value = parts[1].trim();
+                                                        }
+                                                    });
+
+                                                    // Generate HTML rows with calculated unit price and total price
+                                                    const particularsRows = updatedParticulars.map((p, index) => {
+                                                        const totalQty = parseFloat(p.total_qty_required || '1') || 1;
+
+                                                        // Use negotiated_value if present, else fallback to cs_value (cost price)
+                                                        const totalValueItem = parseFloat((p.negotiated_value || p.cs_value || '0').toString().trim()) || 0;
+
+                                                        const unitPrice = totalValueItem / totalQty;
+
+                                                        totalValue += totalValueItem;
+
+                                                        return `
+                                                            <tr>
+                                                                <td>${index + 1}</td>
+                                                                <td>${p.partno || ''}</td>
+                                                                <td>${p.item_name || ''}</td>
+                                                                <td>${p.unitname || ''}</td>
+                                                                <td>${totalQty}</td>
+                                                                <td>${unitPrice.toFixed(2)}</td>
+                                                                <td>${totalValueItem.toFixed(2)}</td>
+                                                            </tr>
+                                                        `;
+                                                    }).join('');
+
+                                                    const quotationReference = updatedParticulars.length > 0 ? updatedParticulars[0].quotation_reference || 'N/A' : 'N/A';
+                                                    return `
+                                                    <div class="note-header">
+                                                            <h4 style="color:#800000;"><strong>NOTE ${index + 2}</strong></h4>
+                                                        </div>
+                                                        <div class="card p-4 with-bg" id="hi" style= " border: 1px solid #ddd; ">
+                                                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                                                                <h4 style="margin: 0;">
+                                                                    <strong>
+                                                                        DRAFT PURCHASE ORDER
+                                                                        ${(dpo.form_type === 'import' ? 'Import' : 'Indigenous').toUpperCase()}
+                                                                    </strong>
+                                                                </h4>
+
+
+                                                
+                                                                <p style="margin: 0;">
+                                                                    <strong id="dpoIdDisplay"> ${dpo.dpoid || ''}</strong><br>
+                                                                    <b>Dated:</b> <span id="dpoDateDisplay">${dpo.date ? new Date(dpo.date).toLocaleDateString('en-GB') : ''}</span>
+                                                                </p>
+                                                            </div>
+                                                
+                                                            <table class="table table-bordered mt-3" style="table-layout: fixed; width: 100%;">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th style="width: 33.33%;">To</th>
+                                                                        <th style="width: 33.33%;">Billing Address</th>
+                                                                        <th style="width: 33.33%;">Delivery Address</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <tr>
+                                                                        <td>
+                                                                        <strong>M/s ${vendor.company_name || ''}</strong><br/>
+                                                                            ${vendor.vendor_name || ''}<br/>
+                                                                            ${vendor.phone_number || ''}<br/>
+                                                                            ${vendor.email || ''}<br/>
+                                                                            ${[vendor.address, vendor.city, vendor.state, vendor.country].filter(Boolean).join(', ')}<br/>
+                                                                            ${vendor.pincode || ''}<br/>
+                                                                            ${vendor.gst_number ? `<strong>GST No:</strong> ${vendor.gst_number}<br/>` : ''}
+                                                                            ${vendor.tin_number ? `<strong>TIN No:</strong> ${vendor.tin_number}<br/>` : ''}
+                                                                            </td>
+                                                                        <td>${dpo.billing_address_1 || ''}</td>
+                                                                        <td>${dpo.delivery_address_2 || ''}</td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                
+                                                            <div>
+                                                                Dear Sir,<br>
+                                                                We are pleased to place the purchase order for the items below.
+                                                            </div>
+                                                            <div>
+                                                                <strong>Quotation Reference:</strong>
+                                                            </div>
+                                                                <p style="margin-top: 10px; padding: 10px; border: 1px solid #000; display: block; width: 100%; box-sizing: border-box;height:38px;">
+                                                                    ${quotationReference}
+                                                                </p>
+                                                
+                                                            <table class="table table-bordered mt-2">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>S. No</th>
+                                                                        <th>Part No / Model No.</th>
+                                                                        <th>Description</th>
+                                                                        <th>Unit</th>
+                                                                        <th>Qty</th>
+                                                                        <th>Unit Price(${dpo.form_type === 'import' ? 'FE' : 'INR'})</th>
+                                                                        <th>Total(${dpo.form_type === 'import' ? 'FE' : 'INR'})</th>      
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    <!-- If line items exist, render them dynamically here -->
+                                                                    ${particularsRows}
+                                                                    <tr>
+                                                                        <td colspan="6" style="text-align: right;"><strong>Sub Total:</strong></td>
+                                                                        <td><span id="totalValue">${dpo.total_value !== undefined ? parseFloat(dpo.total_value).toFixed(2) : ''}</span></td>
+                                                                    </tr>
+                                                                    <tr>
+                                                                        <td colspan="6" style="text-align: right;"><strong>Discount (%) :</strong></td>
+                                                                        <td>
+                                                                            ${dpo.discount !== undefined && dpo.discount !== null ? (parseFloat(dpo.discount).toFixed(2)) : ''}
+                                                                        </td>
+                                                                    </tr>
+
+                                                                    ${dpo.form_type !== 'import' ? `
+                                                                    <tr>
+                                                                        <td colspan="6" style="text-align: right;"><strong>GST (%)</strong> ${dpo.gst_percentage !== undefined && dpo.gst_percentage !== null ? (parseFloat(dpo.gst_percentage).toFixed(2)) : ''}:</td>
+                                                                        <td>
+                                                                            ${dpo.gst_value !== undefined && dpo.gst_value !== null ? (parseFloat(dpo.gst_value).toFixed(2)) : ''}
+                                                                        </td>
+                                                                    </tr>` : ''}
+
+                                                                    <tr>
+                                                                        <td colspan="6" style="text-align: right;"><strong>Grand Total:</strong></td>
+                                                                        <td><span id="grandTotalValue">${dpo.grand_total !== undefined ? (parseFloat(dpo.grand_total).toFixed(2)) : ''}</span></td>
+                                                                    </tr>
+                                                                </tbody>
+                                                            </table>
+                                                            <div class="terms-section mt-3">
+                                                    
+                                                        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 5px;">
+                                                            ${(dpo.termcond || '<em>No terms provided.</em>').replace(/contenteditable="true"/gi, 'contenteditable="false"')}
+                                                        </div>
+
+                                                    
+                                                        <div style="border: 1px solid #ccc; padding: 10px; border-radius: 5px;">
+                                                            ${(dpo.gentermcond || '<em>No general terms provided.</em>').replace(/contenteditable="true"/gi, 'contenteditable="false"')}
+                                                        </div>
+                                                    </div>
+                                                        <div>
+                                                            <p><strong>Remarks:</strong> ${stage.remarks || 'N/A'}</p>
+                                                        </div>
+                                                        <span class="status-user-right">
+                                                                                    <div><strong> ${stageName} IMM Name: </strong>${stage.user && (stage.user.first_name || stage.user.last_name) 
+                                                            ? `${stage.user.first_name || ''} ${stage.user.last_name || ''}`.trim() 
+                                                            : 'N/A'}</div>
+                                                                                    <div><strong>${stageName} IMM Emp id:</strong> ${stage.userid || 'N/A'}</div>
+                                                                                    <div><strong> Department: </strong>${stage.userdept || 'N/A'}</div>  
+                                                                                    ${stage.forwarded_to ? `
+                                                                                    <p><strong>Forwarded To:</strong> 
+                                                                                        ${stage.forwarded_to_name || 'Unknown'} (${stage.forwarded_to})
+                                                                                    </p>
+                                                                                ` : ''}
+                                                                                </span>
+                                                                    </div>
+                                                                `;
+                                                }
+                                                else if (stage.remarktype === 'Enquiry Generated') {
+
+                                                    const enquiry = data.enquirydata?.[0] || {};
+                                                    const enquiryNo = enquiry.enquiry_no || 'N/A';
+                                                    const dueDate = enquiry.due_date || 'N/A';
+                                                    const termsConditions = enquiry.terms_conditions || 'N/A';
+                                                    const deliveryDates = enquiry.delivery_dates || [];
+                                                    const createdate = enquiry.createddate || [];
+                                                    const isModified = enquiry.remarktype === 'Enquiry Modified';
+                                                
+                                                    const formatDate = (d) => {
+                                                        if (!d) return 'N/A';
+                                                        const date = new Date(d);
+                                                        const day = date.getDate().toString().padStart(2, '0');
+                                                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                                        const year = date.getFullYear();
+                                                        return `${day}-${month}-${year}`;
+                                                    };
+                                                
+                                                    const enquiryForm = `
+                                                        <div class="note-header">
+                                                            <h4 style="color:#800000;"><strong>NOTE ${index + 1}</strong></h4>
+                                                        </div>
+                                                        <div class="stage-note" style=" padding: 20px; border-radius: 8px;  width: 100%; max-width: 1200px; margin: 0 auto;">
+                                                            <div class="title text-center"><b>ENQUIRY FORM</b>
+                                                                ${isModified ? '<span style="color: #007bff; font-weight: bold; margin-left: 10px;">(Modified)</span>' : ''}
+                                                            </div>
+                                                
+                                                            <div class="from"><b>From: Meslova Systems Private Ltd Hyd.</b> </div>
+                                                            <div class="header" style="float: right; text-align: right;">
+                                                                <p>
+                                                                    <b>Enquiry No:</b> ${enquiryNo}<br>
+                                                                    <b>Date:</b> ${formatDate(createdate)}<br>
+                                                                    <b>Due Date:</b> ${formatDate(dueDate)}
+                                                                </p>
+                                                            </div>
+                                                            
+                                                            <div class="address" style="margin-top: 7%;">
+                                                                <p><b>To,</b><br>${data.suppliers}<br><b>Gmail</b>:${data.supplier_details[0].mail}<br>Kind Attention:</p>
+                                                            </div>
+                                                            <div class="subject" style="margin-top: 2px;">
+                                                                ${enquiry.subject}<br>
+                                                            </div>
+                                                            <p>Sir,</p>
+                                                            <p>We are in need of items as given below: It is requested to submit your best possible commercial offer on or before the due date.</p>
+                                                            <table class="items">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Sl No</th>
+                                                                        <th>Description of Item</th>
+                                                                        <th>Specification</th>
+                                                                        <th>Unit</th>
+                                                                        <th>Part No</th>
+                                                                        <th>Qty Required</th>
+                                                                        <th>Delivery Type</th>
+                                                                        <th>Dly required by</th>
+                                                                        <th style="display:none;">Reasons Document</th>
+                                                                        <th style="display:none;">Quality Document</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    ${data.particulars.map((particular, i) => {
+                                                                        const matchedDelivery = deliveryDates.find(dd => Number(dd.particular_id) === Number(particular.id));
+                                                                        const rawDeliveryType = matchedDelivery?.delivery_type_name || particular.delivery_name || '';
+                                                                        const deliveryType = rawDeliveryType.trim().toLowerCase();
+                                                
+                                                                        let deliveryRequiredByContent = '';
+                    
+                                                                        if (deliveryType === 'staggered' && Array.isArray(matchedDelivery?.quantities) && matchedDelivery.quantities.length > 0) {
+                                                                            // For staggered: show quantity and date
+                                                                            deliveryRequiredByContent = matchedDelivery.quantities
+                                                                                .map(q => `${q.quantity ?? 'N/A'} (${formatDate(q.en_expected_date)})`)
+                                                                                .join('<br/>');
+                                                                        } else {
+                                                                            // For non-staggered: show only the first date (no quantity)
+                                                                            const firstExpectedDate =
+                                                                                matchedDelivery?.quantities?.[0]?.en_expected_date ||
+                                                                                particular.items_to_be_positioned_by?.[0]?.expected_date ||
+                                                                                null;
+                                                                            deliveryRequiredByContent = firstExpectedDate ? `${formatDate(firstExpectedDate)}` : 'N/A';
+                                                                        }
+                    
+                                                
+                                                                        return `
+                                                                            <tr>
+                                                                                <td>${i + 1}</td>
+                                                                                <td class="description-cell">${particular.description || particular.item_name || 'N/A'}</td>
+                                                                                <td class="specification-cell">
+                                                                                    ${particular.item_specification ? `<span class="specification-text">${particular.item_specification}</span>` : '____________________'}
+                                                                                    ${particular.spec_document_url ? `<a href="${particular.spec_document_url}" target="_blank" class="spec-document-link">${particular.spec_document_url.split('/').pop()}</a>` : ''}
+                                                                                </td>
+                                                                                <td>${particular.unitname || 'N/A'}</td>
+                                                                                <td>${particular.partno || 'N/A'}</td>
+                                                                                <td>${particular.total_qty_required ?? 'N/A'}</td>
+                                                                                <td>${matchedDelivery?.delivery_type_name || particular.delivery_name || 'N/A'}</td>
+                                                                                <td>${deliveryRequiredByContent}</td>
+                                                                            </tr>
+                                                                        `;
+                                                                    }).join('')}
+                                                                </tbody>
+                                                            </table>
+                                                            <p><strong>Terms & Conditions:</strong> ${termsConditions.replace(/contenteditable="true"/gi, 'contenteditable="false"')}</p>
+                                                                                                <p><strong>Remarks:</strong> ${stage.remarks || 'N/A'}</p>
+                                                                    <span class="status-user-right">
+                                                                        <div><strong> IMM Name: </strong>${stage.user && (stage.user.first_name || stage.user.last_name) 
+                                                            ? `${stage.user.first_name || ''} ${stage.user.last_name || ''}`.trim() 
+                                                            : 'N/A'} </div>
+                                                                        <div><strong>IMM Emp id:</strong> ${stage.userid || 'N/A'}</div>
+                                                                        <div><strong>Department: </strong>${stage.userdept || 'N/A'}</div>
+                                                                        ${stage.forwarded_to ? `
+                                                                                    <p><strong>Forwarded To:</strong> 
+                                                                                        ${stage.forwarded_to_name || 'Unknown'} (${stage.forwarded_to})
+                                                                                    </p>
+                                                                                ` : ''}  
+                                                                    </span>
+                                                                    </div><br>
+                                                        </div>
+                    
+                                                    `;
+                                                
+                                                    return enquiryForm;
+                                                }
+                                                
+                                                
+                                                else if (stage.remarktype === 'Enquiry_Modified') {
+                    
+                                                    const enquiry = data.enquiry_modified?.[0] || {};
+                                                    const enquiryNo = enquiry.enquiry_no || 'N/A';
+                                                    const dueDate = enquiry.due_date || 'N/A';
+                                                    const termsConditions = enquiry.terms_conditions || 'N/A';
+                                                    const deliveryDates = enquiry.delivery_dates || [];
+                                                    const createdate = enquiry.createddate || [];
+                                                    const isModified = true;
+                                                
+                                                    const formatDate = (d) => {
+                                                        if (!d) return 'N/A';
+                                                        const date = new Date(d);
+                                                        const day = date.getDate().toString().padStart(2, '0');
+                                                        const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                                        const year = date.getFullYear();
+                                                        return `${day}-${month}-${year}`;
+                                                    };
+                                                
+                                                    const enquiryForm = `
+                                                        <div class="note-header">
+                                                            <h4 style="color:#800000;"><strong>NOTE ${index + 1}</strong></h4>
+                                                        </div>
+                                                        <div class="stage-note" style=" padding: 20px; border-radius: 8px;  width: 100%; max-width: 1200px; margin: 0 auto;">
+                                                            <div class="title text-center"><b>ENQUIRY FORM</b>
+                                                                ${isModified ? '<span style="color: #007bff; font-weight: bold; margin-left: 10px;">- Modified</span>' : ''}
+                                                            </div>
+                    
+                                                            <div class="from"><b>From: Meslova Systems Private Ltd Hyd.</b></div>
+                                                            <div class="header" style="float: right; text-align: right;">
+                                                                <p>
+                                                                    <b>Enquiry No:</b> ${enquiryNo}<br>
+                                                                    <b>Date:</b> ${formatDate(createdate)}<br>
+                                                                    <b>Due Date:</b> ${formatDate(dueDate)}
+                                                                </p>
+                                                            </div>
+                                                            <div class="address" style="margin-top: 7%;">
+                                                                <p><b>To,</b><br>${data.suppliers}<br><b>Gmail</b>:${data.supplier_details[0].mail}<br>Kind Attention:</p>
+                                                            </div>
+                                                
+                                                            <div class="subject" style="margin-top: 2%;">${enquiry.subject || ''}</div>
+                                                            <p>Sir,</p>
+                                                            <p>We are in need of items as given below: It is requested to submit your best possible commercial offer on or before the due date.</p>
+                                                            <table class="items">
+                                                                <thead>
+                                                                    <tr>
+                                                                        <th>Sl No</th>
+                                                                        <th>Description of Item</th>
+                                                                        <th>Specification</th>
+                                                                        <th>Unit</th>
+                                                                        <th>Part No</th>
+                                                                        <th>Qty Required</th>
+                                                                        <th>Delivery Type</th>
+                                                                        <th>Dly required by</th>
+                                                                        <th style="display:none;">Reasons Document</th>
+                                                                        <th style="display:none;">Quality Document</th>
+                                                                    </tr>
+                                                                </thead>
+                                                                <tbody>
+                                                                    ${data.particulars.map((particular, i) => {
+                                                                        const matchedDelivery = deliveryDates.find(dd => dd.particular_id === particular.id);
+                                                                        const deliveryType = matchedDelivery?.delivery_type_name?.trim().toLowerCase() || particular.delivery_name?.trim().toLowerCase() || 'n/a';
+                                                
+                                                                        // Combine quantity and date for "Dly required by"
+                                                                        let deliveryRequiredByContent = '';
+                    
+                                                                        if (deliveryType === 'staggered' && Array.isArray(matchedDelivery?.quantities) && matchedDelivery.quantities.length > 0) {
+                                                                            // Show quantity + date for staggered
+                                                                            deliveryRequiredByContent = matchedDelivery.quantities
+                                                                                .map(q => `${q.quantity ?? 'N/A'} ${formatDate(q.en_expected_date)}`)
+                                                                                .join('<br/>');
+                                                                        } else {
+                                                                            // Only show date for other delivery types (not quantity)
+                                                                            const firstDate =
+                                                                                matchedDelivery?.quantities?.[0]?.en_expected_date ||
+                                                                                particular.items_to_be_positioned_by?.[0]?.expected_date ||
+                                                                                null;
+                    
+                                                                            deliveryRequiredByContent = firstDate ? `${formatDate(firstDate)}` : 'N/A';
+                                                                        }
+                    
+                                                
+                                                                        return `
+                                                                            <tr>
+                                                                                <td>${i + 1}</td>
+                                                                                <td class="description-cell">${particular.description || particular.item_name || 'N/A'}</td>
+                                                                                <td class="specification-cell">
+                                                                                    ${particular.item_specification ? `<span class="specification-text">${particular.item_specification}</span>` : '____________________'}
+                                                                                    ${particular.spec_document_url ? `<a href="${particular.spec_document_url}" target="_blank" class="spec-document-link">${particular.spec_document_url.split('/').pop()}</a>` : ''}
+                                                                                </td>
+                                                                                <td>${particular.unitname || 'N/A'}</td>
+                                                                                <td>${particular.partno || 'N/A'}</td>
+                                                                                <td>${particular.total_qty_required ?? 'N/A'}</td>
+                                                                                <td>${matchedDelivery?.delivery_type_name || particular.delivery_name || 'N/A'}</td>
+                                                                                <td>${deliveryRequiredByContent}</td>
+                                                                            </tr>
+                                                                        `;
+                                                                    }).join('')}
+                                                                </tbody>
+                                                            </table>
+                                                            <p><strong>Terms & Conditions:</strong> ${termsConditions.replace(/contenteditable="true"/gi, 'contenteditable="false"')}</p>
+                                                            <p><strong>Remarks:</strong> ${stage.remarks || 'N/A'}</p>
+                                                                    <span class="status-user-right">
+                                                                        <div><strong> IMM Name: </strong>${stage.user && (stage.user.first_name || stage.user.last_name) 
+                                                            ? `${stage.user.first_name || ''} ${stage.user.last_name || ''}`.trim() 
+                                                            : 'N/A'} </div>
+                                                                        <div><strong>IMM Emp id:</strong> ${stage.userid || 'N/A'}</div>
+                                                                        <div><strong>Department: </strong>${stage.userdept || 'N/A'}</div>
+                                                                        ${stage.forwarded_to ? `
+                                                                                    <p><strong>Forwarded To:</strong> 
+                                                                                        ${stage.forwarded_to_name || 'Unknown'} (${stage.forwarded_to})
+                                                                                    </p>
+                                                                                ` : ''}  
+                                                                    </span>
+                                                                    </div><br>
+                                                        </div>
+                                                        
+                                                    `;
+                                                
+                                                    return enquiryForm;
+                                                }
+                                                else if(stage.remarktype=="PR_Raised"){
+                                                    return ''       
+                                                }
+                                                
+                                                test=stage.datetime
+                                                if (test) {
+                                                    const dateObj = new Date(test);  // Create a Date object from the UTC datetime string
+                                                    const options = {
+                                                        timeZone: 'Asia/Kolkata', // Set the timezone to IST (Indian Standard Time)
+                                                        year: 'numeric',
+                                                        month: '2-digit',
+                                                        day: '2-digit',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        second: '2-digit',
+                                                        hour12: false
+                                                    };
+                                                    formattedDate2 = dateObj.toLocaleString('en-IN', options); // Assign to formattedDate
+                                                    console.log(test, 'naveen');
+                                                }
+                                                const currentStageDatetime = new Date(stage.datetime); // current stage2 datetime
+
+                                                    // Check if any stage7 exists with datetime > currentStageDatetime
+                                                    const hasStage7After = data.stages.some(s => 
+                                                    s.stage === "stage7" && 
+                                                    s.remarktype === "CST" && 
+                                                    new Date(s.datetime) > currentStageDatetime
+                                                    );
+
+                                                    if (stage.stage === "stage2" && stage.remarktype === "Approval") {
+                                                    if (hasStage7After) {
+                                                        // show RA Negotiation
+                                                    } else {
+                                                        // don't show RA Negotiation
+                                                    }
+                                                }
+                                    // notings after recommends and rejects with remarks
+                                    return `
+                                        <div class="note-header">
+                                        <h4 style="color:#800000;"><strong>NOTE ${index + 1}</strong></h4>
+                                        </div>
+                                            <div class="stage-note">
+                                                <p><strong>Status: </strong> ${remarkDisplay}</p>
+                                                <p><strong>Remarks:</strong> ${stage.remarks || 'N/A'}</p>
+                                                    ${
+                                                    (() => {
+                                                        if (stage.stage === "stage1" && stage.remarktype === "Approval") {
+                                                        return `<p><strong>Negotiation Recommended:</strong> ${data.procurement_data[0].is_negotiation ? 'Yes': 'No'}</p>`;
+                                                        }
+                                                        if (stage.stage === "stage7" && stage.remarktype === "CST") {
+                                                        return `<p><strong>Negotiation Recommended:</strong> ${data.procurement_data[0].is_negotiation ? 'Yes': 'No'}</p>`;
+                                                        }
+                                                        
+                                                        
+                                                        if (stage.stage === "stage2" && stage.remarktype === "Approval") {
+                                                        const currentStageDatetime = new Date(stage.datetime);
+                                                        const hasStage7Before = data.stages.some(s =>
+                                                            s.stage === "stage7" &&
+                                                            s.remarktype === "CST" &&
+                                                            new Date(s.datetime) < currentStageDatetime
+                                                        );
+                                                        if (hasStage7Before) {
+                                                            return `<p><strong>Negotiation Recommended:</strong> ${data.procurement_data[0].RA_negotiation ? 'Yes': 'No'}</p>`;
+                                                        }
+                                                        return '';
+                                                        }
+                                                        return '';
+                                                    })()
+                                                    }
+
+
+                                                <p><strong>Date and Time:</strong> ${formattedDate2}</p>
+                                                ${stage.stage !== "stage6" ? attachmentHtml : ''}
+                                                ${stage.forwarded_to ? `
+                                                <p><strong>Forwarded To:</strong> 
+                                                    ${stage.forwarded_to_name || 'Unknown'} (${stage.forwarded_to})
+                                                </p>
+                                            ` : ''}
+                                            ${stage.reject_to ? `
+                                            <p><strong>Returned To:</strong> 
+                                                ${stage.reject_to_name || 'Unknown'} (${stage.reject_to})
+                                            </p>
+                                            ` : ''}
+                                                <span class="status-user-right">
+                                                    <div>
+                                                        <strong>${stageName} Name:</strong>
+                                                        ${stage.user && (stage.user.first_name || stage.user.last_name) 
+                                                            ? `${stage.user.first_name || ''} ${stage.user.last_name || ''}`.trim() 
+                                                            : 'N/A'}
+                                                    </div>
+                                                    <div><strong>${stageName} Emp id:</strong> ${stage.userid || 'N/A'}</div>
+                                                    <div><strong>Department: </strong>${stage.userdept || 'N/A'}</div>  
+                                                            </span>
+                                                        </div>
+                                                    `;
+                                                }).join('')}
+                        </div>
+
+                            `;
+
+                    
+                
+                  
+                
+                        // Insert the generated preview HTML into the preview content section
+                        $('#previewContent').html(previewHtml).show();
+                        $('#previewContent').scrollTop(0);
+                        $('#divbutton').show();
+                        //Download function
+                        $('#downloadBtn').off('click').on('click', async function () {
+                            const { jsPDF } = window.jspdf;
+                            const content = document.querySelector('#previewContent');
+                            const procurementId = $("#downloadBtn").attr("data-id");
+                            const pdf = new jsPDF('p','pt', 'a4');
+                        
+                            showLoader();
+                        
+                            // Expand all expandable text blocks
+                            const expandableTextBlocks = content.querySelectorAll('.expandable-text');
+                            const visibilityStates = [];
+                        
+                            expandableTextBlocks.forEach(block => {
+                                const shortText = block.querySelector('.short-text');
+                                const fullText = block.querySelector('.full-text');
+                                const toggle = block.querySelector('.toggle-text');
+                        
+                                visibilityStates.push({
+                                    shortText,
+                                    fullText,
+                                    toggle,
+                                    shortDisplay: shortText?.style.display,
+                                    fullDisplay: fullText?.style.display,
+                                    toggleDisplay: toggle?.style.display
+                                });
+                        
+                                if (shortText && fullText) {
+                                    shortText.style.display = 'none';
+                                    fullText.style.display = 'inline';
+                                }
+                                if (toggle) {
+                                    toggle.style.display = 'none';
+                                }
+                            });
+                        
+                            content.scrollIntoView({ behavior: "instant", block: "start" });
+                            window.scrollTo(0, 0);
+                        
+                            const originalMinHeight = content.style.minHeight;
+                            content.style.minHeight = content.scrollHeight + 'px';
+                            const originalOverflow = document.body.style.overflow;
+                            document.body.style.overflow = 'hidden';
+                        
+                            const downloadBtn = document.getElementById('downloadBtn');
+                            const originalBtnDisplay = downloadBtn.style.display;
+                            downloadBtn.style.display = 'none';
+                        
+                            setTimeout(() => {
+                                content.querySelectorAll('.note-header').forEach((header, index) => {
+                                    if (index !== 0) {
+                                        header.style.paddingTop = '10px';
+                                    }
+                                });
+                        
+                                html2canvas(content, {
+                                    scrollY: -window.scrollY,
+                                    scale: 2,
+                                    useCORS: true,
+                                    ignoreElements: function (element) {
+                                        return element.classList.contains('approve-btn') ||
+                                            element.classList.contains('reject-btn') ||
+                                            element.id === 'downloadBtn';
+                                    }
+                                }).then(canvas => {
+                                    const imgData = canvas.toDataURL('image/png');
+                                    const pdfWidth = pdf.internal.pageSize.getWidth();
+                                    const pdfHeight = pdf.internal.pageSize.getHeight();
+                        
+                                    const outerMargin = 10;   // Margin from edge of page
+                                    const innerPadding = 3;   // Padding inside the virtual border
+                                    const contentX = outerMargin + innerPadding;
+                                    const contentY = outerMargin + innerPadding;
+                        
+                                    const usableWidth = pdfWidth - 2 * (outerMargin + innerPadding);
+                                    const usableHeight = pdfHeight - 2 * (outerMargin + innerPadding);
+                        
+                                    const imgHeight = (canvas.height * usableWidth) / canvas.width;
+                                    const totalPages = Math.ceil(imgHeight / usableHeight);
+                        
+                                    for (let i = 0; i < totalPages; i++) {
+                                        if (i > 0) pdf.addPage();
+                        
+                                        const sX = 0;
+                                        const sY = (i * usableHeight * canvas.width) / usableWidth;
+                                        const sWidth = canvas.width;
+                                        const sHeight = (usableHeight * canvas.width) / usableWidth;
+                        
+                                        const croppedCanvas = document.createElement('canvas');
+                                        croppedCanvas.width = sWidth;
+                                        croppedCanvas.height = sHeight;
+                                        const ctx = croppedCanvas.getContext('2d');
+                                        ctx.drawImage(canvas, sX, sY, sWidth, sHeight, 0, 0, sWidth, sHeight);
+                                        const croppedImage = croppedCanvas.toDataURL('image/png');
+                        
+                                        pdf.addImage(
+                                            croppedImage,
+                                            'PNG',
+                                            contentX,
+                                            contentY,
+                                            usableWidth,
+                                            usableHeight
+                                        );
+                                    }
+                        
+                                    pdf.save(`REF:${procurementId}.pdf`);
+                                }).catch(error => {
+                                    console.error("PDF generation error:", error);
+                                }).finally(() => {
+                                    visibilityStates.forEach(state => {
+                                        if (state.shortText) state.shortText.style.display = state.shortDisplay;
+                                        if (state.fullText) state.fullText.style.display = state.fullDisplay;
+                                        if (state.toggle) state.toggle.style.display = state.toggleDisplay;
+                                    });
+                        
+                                    downloadBtn.style.display = originalBtnDisplay;
+                                    content.style.minHeight = originalMinHeight;
+                                    document.body.style.overflow = originalOverflow;
+                        
+                                    hideLoader();
+                                });
+                            }, 500);
+                        });
+
+                        //Users for the rejection process
+                        const active_role = "{{ request.session.active_role|default:request.session.user_role.0 }}";
+                        var userContent = '<label for="rejectedUserSelect_' + data.procurement_id + '">Rejected Users for Procurement ' + data.procurement_id + ':</label>' +
+                            '<select name="rejected_user" id="rejectedUserSelect_' + data.procurement_id + '" class="form-control">' +
+                            '<option value="">Select User</option>';
+        
+                            console.log(active_role,'active_role')
+                            if (data.rejected_users && data.rejected_users.length > 0) {
+                                for (var i = 0; i < data.rejected_users.length; i++) {
+        
+                                    var user = data.rejected_users[i];  
+                                    if (user[1] !== active_role) {
+                                    userContent += `<option value="${user[0]}">${user[0]} - ${user[1]}</option>`; 
+                                    }
+                                }
+                            }
+                        
+                        userContent += '</select></div>';
+                        
+                        $("#pcm_approvedUsrBlock").html(userContent);
+                        
+                        $(document).on('change', 'select[id^="rejectedUserSelect_"]', function() {
+                            let selectedUser = $(this).val();
+                            let selectedText = $(this).find("option:selected").text();
+                            let selectedRole = selectedText.includes(" - ") ? selectedText.split(" - ")[1] : ""; // Extract role safely
+                        
+                            console.log("Selected User:", selectedUser);
+                            console.log("Selected Role:", selectedRole);
+                        
+                            // Store values in hidden input fields
+                            $('#selectedUserInput').val(selectedUser);
+                        
+                            // Ensure hidden input for role exists
+                            if ($("#selectedRoleInput").length === 0) {
+                                $("body").append('<input type="hidden" id="selectedRoleInput">');
+                            }
+                            $('#selectedRoleInput').val(selectedRole);
+                        });
+    
+                    
+                        
+                    },
+                    error: function() {
+                        showWarningAlert('An error occurred while fetching the procurement details');
+                        hideLoader();
+                    }
+                });
+                });
+    
+            function getStageName(stage) {
+                console.log('Original stage:', stage);
+                
+            
+                stage = stage ? stage.trim() : '';
+            
+                let stageName = '';
+                
+                if (stage === "stage2") {
+                    stageName = 'Recommending Authority';
+                } else if (stage === "stage3") {
+                    stageName = 'IMM';
+                } else if (stage === "stage4") {
+                    stageName = 'Accounts';
+                } else if (stage === "stage5") {
+                    stageName = 'Approving Authority';
+                } else {
+                    stageName = 'Not Provided';
+                }
+                
+                console.log('Resolved stage name:', stageName);
+                return stageName;
+            }
+            
+
+            //Filtering the stages based on the stageno and roles.
+            function getStageNames(role) {
+                console.log('Selected Role:', role);
+            
+                role = role ? role.trim() : '';
+            
+                let stageName = '';
+            
+                
+                const roleStageMap = {
+                    "Recommending Authority": "stage2",
+                    "IMM": "stage3",
+                    "Accounts": "stage4",
+                    "Approving Authority": "stage5",
+                    "Indentor":"stage1",
+                    "Indentor IMM":"stage1",
+                    
+                };
+            
+                stageName = roleStageMap[role] || 'Not Provided';
+            
+                console.log('Resolved stage:', stageName);
+                return stageName;
+            }
+        
+
+        
+        });
+
+    
+
+    
+        function adjustButtonPosition() {
+            const trackingData = document.getElementById('tracking-list');
+            const button = document.getElementById('divbutton');
+            
+        
+            const trackingHeight = trackingData.offsetHeight;
+            const buttonTop = trackingHeight + 20;
+            
+            button.style.top = `${buttonTop}px`;
+        }
+        
+        // This function can be called when the notes are added or whenever the content updates
+        window.addEventListener('load', adjustButtonPosition);  // On page load
+        window.addEventListener('resize', adjustButtonPosition); // On window resize
+        
+        document.addEventListener('DOMContentLoaded', function () {
+            debugger
+            // Get procurement_id from URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const procurementIdFromUrl = urlParams.get('procurement_id');
+            $(".view-pr-id").each(function() {
+                var procurement = $(this).data('id');
+                if (procurement == procurementIdFromUrl) {
+                    $(this).closest('li').css('background-color', 'rgb(227, 222, 222)');  
+                    $(this).closest('li').addClass('highlight');  
+
+                    $('html, body').animate({
+                        scrollTop: $(this).closest('li').offset().top
+                    }, 500);
+
+                    setTimeout(function() {
+                        $(this).click();  
+                    }.bind(this), 100);  
+
+                    return false;
+                }
+                
+            })
+        });
+        //Web socket related function where without refresh the data appends (procurement id)
+        (function() {
+            const role = "imm";  // IMM role
+            const pageKey = "imm";  // Default to 'imm', but can be dynamic based on remark type
+            
+            const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+            const ws_url = `${ws_scheme}://${window.location.host}/ws/sidebar/${role}/${pageKey}/`;
+            const imm_socket = new WebSocket(ws_url);
+            
+            imm_socket.onopen = function() {
+                console.log("IMM sidebar WebSocket opened.");
+
+            }
+            imm_socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log("imm data", data)
+        
+                if (data.update_type === "refresh_sidebar_imm") {
+                    // Only update if message is for IMM role and corresponding page
+                
+        
+                    const procurementId = data.procurement_id;
+                    const dateObj = new Date(data.timestamp);
+                    let formattedDatetime = '';
+        
+                    if (!isNaN(dateObj)) {
+                        const pad = num => String(num).padStart(2, '0');
+                        const day = pad(dateObj.getDate());
+                        const month = pad(dateObj.getMonth() + 1);
+                        const year = dateObj.getFullYear();
+                        const hours = pad(dateObj.getHours());
+                        const minutes = pad(dateObj.getMinutes());
+                        const seconds = pad(dateObj.getSeconds());
+                        formattedDatetime = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                    }
+        
+                    const listItem = $(`#procurementSidebar .list-group-item a.view-pr-id[data-id="${procurementId}"]`).closest('.list-group-item');
+                    if (data.role !== "imm" || data.page !== pageKey) {
+                        console.log("Ignoring update for role/page:", data.role, data.page);
+                        if (data.page=="rejectedimm"){
+                            listItem.css('background-color', '#CCE5F0');
+                        }
+                    
+                        return;
+                    }
+                    if (listItem.length) {
+                        listItem.find('div').eq(1).text(formattedDatetime);
+                        console.log('hi',data.forwarded_to_imm_user);
+                        console.log('hellopage',data.page);
+                        // Apply background logic based on conditions
+                        if (data.forwarded_to_imm_user  && data.page === pageKey) {
+                            listItem.css('background-color', '#f8f9fa'); // Reset background if forwarded
+
+                        } else {
+                            // Assuming procurement was recommended, update the background color
+                            listItem.css('background-color', '#CCE5F0'); // Highlight the item when recommended
+                        }
+
+                    } else {
+                        // New procurement item
+                        const statusesString = (data.statuses || []).join(',');
+                        let backgroundColor = '#f8f9fa'; // Default background color
+
+                        // Apply background color for forwarded or recommended stage
+                        if (data.forwarded_to_imm_user) {
+                            backgroundColor = '#f8f9fa'; // Reset if forwarded
+                        } else {
+                            backgroundColor = '#CCE5F0'; // Highlight if recommended
+                        }
+        
+                        const newListItem = `
+                            <li id="procurement-${procurementId}" class="list-group-item" data-statuses="${statusesString}"
+                                style="background-color: ${backgroundColor}; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top:7px; padding:9px;">
+                                <a href="#" class="view-pr-id" data-id="${procurementId}" style="text-decoration: none; color: inherit; display: block;">
+                                    <div style="font-weight: 500; font-size: 14px; color: black;">
+                                        ${procurementId}
+                                    </div>
+                                    <div style="font-size: 11px; color: black;">
+                                        ${formattedDatetime}
+                                    </div>
+                                </a>
+                            </li>
+                        `;
+        
+                        $('#procurementSidebar').prepend(newListItem);
+                    }
+        
+                    // Reapply any filter you have
+                    $('#statusFilter').trigger('change');
+                }
+            };
+        
+            imm_socket.onclose = function() {
+                console.warn("IMM sidebar WebSocket closed.");
+            };
+})();
+
+</script>
+
+
+{% endblock %}

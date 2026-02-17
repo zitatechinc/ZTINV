@@ -1,0 +1,4097 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="keywords" content="" />
+  <meta name="description" content="" />
+  <meta name="author" content="" />
+  <title>IMS</title>
+  <link href="js" rel="stylesheet" />
+  <link href="{% static "fullcalendar/main.min.css" %}" rel="stylesheet">
+  <link href="{% static "css/bootstrap.min.css" %}" rel="stylesheet">
+   <link href="{% static "css/all.min.css" %}" rel="stylesheet">
+  <link href="{% static "fontawesome/css/all.min.css" %}" rel="stylesheet">
+  <link href="{% static "css/bootstrap-icons.css" %}" rel="stylesheet">
+  <link href="{% static "bootstrapicons/font/bootstrap-icons.css" %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static "css/owl.carousel.min.css" %}">
+  <link rel="stylesheet" href="{% static "css/owl.theme.default.min.css" %}">
+  <link href="{% static "css/select2.min.css" %}" rel="stylesheet" />
+  <link rel="stylesheet" href="{% static "css/animate.min.css" %}">
+  <link rel="stylesheet" href="{% static "css/jquery.dataTables.min.css" %}">
+  <link rel="stylesheet" href="{% static "css/dataTables.bootstrap5.min.css" %}">
+  <link rel="stylesheet" href="{% static "css/buttons.dataTables.min.css" %}">
+  <link rel="stylesheet" href="{% static "css/intlTelInput.min.css" %}">
+  <link href="{% static "css/boxicons.min.css" %}" rel="stylesheet">
+  <link href="{% static 'css/style.css' %}" rel="stylesheet">
+  <link href="{% static 'css/responsive.css' %}" rel="stylesheet">
+  <link rel="stylesheet" href="{% static "css/jquery-ui.css" %}">
+  <link rel="icon" href="{% static 'images/logo234.png' %}" type="image/x-icon">
+
+  <style>
+    
+        .navbar-nav .nav-item .nav-link {
+          transition: background-color 0.3s ease-in-out, color 0.3s ease-in-out, text-shadow 0.3s ease-in-out;
+          padding: 0.5rem 1rem; /* Ensure consistent spacing */
+          white-space: nowrap;
+          --bs-nav-link-color: white !important;
+          text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* subtle shadow */
+        }
+        .active-po {
+          background-color: #007080 !important;
+          color: white !important;
+      }
+  
+      .active-po div {
+          color: white !important;
+      }
+
+        .notification-link {
+          color: #0a58ca;
+          text-decoration: underline;
+        }
+
+        .notification-link:hover {
+          color: #007080;
+          text-decoration: underline;
+        }
+        .navbar-nav .nav-item:hover .nav-link {
+              background-color: #007080;
+              color: white;
+              border-bottom: 2px solid white;
+              border-radius: 10px; /* rounds top corners only */
+              transition: all 0.3s ease;
+        }   
+        .navbar-nav {
+            display: flex;
+            justify-content: center; /* Center the nav items horizontally */
+            width: 100%;
+            flex-wrap: wrap;
+            gap: -1.5rem;
+            margin: 0 auto; /* Center the entire nav */
+            padding-left: 0; /* Remove default padding */
+          }
+
+                
+      
+        /* Footer styles */
+        .footer {
+          background-color:#3399A0!important;
+          /* padding: 1px 0; */
+          position: fixed;
+          bottom: 0px;
+          width: 100%;
+          text-align: center;
+          border-top: 1px solid #ddd;
+          box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.1);
+          font-family: Arial, sans-serif;
+          color: #333;
+        }
+    
+        .footer-text {
+          margin: 0;
+          font-size:5px;
+          color: #555;
+         
+          color: white;
+        }
+    
+        .user-info-container {
+          display: flex;
+          align-items: center;
+          margin-left: auto;
+        }
+    
+        .greeting-text {
+          font-size: 15px;
+          color: #333;
+        }
+    
+        .profile-dropdown {
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+    
+        .profile-button {
+          display: flex;
+          align-items: center;
+          background: none;
+          border: none;
+          cursor: pointer;
+          border-radius: 20px;
+          transition: all 0.3s ease;
+        }
+    
+        .profile-button:hover {
+          background-color: rgba(0, 123, 255, 0.1);
+        }
+    
+        .profile-icon {
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          background-color: #007bff;
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          margin-left: 8px;
+        }
+    
+        .dropdown-menu {
+          position: absolute;
+          right: 0;
+          top: 100%;
+          background-color: white;
+          border-radius: 8px;
+          box-shadow: 0 4px 12px rgba(255, 255, 255, 0.4);
+          padding: 10px 0;
+          min-width: 220px;
+          z-index: 1000;
+          display: none;
+          border: 1px solid #469da3d6;
+        }
+    
+        .dropdown-menu.show {
+          display: block;
+          animation: fadeIn 0.2s ease-in-out;
+        }
+    
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        /* Header bottom container adjustments */
+      .header_bottom .container-fluid {
+        padding-left: 15px;
+        padding-right: 15px;
+        width: 100%;
+      }
+
+      /* Custom navbar container */
+      .custom_nav-container {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+      }
+
+      /* Nav item adjustments */
+      .navbar-nav .nav-item {
+        flex-shrink: 0; /* Prevent items from shrinking */
+      }
+
+
+      @media (max-width: 768px) {
+        .navbar-nav {
+          flex-direction: column;
+          gap: 0.5rem;
+          padding: 1rem;
+        }
+        
+        .nav-item {
+          width: 100%;
+        }
+        
+        .nav-link {
+          padding: 0.75rem 1rem;
+          border-radius: 0.25rem;
+        }
+        
+        /* Ensure dropdowns are full width */
+        .dropdown-menu {
+          position: static !important;
+          width: 100% !important;
+          margin: 0 !important;
+        }
+      }
+    
+  
+   
+
+    /* Base mobile styles */
+    @media (max-width: 576px) {
+      /* Adjust font sizes */
+      body {
+        font-size: 14px;
+      }
+      
+      h1, h2, h3 {
+        font-size: 1.5rem;
+      }
+      
+      /* Form elements */
+      .form-control, .btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+      }
+      
+      /* Containers */
+      .container-fluid {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
+      
+      /* Hide less important elements on mobile */
+      .greeting-text {
+        display: none !important;
+      }
+    }
+
+    /* Ensure touch targets are large enough */
+    .nav-link, .dropdown-item {
+      min-height: 44px;
+      min-width: 44px;
+      display: flex;
+      align-items: center;
+    } 
+
+            .dropdown-header {
+          padding: 8px 16px;
+          border-bottom: 1px solid #eee;
+          font-weight: bold;
+          color: #333;
+        }
+    
+        .dropdown-item {
+          padding: 8px 16px;
+          text-decoration: none;
+          display: block;
+          transition: background-color 0.2s;
+          font-size: 14px;
+        }
+    
+        .dropdown-item:hover {
+          {% comment %} background-color:rgba(255, 255, 255, 0.4); {% endcomment %}
+          color:rgb(5, 127, 146);
+        }
+    
+        .dropdown-divider {
+          margin: 5px 0;
+          border-top: 1px solid #eee;
+        }
+    
+        .user-details {
+          padding: 0px 17px;
+          font-size: 13px;
+          line-height: 1.4;
+        }
+        .user-details p {
+          margin: 5px 0; 
+          display: flex;  
+          flex-wrap: wrap; 
+        }
+        .user-details strong {
+          color: #007bff;
+          margin-left: 4px; 
+        }
+    
+        .logout-item {
+          color: #dc3545 !important;
+          font-weight: 500;
+        }
+    
+        .logout-item:hover {
+          background-color: rgba(220, 53, 69, 0.1) !important;
+        }
+    
+        /* Make sure the footer stays at the bottom when content is short */
+        body {
+          display: flex;
+          flex-direction: column;
+          min-height:80.5vh;
+        }
+    
+        /* .main-content {
+          flex-grow: 1;
+        } */
+        .dropdown-role-text {
+          white-space: nowrap;
+          word-break: keep-all;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          /* Optional: adjust width as needed */
+          display: inline-block;
+          vertical-align: middle;
+        }
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+          .greeting-text {
+            display: none;
+          }
+        
+          .profile-icon {
+            width: 32px;
+            height: 32px;
+            font-size: 14px;
+          }
+        
+          .dropdown-menu {
+            min-width: 200px;
+            right: -20px;
+          }
+        }
+        .dropdown-item.active {
+          color: #fff;
+        }
+        .nav-item.active .nav-link,
+          .nav-link.active {
+            /* background-color: transparent;  remove background color */
+              background-color:#007080;
+              color: rgb(252, 252, 247) !important; /* you can keep or adjust text color */
+              border-bottom: 2px solid rgb(242, 241, 247); /* add underline */
+              border-radius:10px;
+              padding-bottom: 5px; /* add some space so underline doesn't touch text */
+          }
+
+          /* For tablets like iPad Mini (768px and below) */
+    @media (max-width: 768px) {
+      .navbar-brand img {
+        max-width: 150px;
+        height: auto;
+
+      }
+
+      .navbar-brand {
+        gap: 5px;
+        flex-wrap: wrap;
+      }
+
+      .greeting-text {
+        display: none !important; /* Hide greeting to save space */
+      }
+
+      .user-container {
+        flex-direction: row;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .dropdown-menu {
+        min-width: 180px;
+        max-width: 90vw;
+        word-break: break-word;
+        white-space: normal;
+      }
+
+      .nav-item {
+        width: 100%; /* Stack nav items vertically */
+      }
+
+      .nav-link {
+        text-align: left;
+        padding-left: 1rem;
+      }
+
+      .navbar-nav {
+        flex-direction: column;
+        align-items: flex-start;
+        width: 100%;
+      }
+
+      /* Notification dropdown should stay within screen */
+      #notification-dropdown {
+        right: 0;
+        left: auto;
+        transform: translateX(0);
+      }
+    }
+
+
+    @media (max-width: 576px) {
+      .navbar-brand img {
+        max-width: 150px;
+        height:auto;
+      }
+
+      .dropdown-menu {
+        max-width: 95vw;
+      }
+
+
+      .fa-user-circle {
+        font-size: 1.5rem !important;
+      }
+    }
+    .greeting-text d-none d-lg-inline text-truncate{
+      color:#f5f5f5 !important;
+    }
+
+    .hero_area {
+      height: 100%;
+      
+      display: flex;
+      flex-direction: column;
+    }
+
+    .header_section {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background:#007080;
+    }
+
+    .container-fluid#sidebarcontainer {
+ 
+      overflow: hidden;
+    
+    }
+    .custom-scroll {
+      max-height: 86vh;
+      overflow-x: clip;
+      overflow-y: auto;
+      padding-right: 1px;
+    }
+    
+    /* Scrollbar width */
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    /* Scrollbar track */
+    .custom-scroll::-webkit-scrollbar-track {
+      box-shadow: inset 0 0 5px grey;
+      border-radius: 10px;
+      background-color: transparent;
+    }
+    
+    /* Scrollbar thumb */
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: grey;
+      border-radius: 5px;
+    }
+    
+    /* Scrollbar thumb on hover */
+    .custom-scroll::-webkit-scrollbar-thumb:hover {
+      background:rgb(154, 152, 152);
+    }
+    
+
+    .dropdown-item-text {
+      transition: background-color 0.2s ease, color 0.2s ease;
+      padding: 0.5rem 1rem;
+      border-radius: 0.25rem;
+      cursor: default;
+    }
+
+    .dropdown-item-text:hover {
+      background-color:#007080; 
+      color: #212529; /* Bootstrap default text */
+    }
+
+    .dropdown-item-text a {
+      text-decoration: none;
+      color: inherit;
+    }
+    .navbar-toggler {
+      position: relative;
+      bottom: auto;
+      right: auto;
+      margin-left: auto; /* Push to the right */
+    }
+    /* Increase width of dropdown menu */
+    #roleDropdown + .dropdown-menu {
+        width: 213px;  /* Adjust to your preferred width */
+        margin-left: -142%;
+        margin-top: 16%;
+    }
+
+    /* Calendar icon button */
+
+    .btn-calendar {
+      background: none;
+      border: none !important;
+      color: #ffffff !important;
+      font-size: 1.2rem;
+      cursor: pointer;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Fullscreen semi-transparent overlay */
+    .calendar-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.45);
+      z-index: 1002;
+      display: none;
+    }
+
+    .calendar-overlay.active {
+      display: block;
+    }
+
+    /* Modal wrapper */
+    .calendar-modal {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 90%;
+      max-width: 1000px;
+      max-height: 83vh;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.25);
+      z-index: 1003;
+      display: none;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    .calendar-modal.active {
+      display: flex;
+    }
+
+    /* Modal Header */
+    .calendar-modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      background-color: #007080;
+      color: #fff;
+    }
+
+    .calendar-modal-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      height:20px;
+    }
+
+    /* Close Button */
+    .calendar-close-btn {
+      background: none;
+      border: none;
+      color: #fff;
+      font-size: 1.5rem;
+      cursor: pointer;
+      padding: 0;
+    }
+
+    .calendar-close-btn:hover {
+      color: red;
+    }
+
+    .calendar-container {
+      width: 100%;
+      min-height: 400px;
+      font-size: 0.9rem;
+    }
+
+    /* Limit the height of event area in each day cell */
+    .fc-daygrid-day-events {
+      max-height: 70px;  /* Adjust as needed */
+      overflow-y: auto;
+      margin-bottom: 0em !important;
+    }
+
+    /* Optional: make scrollbar thinner */
+    .fc-daygrid-day-events::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    .fc-daygrid-day-events::-webkit-scrollbar-thumb {
+      background-color: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+    }
+
+    /* FullCalendar styling adjustments */
+    .fc-daygrid-day-number {
+      font-size: clamp(0.65rem, 1.5vw, 0.85rem);
+      position: absolute;
+      top: 4px;
+      right: 6px;
+      font-weight: bold;
+      color: #000;
+      z-index: 2;
+    }
+
+
+    .fc-daygrid-day {
+      position: relative;
+      min-height: 60px;
+      padding: 0;
+    }
+    .fc-col-header-cell-cushion {
+      color: #212529;
+      font-weight: 500;
+    }
+
+    .fc-event {
+      font-size: 0.8rem;
+      line-height: 1.1;
+      padding: 2px 4px;
+      border-radius: 4px;
+      margin-top: 18px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .calendar-modal {
+        width: 95%;
+        max-height: 95vh;
+      }
+
+      .calendar-modal-header h2 {
+        font-size: 1rem;
+      }
+
+      .calendar-close-btn {
+        font-size: 1.2rem;
+      }
+    }
+
+    /* Optional: Ensure header stays fixed if needed */
+    .fc-header-toolbar {
+      position: sticky;
+      top: 0;
+      background: white; /* or match your modal bg */
+      z-index: 10;
+    }
+
+    /* Apply custom scroll to the calendar modal body */
+    .calendar-modal-body {
+      max-height: 600px; /* or whatever fits your layout */
+      overflow-y: auto;
+      padding: 1rem;
+      flex-grow: 1;
+    }
+
+    /* Scrollbar styling for WebKit browsers (Chrome, Safari, Edge) */
+    .calendar-modal-body::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .calendar-modal-body::-webkit-scrollbar-track {
+      background: #f1f1f1;
+      border-radius: 4px;
+    }
+
+    .calendar-modal-body::-webkit-scrollbar-thumb {
+      background-color: #888;
+      border-radius: 4px;
+    }
+
+    .calendar-modal-body::-webkit-scrollbar-thumb:hover {
+      background: #555;
+    }
+
+    /* Firefox scrollbar */
+    @supports (scrollbar-color: auto) {
+      .calendar-modal-body {
+        scrollbar-width: thin;
+        scrollbar-color: #888 #f1f1f1;
+      }
+    }
+
+    .rounded-container {
+        border: 1px solid #ccc;
+        border-radius: 12px;
+        padding-top: 20px;
+        background-color: #fff;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+      }
+    .dropdown-item.disabled.active {
+      background-color: #007080;
+      color: white;
+      font-weight: bold;
+      cursor: default;
+    }
+    .big-icon {
+      width: 28px;
+      height: 28px;
+    }
+
+
+
+    .custom-confirm-btn {
+      background-color: #007080 !important;
+      border-color: #007080 !important;
+      color: white !important;
+      font-weight: bold;
+      font-size: 13px;            /* Smaller text */
+      padding: 6px 14px;          /* Less padding = smaller button */
+      border-radius: 4px;         /* Slightly smaller radius */
+    }
+
+    .custom-confirm-btn:hover {
+      background-color: #005959 !important;
+      border-color: #005959 !important;
+    }
+    .custom-popup .swal2-title {
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+
+    .custom-popup .swal2-html-container {
+      font-size: 14px;
+    }
+    .custom-popup {
+      width: 350px !important;       /* default is ~500px, reduce as needed */
+      padding: 20px 25px !important; /* adjust padding */
+      font-size: 14px;               /* optional: smaller font size */
+      border-radius: 8px;            /* keep rounded corners */
+    }
+    .custom-cancel-btn {
+      background-color: #007080 !important;
+      border-color: #007080 !important;
+      color: white !important;
+      font-weight: bold;
+      font-size: 13px;            /* Smaller text */
+      padding: 6px 14px;          /* Less padding = smaller button */
+      border-radius: 4px;         /* Slightly smaller radius */
+      margin-left: 10px;
+    }
+
+    .custom-confirm-btn:hover {
+      background-color: #005f66;
+    }
+
+    .custom-cancel-btn:hover {
+      background-color: #bbb;
+    }
+    #loader {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background-color: rgba(0, 0, 0, 0.3);
+      backdrop-filter: blur(6px);
+      display: none; /* Hide by default */
+      z-index: 9999;
+      justify-content: center;
+      align-items: center;
+    }
+      .search-box {
+        position: relative;
+        width: 100%;
+    }
+  
+    .search-box i {
+        position: absolute;
+        left: 10px; /* Space from the left edge */
+        top: 50%;
+        transform: translateY(-50%); /* Vertically center the icon */
+        color: #888; /* Optional: Change color of the icon */
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 8px 10px 8px 35px; /* Extra padding on the left for the icon */
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    .filename-ellipsis {
+      display: inline-block;
+      max-width: 150px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      vertical-align: middle;
+      cursor: pointer;
+      color: #007bff; /* optional: look clickable */
+      }
+
+    .filename-ellipsis.expanded {
+        white-space: normal;
+        max-width: none;
+        word-break: break-word;
+    }
+
+    .expandable-text {
+      display: inline;
+      word-break: break-word;
+    }
+    .expandable-text .toggle-text {
+      color: blue;
+      cursor: pointer;
+      margin-left: 5px;
+      font-size: 0.9em;
+      word-break: break-word;
+      text-decoration: underline;
+    }
+      .status-user-right {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        margin-right: 10px; 
+        margin-left: auto; 
+    }
+    .specification-cell {
+        max-width: 250px; /* Adjust to fit your table layout */
+        word-wrap: break-word; /* Wrap words that are too long */
+        overflow: hidden; /* Ensure content doesn't overflow */
+        white-space: normal; /* Allow wrapping */
+        /* Ensure content takes up block space */
+        height: auto; /* Adjust the height of the cell */
+        padding: 5px; /* Optional, for some spacing */
+    }
+    .partno{
+        max-width: 250px; /* Adjust to fit your table layout */
+        word-wrap: break-word; /* Wrap words that are too long */
+        overflow: hidden; /* Ensure content doesn't overflow */
+        white-space: normal; /* Allow wrapping */
+        /* Ensure content takes up block space */
+        height: auto; /* Adjust the height of the cell */
+        padding: 5px; /* Optional, for some spacing */
+    }
+    
+    .specification-text, .spec-document-link {
+        /* Makes sure both items appear in separate lines */
+        word-wrap: break-word; /* Allow long text to wrap within the cell */
+        overflow-wrap: break-word; /* Allow long words to wrap */
+        text-overflow: ellipsis; /* Adds ellipsis if the content exceeds the width */
+        word-break: break-word; /* Forces break on long words */
+        white-space: normal; /* Ensures the text wraps */
+    }
+    
+    .specification-cell a {
+        /* Makes sure the link occupies space on a new line */
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+    }
+  
+    .background-image-container {
+      position: relative;
+      border: 1px solid #ddd;
+      padding: 20px;
+      border-radius: 8px;
+      background-color: #fff;
+      overflow: hidden; /* ensure ::before doesn't overflow rounded corners */
+    }
+    
+    .background-image-container::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: url('{% static "images/priya.png" %}');
+      background-repeat: no-repeat;
+      background-size: 60%;
+      background-position: center;
+      opacity: 0.6; /* adjust this value */
+      pointer-events: none; /* allow clicks to pass through */
+      z-index: 0;
+    }
+    
+    .background-image-container > * {
+      position: relative;
+      z-index: 1; /* ensure content stays above the background image */
+    }
+ 
+
+  html, body,#prshow {
+      height: 100%;
+      margin: 0;
+      font-size: 16px;
+    }
+  .datetimeshow{
+      font-size: 14px;
+  }
+
+  /* Sidebar default (desktop) */
+  #sidebar {
+      background: #41959d5c !important;
+      height: 100%;
+  }
+
+  /* Mobile/tablet overlay style */
+  @media (max-width: 768px) {
+      #sidebar {
+          position: fixed;
+          {% comment %} top: 0; {% endcomment %} 
+          
+          left: -250px; /* Hidden initially */
+          width: 170px;
+          height: 100%;
+          transition: left 0.3s ease;
+          z-index: 1050;
+      }
+      #sidebarOverlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5);
+          display: none;
+          z-index: 1040;
+      }
+  }
+
+
+
+  @media (max-width: 1450px) {
+    html,body ,label,.form-label ,.prshow{
+      font-size: 13.5px;
+    }
+    .nav-link,.datetimeshow{
+      font-size: 12px;
+    }
+  }
+  
+  /* For tablets (width ≤ 768px) */
+  @media (max-width: 1200px) {
+    html ,label,.form-label,body,.prshow{
+      font-size: 12px;
+    }
+    .nav-link ,.datetimeshow{
+        font-size: 11px;
+    }
+  }
+
+  /* For mobile devices (width ≤ 480px) */
+  @media (max-width: 480px) {
+    html ,label,.form-label,body,.prshow{
+      font-size: 10px;
+    }
+    .nav-link,.datetimeshow {
+      font-size: 9px;
+    }
+  }
+  .modal {
+    z-index: 1055; /* Bootstrap's default */
+}
+
+.modal-backdrop {
+    z-index: 1050;
+}
+.filter-btn {
+    width: 130px;       /* same fixed width */
+    height: 38px;       /* same fixed height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap; /* prevent wrapping text */
+  }
+  </style>
+  {% block styleblock %}
+  {% endblock %}
+  <script src="{% static "js/jquery-3.6.0.min.js" %}"></script>
+  <script src="{% static "fullcalendar/main.min.js" %}"></script>
+  <script src="{% static "js/popper.min.js" %}"></script>
+  <script src="{% static "js/bootstrap.bundle.min.js" %}"></script>
+  <script src="{% static "js/owl.carousel.min.js" %}"></script>
+  <script src="{% static "js/owlcarousel2-filter.min.js" %}"></script>
+  <script src="{% static "js/jquery.dataTables.min.js" %}"></script>
+  <script src="{% static "js/dataTables.buttons.min.js" %}"></script>
+  <script src="{% static "js/jszip.min.js" %}"></script>
+  <script src="{% static "js/buttons.html5.min.js" %}"></script>
+  <script src="{% static "js/chart.js" %}"></script>
+  <script src="{% static "js/html2pdf.bundle.min.js" %}"></script>
+  <script src="{% static "js/plotly-latest.min.js" %}"></script>
+  <script src="{% static "js/intlTelInput.min.js" %}"></script>
+  <script src="{% static "js/select2.min.js" %}"></script>
+  <script src="{% static "js/sweetalert2@11.js" %}"></script>
+  <script src="{% static "js/mark.min.js" %}"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+
+
+</head>
+<body>
+
+  <div class="hero_area">
+      <div class="loader" id="loader" style="display:none;">
+        <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+      </div>
+      <!-- header section -->
+      <header class="header_section">
+        <nav class="navbar navbar-expand-md navbar-light" style="background: #469da3d6; padding: 0; border-bottom: 2px solid #007080;">
+
+          <div class="container-fluid">
+          
+            <!-- Brand/Logo -->
+            <a class="navbar-brand d-flex align-items-center">
+              {% comment %} <img src="{% static 'images/logo234.png' %}" alt="logo1" style="width: 50px; height: 50px; border-radius: 14%;"> {% endcomment %}
+              <img src="{% static 'images/kritihlogo1409.png' %}" alt="logo2" class="img-fluid"  style=" height: 50px;width: 170px;"> 
+            </a>
+            
+      
+          
+              
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent"
+              aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+            </button>
+            
+      
+            <!-- Navbar Items -->
+            <div class="collapse navbar-collapse" id="navbarContent">
+
+
+              
+              <ul class="navbar-nav d-flex ms-6 mb-2 mb-md-0"> 
+                {% comment %} <ul class="navbar-nav d-flex flex-row flex-nowrap overflow-auto w-100"> {% endcomment %}
+                {% if request.session.user_role %}
+              
+              
+                  {% with active_role=request.session.active_role|default:request.session.user_role.0 %}
+    
+                  {% if active_role == 'Recommending Authority' %}
+                    <li class="nav-item {% if request.path == '/ims/ra_dashboard/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/ra_dashboard">DASHBOARD</a>
+                      </li>&nbsp;
+                      
+                      <li class="nav-item dropdown {% if request.path == '/ims/RA/' or request.path == '/ims/retunedpr/' %}active{% endif %}">
+                        <a class="nav-link dropdown-toggle" href="#" id="inboxDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if request.path == '/ims/RA/' %}
+                                RECEIVED PR
+                            {% elif request.path == '/ims/retunedpr/' %}
+                                RETURNED PR
+                            {% else %}
+                                INBOX
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="inboxDropdown">
+                            <li>
+                                <a class="dropdown-item {% if request.path == '/ims/RA/' %}active{% endif %}" href="/ims/RA">RECEIVED PR</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.path == '/ims/retunedpr/' %}active{% endif %}" href="/ims/retunedpr">RETURNED PR</a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                       <li class="nav-item {% if request.path == '/ims/ra_data/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/ra_data" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Management Information System">MIS</a>
+                      </li>&nbsp; 
+
+                      {% if request.user.is_authenticated and request.user.poapproval_set.exists %}
+                              <li class="nav-item {% if request.path == '/ims/po_approval/' %}active{% endif %}">
+                                  <a class="nav-link" href="{% url '/ims/po_approval' %}">PO APPROVAL</a>
+                              </li>
+                          {% endif %}
+                    
+                
+                    {% elif active_role == 'Vender' %}
+                      <li class="nav-item {% if request.path == '/vendor-quotation/' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'vendor-quotation' %}">Raise Quotation</a>
+                      </li>&nbsp;
+                      <li class="nav-item {% if request.path == '/floattenders/' %}active{% endif %}">
+                        <a class="nav-link" href="{% url 'floattenders' %}">Float tenders</a>
+                      </li>&nbsp;
+                    
+                
+                    {% elif active_role == 'Accounts' %}
+                      <li class="nav-item {% if request.path == '/ims/acc_dashboard/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/acc_dashboard">DASHBOARD</a>
+                      </li>&nbsp;
+                     
+                      <li class="nav-item dropdown {% if request.path == '/ims/accounts/' or request.path == '/ims/rejectedaccounts/' %}active{% endif %}">
+                        <a class="nav-link dropdown-toggle" href="#" id="accountsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if request.path == '/ims/accounts/' %}
+                                RECEIVED PR
+                            {% elif request.path == '/ims/rejectedaccounts/' %}
+                                RETURNED PR
+                            {% else %}
+                                INBOX
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="accountsDropdown">
+                            <li>
+                                <a class="dropdown-item {% if request.path == '/ims/accounts/' %}active{% endif %}" href="/ims/accounts">RECEIVED PR</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.path == '/ims/rejectedaccounts/' %}active{% endif %}" href="/ims/rejectedaccounts">RETURNED PR</a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                      <li class="nav-item {% if request.path == '/ims/budget/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/budget">BUDGET</a>
+                      </li>&nbsp;
+                       <li class="nav-item {% if request.path == '/ims/acc_data/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/acc_data" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Management Information System">MIS</a>
+                      </li>&nbsp; 
+                       <li class="nav-item {% if request.path == '/ims/dpo_approval/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/dpo_approval/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draft Purchase Order Approval">
+                            DPO APPROVAL
+                        </a>
+                      </li>
+                      
+                       <li class="nav-item {% if request.path == '/ims/payments/' %}active{% endif %}">
+                          <a class="nav-link" href="/ims/payments">PAYMENTS</a>
+                      </li> 
+
+                      <li class="nav-item {% if request.path == '/ims/budget-po/' %}active{% endif %}">
+                          <a class="nav-link" href="/ims/budget-po">PO BUDGET</a>
+                      </li> 
+
+                      {% if request.user.is_authenticated and request.user.poapproval_set.exists %}
+                          <li class="nav-item {% if request.path == '/ims/po_approval/' %}active{% endif %}">
+                              <a class="nav-link" href="{% url '/ims/po_approval/' %}">PO APPROVAL</a>
+                          </li>
+                      {% endif %}
+
+
+                      
+
+
+                    {% elif active_role == 'CEO' %}
+                    
+                      <li class="nav-item {% if request.path == '/ims/acc_dashboard/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/acc_dashboard">DASHBOARD</a>
+                      </li>&nbsp;
+                      <li class="nav-item {% if request.path == '/ims/ceo_received/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/ceo_received">RECEIVED PR</a>
+                      </li>  
+                       <li class="nav-item {% if request.path == '/acc_data/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/acc_data" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Management Information System">MIS</a>
+                      </li>&nbsp;      
+                                  
+                
+                    {% elif active_role == 'Approving Authority' %}
+                    <li class="nav-item {% if request.path == '/ims/aa_dashboard/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/aa_dashboard">DASHBOARD</a>
+                      </li>&nbsp;
+                      <li class="nav-item {% if request.path == '/ims/AApr/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/AApr">INBOX</a>
+                      </li>&nbsp;
+                       <li class="nav-item {% if request.path == '/ims/aa_data/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/aa_data" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Management Information System">MIS</a>
+                      </li>&nbsp; 
+      
+                      <li class="nav-item {% if request.path == '/ims/aa_budget/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/aa_budget">BUDGET</a>
+                      </li>&nbsp;
+                     
+                   
+                        
+
+                       <li class="nav-item {% if request.path == '/ims/negotiation_approval/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/negotiation_approval/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Negotiation Approval">
+                            NEGOTIATION APPROVAL
+                        </a>
+                      </li>
+                       <li class="nav-item {% if request.path == '/ims/dpo_acc_approval/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/dpo_acc_approval/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draft Purchase Order Approval">
+                            DPO APPROVAL
+                        </a>
+                      </li>
+
+                      {% if request.user.is_authenticated and request.user.poapproval_set.exists %}
+                          
+                          <li class="nav-item {% if request.path == '/ims/po_approval/' %}active{% endif %}">
+                              
+                              <a class="nav-link" href="/ims/po_approval/">PO APPROVAL</a>
+                          </li>
+                      {% endif %}
+
+                    
+                      
+            
+                      {% elif active_role == 'IMM' %}
+                        
+                      <li class="nav-item {% if request.path == '/ims/imm_dashboard/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/imm_dashboard">DASHBOARD</a>
+                      </li>
+                      <li class="nav-item dropdown {% if request.path == '/ims/imm/' or request.path == '/ims/rejectedimm/' %}active{% endif %}">
+                        <a class="nav-link dropdown-toggle" href="#" id="immDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if request.path == '/ims/imm/' %}
+                                RECEIVED PR
+                            {% elif request.path == '/ims/rejectedimm/' %}
+                                RETURNED PR
+                            {% else %}
+                                INBOX
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="immDropdown">
+                            <li>
+                                <a class="dropdown-item {% if request.path == '/ims/imm/' %}active{% endif %}" href="/ims/imm">RECEIVED PR</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.path == '/ims/rejectedimm/' %}active{% endif %}" href="/ims/rejectedimm">RETURNED PR</a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                        <li class="nav-item dropdown {% if request.path == '/ims/approvedpr/' or request.path == '/ims/enquiry-create/' or request.path == '/ims/comparative/'  or request.path == '/ims/forgot_password/' or request.path == '/ims/negotiation/' or  request.path == '/ims/negotiation_approval/' %}active{% endif %}">
+                          <a class="nav-link dropdown-toggle"
+                            href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span id="dropdownTitle">
+                              {% if request.path == '/ims/approvedpr/' %}
+                                PR LIST
+                              {% elif request.path == '/ims/enquiry-create/' %}
+                                ENQUIRY FORM
+                              {% elif request.path == '/ims/comparative/' %}
+                              CST
+                              {% elif request.path == '/ims/negotiation/' %}
+                                NEGOTIATION
+                             
+                              {% else %}
+                              APPROVED PR
+                              {% endif %}
+                            </span>
+                          </a>
+                      
+                          <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                            <li>
+                              <a class="dropdown-item {% if request.path == '/ims/approvedpr/' %}active{% endif %}"
+                                href="/ims/approvedpr/"
+                                style="{% if request.path == '/ims/approvedpr/' %} color: white;{% endif %}">
+                                PR LIST
+                              </a>
+                            </li>
+                            
+                            <li>
+                              <a class="dropdown-item {% if request.path == '/ims/enquiry-create/' %}active{% endif %}"
+                                href="/ims/enquiry-create/"
+                                style="{% if request.path == '/ims/enquiry-create/' %}background-color: #212529; color: white;{% endif %}">
+                                ENQUIRY FORM
+                              </a>
+                            </li>
+                            
+                            <li>
+                              <a class="dropdown-item {% if request.path == '/ims/comparative/' %}active{% endif %}"
+                                href="/ims/comparative/"
+                                style="{% if request.path == '/ims/comparative/' %}background-color: #212529; color: white;{% endif %}">
+                                CST
+                              </a>
+                            </li>
+                            
+                            <li>
+                              <a class="dropdown-item {% if request.path == '/ims/negotiation/' %}active{% endif %}"
+                                href="/ims/negotiation/"
+                                style="{% if request.path == '/ims/negotiation/' %}background-color: #212529; color: white;{% endif %}">
+                              NEGOTIATION
+                              </a>
+                            </li>
+                          
+                          </li>
+                          </ul>
+                          
+                          
+
+                          <li class="nav-item dropdown {% if request.path == '/ims/project-create/' or request.path == '/ims/register_user/' or request.path == '/ims/vender-create/' or request.path == '/ims/po-create/' %}active{% endif %}">
+                            <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                {% if request.path == '/ims/project-create/' %}
+                                    PROJECT
+                                {% elif request.path == '/ims/register_user/' %}
+                                    USER REG
+                                {% elif request.path == '/ims/vender-create/' %}
+                                    VENDOR MASTER
+                                    {% elif request.path == '/ims/forgot_password/' %}
+                                    RESET PASSWORD
+                                 {% elif request.path == '/ims/po-create/' %}
+                                    PO CREATE
+                                    {% comment %} {% elif request.path == '/po_data/' %}
+                                    PO DATA {% endcomment %}
+                                {% else %}
+                                    REGISTRATION
+                                {% endif %}
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                                <li>
+                                    <a class="dropdown-item {% if request.path == '/project-create/' %}active{% endif %}" href="/ims/project-create">PROJECT</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.path == '/register_user/' %}active{% endif %}" href="/ims/register_user">USER REG</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item {% if request.path == '/vender-create/' %}active{% endif %}" href="/ims/vender-create">VENDOR MASTER</a>
+                                </li>
+                                 <li>
+                                    <a class="dropdown-item {% if request.path == '/po-create/' %}active{% endif %}" href="/ims/po-create">PO CREATE</a>
+                                </li>
+                                {% comment %} <li>
+                                    <a class="dropdown-item {% if request.path == '/po_data/' %}active{% endif %}" href="/po_data">PO DATA</a>
+                                </li> {% endcomment %}
+                                <li>
+                                  <a class="dropdown-item {% if request.path == '/ims/forgot_password/' %}active{% endif %}"
+                                    href="/ims/forgot_password/"
+                                    style="{% if request.path == '/ims/forgot_password/' %}background-color: #212529; color: white;{% endif %}">
+                                  RESET PASSWORD
+                                  </a>
+                                </li>
+                            </ul>
+                        </li>
+                         <li class="nav-item {% if request.path == '/ims/imm_data/' %}active{% endif %}">
+                          <a class="nav-link" href="/ims/imm_data" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Management Information System">MIS</a>
+                        </li> 
+                          
+                        <li class="nav-item {% if request.path == '/ims/dpo/' %}active{% endif %}">
+                          <a class="nav-link" href="/ims/dpo/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draft Purchase Order">
+                              DPO
+                          </a>
+                        </li>
+                        
+                       
+                       <li class="nav-item {% if request.path == '/ims/invoice_page/' %}active{% endif %}">
+                          <a class="nav-link" href="/ims/invoice_page">INVOICE</a>
+                        </li> 
+                         <li class="nav-item {% if request.path == '/ims/po/' %}active{% endif %}">
+                          <a class="nav-link" href="/ims/po/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Purchase Order">
+                              PO
+                          </a>
+                        </li> 
+
+                      {% if request.user.is_authenticated and request.user.poapproval_set.exists %}
+                          <li class="nav-item {% if request.path == '/ims/po_approval/' %}active{% endif %}">
+                              <a class="nav-link" href="{% url 'po_approval' %}">PO APPROVAL</a>
+                          </li>
+                      {% endif %}
+
+                      {% comment %}  <li class="nav-item {% if request.path == '/payments/' %}active{% endif %}">
+                          <a class="nav-link" href="/payments">PAYMENTS</a>
+                      </li> {% endcomment %} 
+
+                        
+                        
+                        {% elif active_role == 'Purchase Assistant' %}
+                        
+                        <li class="nav-item {% if request.path == '/ims/imm_dashboard/' %}active{% endif %}">
+                          <a class="nav-link" href="/ims/imm_dashboard">DASHBOARD</a>
+                        </li>
+                        <li class="nav-item dropdown {% if request.path == '/ims/imm/' or request.path == '/ims/rejectedimm/' %}active{% endif %}">
+                          <a class="nav-link dropdown-toggle" href="#" id="immDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                              {% if request.path == '/ims/imm/' %}
+                                  RECEIVED PR
+                              {% elif request.path == '/ims/rejectedimm/' %}
+                                  RETURNED PR
+                              {% else %}
+                                  INBOX
+                              {% endif %}
+                          </a>
+                          <ul class="dropdown-menu" aria-labelledby="immDropdown">
+                              <li>
+                                  <a class="dropdown-item {% if request.path == '/ims/imm/' %}active{% endif %}" href="/ims/imm">RECEIVED PR</a>
+                              </li>
+                              <li>
+                                  <a class="dropdown-item {% if request.path == '/ims/rejectedimm/' %}active{% endif %}" href="/ims/rejectedimm">RETURNED PR</a>
+                              </li>
+                          </ul>
+                      </li>
+                      
+                          <li class="nav-item dropdown {% if request.path == '/ims/approvedpr/' or request.path == '/ims/enquiry-create/' or request.path == '/ims/comparative/' or request.path == '/ims/negotiation/' %}active{% endif %}">
+                            <a class="nav-link dropdown-toggle"
+                              href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                              <span id="dropdownTitle">
+                                {% if request.path == '/ims/approvedpr/' %}
+                                  PR LIST
+                                {% elif request.path == '/ims/enquiry-create/' %}
+                                  ENQUIRY FORM
+                                {% elif request.path == '/ims/comparative/' %}
+                                CST
+                                {% elif request.path == '/ims/negotiation/' %}
+                                  NEGOTIATION
+                                {% else %}
+                                APPROVED PR
+                                {% endif %}
+                              </span>
+                            </a>
+                        
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                              <li>
+                                <a class="dropdown-item {% if request.path == '/ims/approvedpr/' %}active{% endif %}"
+                                  href="/ims/approvedpr/"
+                                  style="{% if request.path == '/ims/approvedpr/' %} color: white;{% endif %}">
+                                  PR LIST
+                                </a>
+                              </li>
+                              
+                              <li>
+                                <a class="dropdown-item {% if request.path == '/ims/enquiry-create/' %}active{% endif %}"
+                                  href="/ims/enquiry-create/"
+                                  style="{% if request.path == '/ims/enquiry-create/' %}background-color: #212529; color: white;{% endif %}">
+                                  ENQUIRY FORM
+                                </a>
+                              </li>
+                              
+                              <li>
+                                <a class="dropdown-item {% if request.path == '/ims/comparative/' %}active{% endif %}"
+                                  href="/ims/comparative/"
+                                  style="{% if request.path == '/ims/comparative/' %}background-color: #212529; color: white;{% endif %}">
+                                  CST
+                                </a>
+                              </li>
+                              
+                              <li>
+                                <a class="dropdown-item {% if request.path == '/ims/negotiation/' %}active{% endif %}"
+                                  href="/ims/negotiation/"
+                                  style="{% if request.path == '/ims/negotiation/' %}background-color: #212529; color: white;{% endif %}">
+                                NEGOTIATION
+                                </a>
+                              </li>
+                            </li>
+                            </ul>
+                            <li class="nav-item dropdown {% if request.path == '/ims/project-create/' or request.path == '/ims/register_user/' or request.path == '/ims/vender-create/' %}active{% endif %}">
+                              <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                  {% if request.path == '/ims/project-create/' %}
+                                      PROJECT
+                                  {% elif request.path == '/ims/register_user/' %}
+                                      USER REG
+                                  {% elif request.path == '/ims/vender-create/' %}
+                                      VENDOR MASTER
+                                  {% else %}
+                                      REGISTRATION
+                                  {% endif %}
+                              </a>
+                              <ul class="dropdown-menu" aria-labelledby="userDropdown">
+                                  <li>
+                                      <a class="dropdown-item {% if request.path == '/ims/project-create/' %}active{% endif %}" href="/ims/project-create">PROJECT</a>
+                                  </li>
+                                  <li>
+                                      <a class="dropdown-item {% if request.path == '/ims/register_user/' %}active{% endif %}" href="/ims/register_user">USER REG</a>
+                                  </li>
+                                  <li>
+                                      <a class="dropdown-item {% if request.path == '/ims/vender-create/' %}active{% endif %}" href="/ims/vender-create">VENDOR MASTER</a>
+                                  </li>
+                              </ul>
+                          </li>
+                           <li class="nav-item {% if request.path == '/ims/imm_data/' %}active{% endif %}">
+                            <a class="nav-link" href="/ims/imm_data" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Management Information System">MIS</a>
+                          </li> 
+                            
+                          <li class="nav-item {% if request.path == '/ims/dpo/' %}active{% endif %}">
+                            <a class="nav-link" href="/ims/dpo/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Draft Purchase Order">
+                                DPO
+                            </a>
+                          </li>
+
+                          {% if request.user.is_authenticated and request.user.poapproval_set.exists %}
+                              <li class="nav-item {% if request.path == '/ims/po_approval/' %}active{% endif %}">
+                                  <a class="nav-link" href="{% url '/ims/po_approval/' %}">PO APPROVAL</a>
+                              </li>
+                          {% endif %}
+                         
+                        
+                        
+                           {% comment %} <li class="nav-item {% if request.path == '/po/' %}active{% endif %}">
+                            <a class="nav-link" href="/po/" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Purchase Order">
+                                PO
+                            </a>
+                          </li>  {% endcomment %}
+                           
+                
+                    {% elif active_role == 'Indentor' %}
+                      <li class="nav-item {% if request.path == 'ims/indentor_dashboard/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/indentor_dashboard">DASHBOARD</a>
+                      </li>&nbsp;
+                    
+                      <li class="nav-item {% if request.path == 'ims/procurement/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/procurement">GENERATE PR</a>
+                      </li>&nbsp;
+
+                      <li class="nav-item dropdown {% if request.path == '/ims/submittedpr/' or request.path == '/ims/returned/pr/' %}active{% endif %}">
+                        <a class="nav-link dropdown-toggle" href="#" id="indentorDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {% if request.path == '/ims/submittedpr/' %}
+                                SUBMITTED PR
+                            {% elif request.path == '/ims/returned/pr/' %}
+                                RETURNED PR
+                            {% else %}
+                                INBOX
+                            {% endif %}
+                        </a>
+                        <ul class="dropdown-menu" aria-labelledby="indentorDropdown">
+                            <li>
+                                <a class="dropdown-item {% if request.path == '/ims/submittedpr/' %}active{% endif %}" href="/ims/submittedpr">SUBMITTED PR</a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item {% if request.path == '/ims/returned/pr/' %}active{% endif %}" href="/ims/returned/pr">RETURNED PR</a>
+                            </li>
+                        </ul>
+                    </li>
+                    
+                      {% comment %} <li class="nav-item {% if request.path == '/returned/pr/' %}active{% endif %}">
+                        <a class="nav-link" href="/returned/pr">RETURNED PR</a>
+                      </li>&nbsp;
+                      <li class="nav-item {% if request.path == '/submittedpr/' %}active{% endif %}">
+                        <a class="nav-link" href="/submittedpr">SUBMITTED PR</a>
+                      </li>&nbsp; {% endcomment %}
+                       <li class="nav-item {% if request.path == '/ims/indentor_data/' %}active{% endif %}">
+                        <a class="nav-link" href="/ims/indentor_data" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Management Information System">MIS</a>
+                      </li>&nbsp; 
+
+                      {% comment %} {% if request.user.is_authenticated and request.user.poapproval_set.exists %}
+                          <li class="nav-item {% if request.path == '/po_approval/' %}active{% endif %}">
+                              <a class="nav-link" href="{% url 'po_approval' %}">PO APPROVAL</a>
+                          </li>
+                      {% endif %} {% endcomment %}
+
+
+                      {% comment %} po tab only for indentor user no other roles involved {% endcomment %}
+                      {% if request.user.is_authenticated %}
+                          {% with user_roles=request.user.userreg.role.all %}
+                              {% if user_roles.count == 1 and user_roles.first.role == "Indentor" and request.user.poapproval_set.exists %}
+                                  <li class="nav-item {% if request.path == '/ims/po_approval/' %}active{% endif %}">
+                                      <a class="nav-link" href="{% url '/ims/po_approval/' %}">PO APPROVAL</a>
+                                  </li>
+                              {% endif %}
+                          {% endwith %}
+                      {% endif %}
+
+
+                    {% endif %}
+                    {% endwith %}
+                    <!-- Tracking available for all roles -->
+                    <li class="nav-item {% if request.path == '/ims/tracking/' %}active{% endif %}">
+                      <a class="nav-link" href="/ims/tracking">TRACKING</a>
+                    </li>
+                
+                  {% else %}
+                    <li class="nav-item {% if request.path == '/login/' %}active{% endif %}">
+                      <a class="nav-link" href="/">LOGIN</a>
+                    </li>
+                  {% endif %}
+            
+              </ul>
+
+   
+
+      
+              <!-- Profile Dropdown -->
+              {% comment %} <ul class="navbar-nav d-flex me-4 mb-2 mb-md-0"> {% endcomment %}
+                <div class="user-container d-flex align-items-center gap-3">
+                  
+                  {% if request.session.user_role|length > 1 %}
+                  <li class="nav-item dropdown list-unstyled m-0">
+                    <a class="nav-link dropdown-toggle" href="#" id="roleDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="color: white;"
+                      data-bs-toggle="tooltip" data-bs-placement="top" title="Switch Role">
+                      
+                      <!-- Bootstrap SVG icon with increased size -->
+                      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-toggles2" viewBox="0 0 16 16">
+                        <path d="M9.465 10H12a2 2 0 1 1 0 4H9.465c.34-.588.535-1.271.535-2s-.195-1.412-.535-2"/>
+                        <path d="M6 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6m0 1a4 4 0 1 1 0-8 4 4 0 0 1 0 8m.535-10a4 4 0 0 1-.409-1H4a1 1 0 0 1 0-2h2.126q.138-.534.41-1H4a2 2 0 1 0 0 4z"/>
+                        <path d="M14 4a4 4 0 1 1-8 0 4 4 0 0 1 8 0"/>
+                      </svg>
+                  
+                    </a>
+                  <ul class="dropdown-menu" aria-labelledby="roleDropdown">
+                    {# First: Render the active role first #}
+                    {% for role in request.session.user_role %}
+                      {% if role == request.session.active_role %}
+                        <li>
+                          <a href="#"
+                            class="dropdown-item switch-role-item active disabled"
+                            data-role="{{ role }}">
+                            {{ role }} <span class="text-muted"></span>
+                          </a>
+                        </li>
+                      {% endif %}
+                    {% endfor %}
+
+                    {# Then: Render the other roles #}
+                    {% for role in request.session.user_role %}
+                      {% if role != request.session.active_role %}
+                        <li>
+                          <a href="#"
+                            class="dropdown-item switch-role-item"
+                            data-role="{{ role }}">
+                            {{ role }}
+                          </a>
+                        </li>
+                      {% endif %}
+                    {% endfor %}
+                  </ul>
+
+                  </li>
+                  {% endif %}
+                  
+                
+                  {% with active_role=request.session.active_role|default:request.session.user_role.0 %}
+                  {% if active_role == 'Accounts' or active_role == 'IMM' or active_role == 'CEO' or active_role == 'GM' or active_role == 'Purchase Assistant'   %}
+                    <!-- Calendar Icon Button -->
+                    {% comment %} <div class="calendar-icon" title="View Calendar">
+                      <button id="openCalendarBtn" class="btn btn-calendar" aria-label="Open Calendar">
+                        <i class="bi bi-calendar3"></i>
+                      </button>
+                    </div> {% endcomment %}
+                  {% endif %}
+                  {% endwith %}   
+                
+                  <!-- Notification Bell Section -->
+                  <div class="notification-icon position-relative" id="notification-bell-wrapper">
+                    <div class="notification-icon position-relative" id="notification-bell" title="Notifications">
+                      <i class="fas fa-bell" style="font-size: 18px; cursor: pointer;color:white;"></i>
+                      <span id="notification-count"
+                        class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger d-none">
+                        0
+                        <span class="visually-hidden">unread messages</span>
+                      </span>
+                    </div>
+                
+                    <!-- Dropdown to show notifications -->
+                    <div id="notification-dropdown" class="dropdown-menu p-2"
+                      style="display: none; width: 300px; max-height: 400px; overflow-y: auto;">
+                      <ul id="notification-items" class="list-unstyled mb-0"></ul>
+                    </div>
+                  </div>
+
+                  <!-- User Profile Dropdown -->
+                  <div class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="profileDropdown" role="button"
+                      data-bs-toggle="dropdown" aria-expanded="false">
+                     
+                      
+                      {% if request.user.userreg.profile_img %}
+                      <img src="{{ request.user.userreg.profile_img.url }}" alt="Profile Image" 
+                           class="rounded-circle" style="width: 32px; height: 32px; object-fit: cover;">
+                    {% else %}
+                      <i class="fas fa-user-circle fa-2x ms-2" style="color: white;"></i>
+                    {% endif %}
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                      <li class="dropdown-item-text d-flex align-items-center fs-6">
+                        <i class="bi bi-person-fill me-2 fs-4"></i>
+                        <strong>
+                          <a href="{% url 'user_profile' %}" style="text-decoration: underline; text-decoration-color: black; color: inherit; cursor: pointer;">
+                            {{ request.session.user_name }}
+                          </a>
+                        </strong>
+                      </li>
+                      
+                      <li><hr class="dropdown-divider"></li>
+                      <li class="dropdown-item-text d-flex align-items-center fs-6">
+                        <i class="bi bi-card-text me-2 fs-4"></i>
+                        <b>EmpID:</b> {{ request.session.emp_id }}
+                      </li>
+                      <li class="dropdown-item-text d-flex align-items-center fs-6">
+                        <i class="bi bi-shield-lock me-2 fs-4"></i>
+                        <b>Role: </b>
+                        <div>
+                              {% for role in request.session.user_role %}
+                                <div class="dropdown-role-text">
+                                  {{ role }}{% if not forloop.last %},{% endif %}
+                                </div>
+                              {% endfor %}
+                          </div>
+                      </li>
+                    
+                      <li class="dropdown-item-text d-flex align-items-center fs-6">
+                        <a  href="{% url 'feedback' %}" style="text-decoration: underline; ">
+                          <i class="fas fa-comment-dots me-2"></i> Feedback
+                        </a>
+                      </li>
+                      <li><hr class="dropdown-divider"></li>
+                      
+                      <li class="dropdown-item-text d-flex align-items-center fs-6">
+                          <a href="https://meslova.com/" target="_blank" style="text-decoration: underline;">
+                              <i class="fas fa-circle-arrow-right me-2"></i> Inventory App
+                          </a>
+                      </li>
+                      <li>
+                        <a class="dropdown-item-text d-flex align-items-center fs-6" href="{% url 'logout' %}">
+                          <i class="bi bi-box-arrow-right text-danger me-2 fs-4"></i>
+                          <b><span style="color:red;">Logout</span></b>
+                        </a>
+                      </li>
+                    </ul>
+                  </div>
+                </div>
+
+            </div>
+          </div>
+        </nav>
+      </header>
+
+      <!-- Calendar Overlay -->
+      <div id="calendarOverlay" class="calendar-overlay" hidden></div>
+
+      <!-- Calendar Popup -->
+      <div id="calendarPopup" class="calendar-modal" role="dialog" aria-modal="true" aria-labelledby="calendarTitle" hidden>
+        <div class="calendar-modal-content">
+          <div class="calendar-modal-header">
+            <h2 id="calendarTitle">Procurement Payments Reminder</h2>
+            <button id="closeCalendarBtn" class="calendar-close-btn" aria-label="Close Calendar">&times;</button>
+          </div>
+          <div class="calendar-modal-body">
+            <div id="calendar" class="calendar-container"></div>
+          </div>
+        </div>
+      </div>
+    
+      <div class="container-fluid main-content" >
+        
+        {% comment %} {% if request.path in '/ra_dashboard/ /acc_dashboard/ /aa_dashboard/ /imm_dashboard/ /indentor_dashboard/ /procurement/ /vender-create/ /project-create/ /register_user/ /budget/ /aa_budget/ /aa_data/ /ra_data/ /indentor_data/ /acc_data/ /imm_data/ /feedback/ /user_profile/ /forgot_password/ /po_data/ /budget-po/  ' %} {% endcomment %}
+        {% if request.path in '/ims/ra_dashboard/ /ims/acc_dashboard/ /ims/aa_dashboard/ /ims/imm_dashboard/ /ims/indentor_dashboard/ /ims/procurement/ /ims/vender-create/ /ims/project-create/ /ims/register_user/ /ims/budget/ /ims/aa_budget/ /ims/aa_data/ /ims/ra_data/ /ims/indentor_data/ /ims/acc_data/ /ims/imm_data/ /ims/feedback/ /ims/user_profile/ /ims/forgot_password/ /ims/po_data/ /ims/budget-po/' %}
+
+          <div class="custom-scroll">
+          {% block mainblock %}{% endblock %}
+          </div>
+        {% else %}
+
+          <div  style="z-index: 100;">
+              <button id="openSidebarBtn" 
+                  class="btn btn-primary btn-sm d-block d-md-none" 
+                  style="margin:5px;">
+                  <i class="fas fa-bars"></i>
+              </button> 
+          </div>
+
+
+
+            <div id="sidebarOverlay"></div>
+        
+      
+            <div class=" row">
+               
+              <div class="col-12 col-md-2 col-sm-2  sidebar p-2"  id="sidebar" style="background:#41959d5c !important;">
+
+                <div class="custom-scroll" >
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" placeholder="Search PR IDs..." id="prSearch">
+                        </div>
+                        {% if request.path == '/ims/RA/' or request.path == '/ims/retunedpr/' or request.path == '/ims/accounts/' or request.path == '/ims/rejectedaccounts/' or request.path == '/ims/imm/' or request.path == '/ims/rejectedimm/' or request.path == '/ims/returned/pr/' or request.path == '/ims/submittedpr/' or request.path == '/ims/AApr/'   %}
+                          <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                                    <!-- Status Dropdown -->
+                                    <div class="mb-3">
+                                      <label for="popupStatusFilter" class="form-label fw-semibold">Status</label>
+                                      <select id="popupStatusFilter" name="statusFilter" class="form-select form-select-sm"
+                                              style="border-radius: 20px; padding: 8px 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px; border: 1px solid #ccc;">
+                                        <option value="All">All</option>
+                                        <option value="Approval">Approval</option>
+                                        <option value="Reject">Reject</option>
+                                        <option value="Modified">Modified</option>
+                                      </select>
+                                    </div>
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                        {% endif %}
+                
+
+                      <ul id="procurementSidebar"  class="list-group" style="list-style-type: none; padding: 0; margin: 0;">
+
+                        {# Sidebar for RA, retunedpr, accounts, rejectedaccounts, imm, rejectedimm, returned/pr, submittedpr #}
+                       
+                        {% if request.path == '/ims/RA/' or request.path == '/ims/retunedpr/' or request.path == '/ims/accounts/' or request.path == '/ims/rejectedaccounts/' or request.path == '/ims/imm/' or request.path == '/ims/rejectedimm/'  or request.path == '/ims/submittedpr/' or request.path == '/ims/AApr/' or  request.path == '/ims/ceo_received/' %}
+                        {% for procurement in procurements %}
+                          {% for status_item in status_list %}
+                            {% if status_item.procurement_id == procurement.procurement_id %}
+                            <li id="procurement-{{ procurement.id }}" class="list-group-item" data-id = "{{procurement.action_performed}}"
+                            style="background-color: {% if procurement.action_performed %}#f8f9fa{% else %}#CCE5F0{% endif %}; border-radius: 0.3rem; margin-bottom: 0.5rem; padding: 8px 12px;">
+                        
+                            <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ procurement.procurement_id }}"
+                            style="line-height: 1.3;">
+                       
+                           <h5 class="fw-semibold " style="font-size: 1rem; margin-bottom: 2px;">
+                             {{ procurement.procurement_type__Procurement_name }}
+                           </h5>
+                       
+                           <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                             {{ procurement.procurement_id }}
+                           </span>
+                       
+                           {% if procurement.procurement_title %}
+                           <p style="
+                              font-size: 0.85rem; 
+                              margin: 0 0 4px 0; 
+                              color: #303030; 
+                              white-space: normal; 
+                              word-break: break-word;">
+                            {{ procurement.procurement_title }}
+                          </p>
+
+                           {% endif %}
+                       
+                           <small class="text-dark" style="font-size: 0.8rem;color:black">
+                             {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                           </small>
+                       
+                         </a>
+                        </li>
+                        
+                            {% endif %}
+                          {% endfor %}
+                        {% endfor %}
+
+
+                    
+                        {# Sidebar for approvedpr, enquiry-create, comparative, negotiation, dpo, po #}
+                    
+                        {% elif request.path == '/ims/approvedpr/' or request.path == '/ims/enquiry-create/' or request.path == '/ims/comparative/' or request.path == '/ims/negotiation/'   or request.path == '/ims/negotiation_approval/'  or request.path == '/ims/po-create/' %}
+                        <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                                
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                        {% for procurement in procurements %}
+                        <li id="procurement-{{ procurement.id }}" class="list-group-item"
+                        style="background-color: {% if procurement.action_performed %} #f8f9fa {% else %} #CCE5F0 {% endif %};
+                               border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                               transition: background-color 0.3s ease, box-shadow 0.3s ease;
+                               margin-top: 7px; padding: 8px 12px;">
+                    
+                      <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ procurement.procurement_id }}"
+                         style="line-height: 1.3;">
+                    
+                        <h5 class="fw-semibold" style="font-size: 1rem; margin-bottom: 2px;">
+                          {{ procurement.procurement_type__Procurement_name }}
+                        </h5>
+                    
+                        <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                          {{ procurement.procurement_id }}
+                        </span>
+                    
+                        {% if procurement.procurement_title %}
+                        <p style="
+                        font-size: 0.85rem; 
+                        margin: 0 0 4px 0; 
+                        color: #303030; 
+                        white-space: normal; 
+                        word-break: break-word;">
+                      {{ procurement.procurement_title }}
+                    </p>
+                        {% endif %}
+                    
+                        <small class="text-dark" style="font-size: 0.8rem;color:black">
+                          {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                        </small>
+                    
+                        
+                      </a>
+                    </li>
+                    
+                      {% endfor %}
+                      {% elif request.path == '/ims/negotiation_approval/' %}
+                        <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                                    <!-- Status Dropdown -->
+                                    
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                        {% for procurement in procurements %}
+                        <li id="procurement-{{ procurement.id }}" class="list-group-item"
+                        style="background-color: {% if procurement.action_performed %} #f8f9fa {% else %} #CCE5F0 {% endif %};
+                               border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                               transition: background-color 0.3s ease, box-shadow 0.3s ease;
+                               margin-top: 7px; padding: 8px 12px;">
+                    
+                      <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ procurement.procurement_id }}"
+                         style="line-height: 1.3;">
+                    
+                        <h5 class="fw-semibold" style="font-size: 1rem; margin-bottom: 2px;">
+                          {{ procurement.procurement_type__Procurement_name }}
+                        </h5>
+                    
+                        <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                          {{ procurement.procurement_id }}
+                        </span>
+                    
+                        {% if procurement.procurement_title %}
+                        <p style="
+                        font-size: 0.85rem; 
+                        margin: 0 0 4px 0; 
+                        color: #303030; 
+                        white-space: normal; 
+                        word-break: break-word;">
+                      {{ procurement.procurement_title }}
+                    </p>
+                        {% endif %}
+                    
+                        <small class="text-dark" style="font-size: 0.8rem;color:black">
+                          {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                        </small>
+                    
+                      </a>
+                    </li>
+                    
+                      {% endfor %}
+                    
+                      {% elif request.path == '/ims/dpo_acc_approval/' %}
+                      <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                                    
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                      {% for procurement in procurements %}
+                        {% for group in procurement.vendor_groups %}
+                          <li id="procurement-{{ procurement.procurement_id }}"
+                              class="list-group-item"
+                              style="background-color: {% if procurement.action_performed %} #f8f9fa {% else %} #CCE5F0 {% endif %};
+                                     border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+                                     margin-top: 7px; padding: 8px 12px;">
+                    
+                            <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ procurement.procurement_id }}"data-vendor="{{ group.vendor_id }}"
+                               style="line-height: 1.3;">
+                              
+                              <h5 class="fw-semibold" style="font-size: 1rem; margin-bottom: 2px;">
+                                {{ procurement.procurement_type__Procurement_name }}
+                              </h5>
+                    
+                              <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                                {{ procurement.procurement_id }}
+                              </span>
+                    
+                              {% if procurement.procurement_title %}
+                                <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030; white-space: normal; word-break: break-word;">
+                                  {{ procurement.procurement_title }}
+                                </p>
+                              {% endif %}
+                    
+                              <span><strong>Vendor:</strong> {{ group.vendor_name }}</span><br>
+                              <small class="text-dark" style="font-size: 0.8rem;">
+                                {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                              </small>
+                            </a>
+                          </li>
+                        {% endfor %}
+                      {% endfor %}
+                      
+                      {% elif request.path == '/ims/dpo_approval/' %}
+                      <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                                    <!-- Status Dropdown -->
+                                  
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                      {% for procurement in procurements %}
+                        {% for group in procurement.vendor_groups %}
+                          <li id="procurement-{{ procurement.procurement_id }}"
+                              class="list-group-item"
+                              style="background-color: {% if procurement.action_performed %} #f8f9fa {% else %} #CCE5F0 {% endif %};
+                                     border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+                                     margin-top: 7px; padding: 8px 12px;">
+                    
+                            <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ procurement.procurement_id }}"data-vendor="{{ group.vendor_id }}"
+                               style="line-height: 1.3;">
+                              
+                              <h5 class="fw-semibold" style="font-size: 1rem; margin-bottom: 2px;">
+                                {{ procurement.procurement_type__Procurement_name }}
+                              </h5>
+                    
+                              <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                                {{ procurement.procurement_id }}
+                              </span>
+                    
+                              {% if procurement.procurement_title %}
+                                <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030; white-space: normal; word-break: break-word;">
+                                  {{ procurement.procurement_title }}
+                                </p>
+                              {% endif %}
+                    
+                              <span><strong>Vendor:</strong> {{ group.vendor_name }}</span><br>
+                              <small class="text-dark" style="font-size: 0.8rem;">
+                                {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                              </small>
+                            </a>
+                          </li>
+                        {% endfor %}
+                      {% endfor %}
+
+                      {% elif request.path == '/ims/dpo/' %}
+                      <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                               
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                      {% for procurement in procurements %}
+                        {% for group in procurement.vendor_groups %}
+                          <li id="procurement-{{ procurement.procurement_id }}"
+                              class="list-group-item"
+                              style="background-color: {% if procurement.action_performed %} #f8f9fa {% else %} #CCE5F0 {% endif %};
+                                     border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+                                     margin-top: 7px; padding: 8px 12px;">
+                    
+                            <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ procurement.procurement_id }}"data-vendor="{{ group.vendor_id }}"
+                               style="line-height: 1.3;">
+                              
+                              <h5 class="fw-semibold" style="font-size: 1rem; margin-bottom: 2px;">
+                                {{ procurement.procurement_type__Procurement_name }}
+                              </h5>
+                    
+                              <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                                {{ procurement.procurement_id }}
+                              </span>
+                    
+                              {% if procurement.procurement_title %}
+                                <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030; white-space: normal; word-break: break-word;">
+                                  {{ procurement.procurement_title }}
+                                </p>
+                              {% endif %}
+                    
+                              <span><strong>Vendor:</strong> {{ group.vendor_name }}</span><br>
+                              <small class="text-dark" style="font-size: 0.8rem;">
+                                {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                              </small>
+                            </a>
+                          </li>
+                        {% endfor %}
+                      {% endfor %}
+
+                      {% elif request.path == '/ims/payments/' %}
+                      <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                               
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                      {% comment %} {% for procurement in procurements %}
+                        <li id="procurement-{{ procurement.procurement_id }}"
+                            class="list-group-item"
+                            style="background-color:#CCE5F0; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                  transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top: 7px; padding: 8px 12px;">
+
+                          <a href="#" class="view-pr-id text-decoration-none text-dark d-block"
+                            data-id="{{ procurement.procurement_id }}"
+                            style="line-height: 1.3;">
+
+                           
+
+                            <!-- Procurement ID -->
+                            <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                              {{ procurement.procurement_id }}
+                            </span>
+
+                              <!-- PO Number (if exists) -->
+                            {% if procurement.purchase_orders.first %}
+                              <span><strong>PO:</strong> {{ procurement.purchase_orders.first.po_number }}</span><br>
+                            {% endif %}
+
+                            <!-- Procurement Title -->
+                            {% if procurement.procurement_title %}
+                              <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030;">
+                                {{ procurement.procurement_title }}
+                              </p>
+                            {% endif %}
+
+                            <!-- Vendor Name -->
+                            {% if procurement.purchase_orders.first and procurement.purchase_orders.first.draft_po.sources %}
+                              <span><strong>Vendor:</strong> {{ procurement.purchase_orders.first.draft_po.sources.company_name }}</span><br>
+                            {% elif procurement.supplier.exists %}
+                              <span><strong>Vendor:</strong> {{ procurement.supplier.first.company_name  }}</span><br>
+                            {% else %}
+                              <span><strong>Vendor:</strong> —</span><br>
+                            {% endif %}
+
+                          
+
+                            <!-- Status Badge -->
+                            {% if procurement.pr_events == "Online_order" %}
+                              <span class="badge bg-success">Online Order</span>
+                            {% else %}
+                              <span class="badge bg-primary">Purchase Order</span>
+                            {% endif %}
+
+                            <!-- Date -->
+                            <small class="text-dark" style="font-size: 0.8rem;">
+                              {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                            </small>
+                          </a>
+                        </li>
+                      {% endfor %} {% endcomment %}
+
+                      {% for procurement in procurements %}
+                          {% if procurement.purchase_orders %}
+                            {% for po in procurement.purchase_orders %}
+                              <li id="procurement-{{ procurement.procurement_id }}-{{ po.po_number }}"
+                                  class="list-group-item"
+                                  style="background-color:#CCE5F0; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                        transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top: 7px; padding: 8px 12px;">
+
+                                <a href="#" class="view-pr-id text-decoration-none text-dark d-block"
+                                  data-id="{{ procurement.procurement_id }}" data-po="{{ po.po_number }}"
+                                  style="line-height: 1.3;">
+
+                                  <!-- Procurement ID -->
+                                  <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                                    {{ procurement.procurement_id }}
+                                  </span>
+
+                                  <!-- PO Number -->
+                                  <span><strong>PO:</strong> {{ po.po_number }}</span><br>
+
+                                  <!-- Procurement Title -->
+                                  {% if procurement.procurement_title %}
+                                    <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030;">
+                                      {{ procurement.procurement_title }}
+                                    </p>
+                                  {% endif %}
+
+                                  <!-- Vendor Name -->
+                                  {% if po.draft_po.sources %}
+                                    <span><strong>Vendor:</strong> {{ po.draft_po.sources.company_name }}</span><br>
+                                  {% elif procurement.supplier.exists %}
+                                    <span><strong>Vendor:</strong> {{ procurement.supplier.first.company_name }}</span><br>
+                                  {% else %}
+                                    <span><strong>Vendor:</strong> —</span><br>
+                                  {% endif %}
+
+                                  <!-- Status Badge -->
+                                  {% if procurement.pr_events == "Online_order" %}
+                                    <span class="badge bg-success">Online Order</span>
+                                  {% else %}
+                                    <span class="badge bg-primary">Purchase Order</span>
+                                  {% endif %}
+
+                                  <!-- Date -->
+                                  <small class="text-dark" style="font-size: 0.8rem;">
+                                    {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                                  </small>
+                                </a>
+                              </li>
+                            {% endfor %}
+                          {% else %}
+                            <!-- For procurements with no PO (like online orders) -->
+                            <li id="procurement-{{ procurement.procurement_id }}"
+                                class="list-group-item"
+                                style="background-color:#CCE5F0; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                      transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top: 7px; padding: 8px 12px;">
+
+                              <a href="#" class="view-pr-id text-decoration-none text-dark d-block"
+                                data-id="{{ procurement.procurement_id }}"
+                                style="line-height: 1.3;">
+                                
+                                <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                                  {{ procurement.procurement_id }}
+                                </span>
+
+                                {% if procurement.procurement_title %}
+                                  <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030;">
+                                    {{ procurement.procurement_title }}
+                                  </p>
+                                {% endif %}
+
+                                {% if procurement.supplier.exists %}
+                                  <span><strong>Vendor:</strong> {{ procurement.supplier.first.company_name }}</span><br>
+                                {% else %}
+                                  <span><strong>Vendor:</strong> —</span><br>
+                                {% endif %}
+
+                                <span class="badge bg-success">Online Order</span>
+
+                                <small class="text-dark" style="font-size: 0.8rem;">
+                                  {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                                </small>
+                              </a>
+                            </li>
+                          {% endif %}
+                        {% endfor %}
+
+ 
+                       {% comment %}  {% for item in procurements %}
+                          {% if item.card_type == "online" %}
+                              <li id="procurement-{{ item.procurement_id }}" class="list-group-item" style="background-color:#CCE5F0; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                  transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top: 7px; padding: 8px 12px;">
+                                  <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ item.procurement_id }}" data-po-id = "{{ item.po_number}}">
+                                      <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                                          {{ item.procurement_id }}
+                                      </span>
+                                      <span><strong>Vendor:</strong>
+                                          {% if item.supplier.exists %}
+                                              {{ item.supplier.first.company_name }}
+                                          {% else %}
+                                              —
+                                          {% endif %}
+                                      </span><br>
+                                      <span class="badge bg-success">Online Order</span>
+                                      <small class="text-dark" style="font-size: 0.8rem;">
+                                          {{ item.datetime|date:"d-m-Y H:i:s" }}
+                                      </small>
+                                  </a>
+                              </li>
+                          {% elif item.card_type == "po" %}
+                              <li id="procurement-{{ item.procurement.procurement_id }}" class="list-group-item" style="background-color:#CCE5F0; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                  transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top: 7px; padding: 8px 12px;">
+                                  <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ item.procurement.procurement_id }}" data-po-id = "{{ item.po_number}}">
+                                      <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                                          {{ item.po_number }} <span class="text-muted">(PO)</span>
+                                      </span>
+                                      <span><strong>PR:</strong> {{ item.procurement.procurement_id }}</span><br>
+                                      <span><strong>Vendor:</strong>
+                                          {% if item.draft_po and item.draft_po.sources %}
+                                              {{ item.draft_po.sources.company_name }}
+                                          {% else %}
+                                              —
+                                          {% endif %}
+                                      </span><br>
+                                      <span class="badge bg-primary">Purchase Order</span>
+                                      <small class="text-dark" style="font-size: 0.8rem;">
+                                          {{ item.procurement.datetime|date:"d-m-Y H:i:s" }}
+                                      </small>
+                                  </a>
+                              </li>
+                          {% endif %}
+                      {% endfor %}
+ {% endcomment %}
+
+
+
+
+                      {% elif request.path == '/ims/po_approval/' %}
+                      <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                                    <!-- Status Dropdown -->
+                                    
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                      
+                      {% for procurement in procurements %}
+                        {% for group in procurement.vendor_groups %}
+                          <li id="procurement-{{ procurement.procurement_ref.procurement_id }}"
+                              class="list-group-item"
+                              style="background-color: {% if procurement.action_performed %} #f8f9fa {% else %} #CCE5F0 {% endif %};
+                                     border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+                                     margin-top: 7px; padding: 8px 12px;">
+                    
+                            <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ procurement.procurement_ref.procurement_id }}"data-vendor="{{ group.vendor_id }}"
+                               style="line-height: 1.3;">
+                              
+                              <h5 class="fw-semibold" style="font-size: 1rem; margin-bottom: 2px;">
+                                {{ procurement.procurement_ref.procurement_type__Procurement_name }}
+                              </h5>
+                    
+                              <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                                {{ procurement.procurement_ref.procurement_id }}
+                              </span>
+                    
+                              {% if procurement.procurement_ref.procurement_title %}
+                                <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030; white-space: normal; word-break: break-word;">
+                                  {{ procurement.procurement_ref.procurement_title }}
+                                </p>
+                              {% endif %}
+                    
+                              <span><strong>Vendor:</strong> {{ group.vendor_name }}</span><br>
+                              <small class="text-dark" style="font-size: 0.8rem;">
+                                {{ procurement.date_created|date:"d-m-Y H:i:s" }}
+                              </small>
+                            </a>
+                          </li>
+                        {% endfor %}
+                      {% endfor %}
+                    
+                      {% elif request.path == '/ims/po/' %}
+                      <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                                    
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                      {% for procurement in procurements %}
+                        {% for group in procurement.vendor_groups %}
+                          <li id="procurement-{{ procurement.procurement_id }}"
+                              class="list-group-item"
+                            {% comment %} data for useres drop down in modal to select user to send po {% endcomment %}
+                            data-procurement="{{ procurement.procurement_id }}"
+                            data-ra="{% if procurement.ra_user %}{{ procurement.ra_user.id }}{% endif %}"
+                            data-ra-name="{% if procurement.ra_user %}{{ procurement.ra_user.username }}{% endif %}"
+
+                            data-imm="{% if procurement.imm_user %}{{ procurement.imm_user.id }}{% endif %}"
+                            data-imm-name="{% if procurement.imm_user %}{{ procurement.imm_user.username }}{% endif %}"
+
+                            data-aa="{% if procurement.aa_user %}{{ procurement.aa_user.id }}{% endif %}"
+                            data-aa-name="{% if procurement.aa_user %}{{ procurement.aa_user.username }}{% endif %}"
+
+                            data-acc="{% if procurement.account_user %}{{ procurement.account_user.id }}{% endif %}"
+                            data-acc-name="{% if procurement.account_user %}{{ procurement.account_user.username }}{% endif %}"
+
+                              style="background-color: {% if procurement.action_performed %} #f8f9fa {% else %} #CCE5F0 {% endif %};
+                                     border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px;
+                                     transition: background-color 0.3s ease, box-shadow 0.3s ease;
+                                     margin-top: 7px; padding: 8px 12px;">
+                    
+                            <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ procurement.procurement_id }}"data-vendor="{{ group.vendor_id }}"
+                               style="line-height: 1.3;">
+                              
+                              <h5 class="fw-semibold" style="font-size: 1rem; margin-bottom: 2px;">
+                                {{ procurement.procurement_type__Procurement_name }}
+                              </h5>
+                    
+                              <span style="color: black; font-weight: 600; display: block; margin-bottom: 2px;">
+                                {{ procurement.procurement_id }}
+                              </span>
+                    
+                              {% if procurement.procurement_title %}
+                                <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030; white-space: normal; word-break: break-word;">
+                                  {{ procurement.procurement_title }}
+                                </p>
+                              {% endif %}
+                    
+                              <span><strong>Vendor:</strong> {{ group.vendor_name }}</span><br>
+                              <small class="text-dark" style="font-size: 0.8rem;">
+                                {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                              </small>
+                            </a>
+                          </li>
+                        {% endfor %}
+                      {% endfor %}
+                      
+                          {# Sidebar for tracking page #}
+                        {% elif request.path == '/ims/tracking/' %}
+                        <div class="filter-box" style="margin-bottom: 10px;">
+                            <!-- Filter + Button -->
+                            <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                              <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                              </button>
+                              <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                Clear Filter
+                              </button>
+                            </div>
+
+                          </div>
+                          <!-- Date & Status Filter Modal -->
+                          <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                            <div class="modal-dialog modal-dialog-centered">
+                              <div class="modal-content shadow-lg rounded-3">
+                                <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                  <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                  <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body px-4 pt-4 pb-2">
+                                  <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                    <!-- Start Date -->
+                                    <div class="mb-3">
+                                      <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                      <input type="date" class="form-control" id="startDate" name="startDate">
+                                    </div>
+
+                                    <!-- End Date -->
+                                    <div class="mb-3">
+                                      <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                      <input type="date" class="form-control" id="endDate" name="endDate">
+                                    </div>
+
+                                    <!-- Status Dropdown -->
+                                    <div class="mb-3">
+                                      <label for="popupStatusFilter" class="form-label fw-semibold">Status</label>
+                                      <select id="popupStatusFilter" name="statusFilter" class="form-select form-select-sm"
+                                              style="border-radius: 20px; padding: 8px 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px; border: 1px solid #ccc;">
+                                        <option value="All">All</option>
+                                        <option value="Approval">Approval</option>
+                                        <option value="Reject">Reject</option>
+                                        <option value="Modified">Modified</option>
+                                      </select>
+                                    </div>
+                                    <div class="modal-footer px-4 pb-3">
+                                      <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                      <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                    </div>
+                                  </form>
+                                </div>
+
+                                
+                              </div>
+                            </div>
+                          </div>
+                          {% for procurement in procurements %}
+                            <li id="procurement-{{ procurement.procurement_id }}" class="list-group-item pr-id-item {% if procurement.all_stages_completed %}completed{% endif %}" style="background-color:#CCE5F0;border:1px solid #ddd; border-radius:4px;margin-bottom: 10px;transition:background-color 0.3s ease,box-shadow 0.3s ease; margin-top:7px;">
+                                <a href="#" class="view-pr-id text-decoration-none text-dark d-block" data-id="{{ procurement.procurement_id }}" style="text-decoration: none; color: inherit; display: block;">
+                             
+                                  <div class="pr-id-container">
+                                    <div class="pr-id prshow" style="font-weight: 500;color: black;">{{ procurement.procurement_id }}</div>
+                                          {% if procurement.procurement_title %}
+                                    <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030; white-space: normal; word-break: break-word;">
+                                      {{ procurement.procurement_title }}
+                                    </p>
+                                  {% endif %}
+                                    <div  class="datetimeshow pr-date" style="font-size: 11px; color: black;">{{ procurement.created_datetime }}</div>
+                                  </div>
+                                 
+                                </a>
+                              
+                            </li>
+                            
+                    
+                          {% endfor %}
+                        {% elif  request.path == '/ims/returned/pr/' %}
+                          {% for procurement in rejected_prs %}
+                          <li id="procurement-{{ procurement.id }}" class="list-group-item"
+                              style="background-color: {% if procurement.action_performed %} #f8f9fa{% else %}#CCE5F0{% endif %}; 
+                                    border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top:7px;padding:9px;">
+                              <a href="#" class="view-pr-id" data-id="{{ procurement.procurement_id }}" 
+                                style="text-decoration: none; color: inherit; display: block;">
+                                  <div class="prshow" style="font-weight: 500; color:black">
+                                      {{ procurement.procurement_id }}
+                                    
+                                  </div>
+                                   {% if procurement.procurement_title %}
+                                    <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030; white-space: normal; word-break: break-word;">
+                                      {{ procurement.procurement_title }}
+                                    </p>
+                                  {% endif %}
+                                  <div class="datetimeshow" style=" color: black">
+                                      {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                                  </div>
+                                 
+                              </a>
+                          </li>
+                          {% endfor %}
+                         {% elif  request.path == '/ims/payments/' %}
+                        
+                          <div class="filter-box" style="margin-bottom: 10px;">
+                            <label for="statusFilter" style="font-weight: 600; font-size: 14px;">Filter by Project</label>
+                            <select id="statusFilter" class="form-select form-select-sm"
+                                          style="border-radius: 20px; padding: 8px 14px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); font-size: 14px; border: 1px solid #ccc;">
+                                <option value="all">All</option>
+                                {% for project in projects %}
+                                  <option value="{{ project.project_id }}">{{ project.project_id }} - {{ project.name }}</option>
+                                {% endfor %}
+                            </select>
+                          </div>
+                          {% for procurement in procurements %}
+                            <li id="procurement-{{ procurement.procurement_id }}"
+                                data-project-id="{{ procurement.project.project_id }}"
+                                class="list-group-item"
+                                style="background-color: {% if procurement.action_performed %}#f8f9fa{% else %}#CCE5F0{% endif %}; 
+                                      border: 1px solid #ddd; 
+                                      border-radius: 4px; 
+                                      margin-bottom: 10px; 
+                                      margin-top:7px;">
+                              <a href="#" class="view-pr-id" data-id="{{ procurement.procurement_id }}"
+                                style="text-decoration: none; color: inherit; display: block;">
+                                
+                                <div class="prshow" style="font-weight: 500;  color: black;">
+                                  {{ procurement.procurement_id }}
+                                </div>
+                                <div class="datetimeshow" style="color: black;">
+                                  {{ procurement.datetime|date:"d-m-Y H:i:s" }}
+                                </div>
+                              </a>
+                            </li>
+                          {% endfor %}
+                          {% elif request.path == '/ims/invoice_page/' %}
+                            <div class="filter-box" style="margin-bottom: 10px;">
+                                <!-- Filter + Button -->
+                                <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                                  <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                    <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                                  </button>
+                                  <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                    Clear Filter
+                                  </button>
+                                </div>
+
+                              </div>
+                              <!-- Date & Status Filter Modal -->
+                              <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                                <div class="modal-dialog modal-dialog-centered">
+                                  <div class="modal-content shadow-lg rounded-3">
+                                    <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                      <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body px-4 pt-4 pb-2">
+                                      <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                        <!-- Start Date -->
+                                        <div class="mb-3">
+                                          <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                          <input type="date" class="form-control" id="startDate" name="startDate">
+                                        </div>
+
+                                        <!-- End Date -->
+                                        <div class="mb-3">
+                                          <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                          <input type="date" class="form-control" id="endDate" name="endDate">
+                                        </div>
+
+                                      
+                                        <div class="modal-footer px-4 pb-3">
+                                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                          <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply</button>
+                                        </div>
+                                      </form>
+                                    </div>
+
+                                    
+                                  </div>
+                                </div>
+                              </div>
+                              {% for item in po_data %}
+                              
+                                  <li id="procurement-{{ item.procurement_id }}"
+                                      class="list-group-item po-sidebar-item"
+                                      data-poid="{{ item.poid }}"
+                                      data-procurement-id="{{ item.procurement_id }}"
+                                      style="background-color: {% if procurement.action_performed %}#f8f9fa{% else %}#CCE5F0{% endif %}; 
+                                          border: 1px solid #ddd; 
+                                          border-radius: 4px; 
+                                          margin-bottom: 10px; 
+                                          margin-top:7px;">
+                                   {% if item.poid %}
+                                    <div style="font-weight: 500; color: black;">
+                                      <strong>PO ID:</strong> {{ item.poid }}
+                                    </div>
+                                  {% endif %}
+                                    <div style="font-weight: 500;  color: black;">
+                                      <strong>PR ID:</strong> {{ item.procurement_id }}
+                                    </div>
+                                      {% if item.procurement_title %}
+                                          <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030; white-space: normal; word-break: break-word;">
+                                              {{ item.procurement_title }}
+                                          </p>
+                                      {% endif %}
+                                    <div class="datetimeshow" style="color: black;">
+                                      {{ item.datetime|date:"d-m-Y H:i:s" }}
+                                    </div>
+                                    {% if item.pr_events == "Online_order" %}
+                                    <span class="badge bg-success">Online Order</span>
+                                  {% else %}
+                                    <span class="badge bg-primary">Purchase Order</span>
+                                  {% endif %}
+                                  </li>
+                              {% empty %}
+                                  <li class="list-group-item" style="text-align: center; color: #777;">
+                                      No Draft Purchase Orders available.
+                                  </li>
+                              {% endfor %}
+                          
+
+                              {% elif request.path == '/ims/invoice_page/' %}
+                            <div class="filter-box" style="margin-bottom: 10px;">
+                                <!-- Filter + Button -->
+                                <div class="text-center mb-3 d-flex justify-content-center gap-2" style="gap: 10px; margin-top: 10px;">
+                                  <button type="button" class="btn btn-sm filter-btn" data-bs-toggle="modal" data-bs-target="#dateFilterModal" style="background-color:#007080 !important; color: white !important;"  >
+                                    <i class="fas fa-filter" style="padding: 3px;"></i> Filter
+                                  </button>
+                                  <button type="button" class="btn btn-sm filter-btn" onclick="window.location.href = window.location.pathname;" style="background-color:#007080 !important; color: white !important;">
+                                    Clear Filter
+                                  </button>
+                                </div>
+
+                              </div>
+                              <!-- Date & Status Filter Modal -->
+                              <div class="modal fade" id="dateFilterModal" tabindex="-1" aria-labelledby="dateFilterModalLabel" aria-hidden="true" >
+                                <div class="modal-dialog modal-dialog-centered">
+                                  <div class="modal-content shadow-lg rounded-3">
+                                    <div class="modal-header bg-primary text-white" style="background-color:#007080 !important;">
+                                      <h5 class="modal-title" id="dateFilterModalLabel" >PR Generated Date</h5>
+                                      <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body px-4 pt-4 pb-2">
+                                      <form id="dateFilterForm" method="get" action="" class="needs-validation" novalidate>
+                                        <!-- Start Date -->
+                                        <div class="mb-3">
+                                          <label for="startDate" class="form-label fw-semibold">Start Date</label>
+                                          <input type="date" class="form-control" id="startDate" name="startDate">
+                                        </div>
+
+                                        <!-- End Date -->
+                                        <div class="mb-3">
+                                          <label for="endDate" class="form-label fw-semibold">End Date</label>
+                                          <input type="date" class="form-control" id="endDate" name="endDate">
+                                        </div>
+
+                                      
+                                        <div class="modal-footer px-4 pb-3">
+                                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" style="background-color:#007080 !important;">Close</button>
+                                          <button type="submit" class="btn btn-primary" style="background-color:#007080 !important;">Apply Filter</button>
+                                        </div>
+                                      </form>
+                                    </div>
+
+                                    
+                                  </div>
+                                </div>
+                              </div>
+                              {% for item in po_data %}
+                              
+                                  <li id="procurement-{{ item.procurement_id }}"
+                                      class="list-group-item po-sidebar-item"
+                                      data-poid="{{ item.poid }}"
+                                      data-procurement-id="{{ item.procurement_id }}"
+                                      style="background-color: {% if procurement.action_performed %}#f8f9fa{% else %}#CCE5F0{% endif %}; 
+                                          border: 1px solid #ddd; 
+                                          border-radius: 4px; 
+                                          margin-bottom: 10px; 
+                                          margin-top:7px;">
+                                    <div style="font-weight: 500; color: black;">
+                                      <strong>PO ID:</strong> {{ item.poid }}
+                                    </div>
+                                    <div style="font-weight: 500;  color: black;">
+                                      <strong>PR ID:</strong> {{ item.procurement_id }}
+                                    </div>
+                                      {% if item.procurement_title %}
+                                          <p style="font-size: 0.85rem; margin: 0 0 4px 0; color: #303030; white-space: normal; word-break: break-word;">
+                                              {{ item.procurement_title }}
+                                          </p>
+                                      {% endif %}
+                                    <div class="datetimeshow" style="color: black;">
+                                      {{ item.datetime|date:"d-m-Y H:i:s" }}
+                                    </div>
+                                  </li>
+                              {% empty %}
+                                  <li class="list-group-item" style="text-align: center; color: #777;">
+                                      No Draft Purchase Orders available.
+                                  </li>
+                              {% endfor %}
+
+                            {% endif %} 
+                        </ul>
+                
+                
+                </div>
+              </div>
+              <div class="col-md-10"  >
+                <div class="custom-scroll">
+                    {% block previewcontent %}
+                    {% endblock %}
+                </div>
+              </div>
+            </div>
+ 
+        {% endif %}
+      
+      </div>
+      
+
+ 
+  <!-- Footer Section -->
+  <footer class="footer fixed-bottom text-center" style="background-color:#469da3 !important;">
+    <div class="row">
+      <div class="col-12 text-center">
+        <p class="footer-text" style="font-size:0.9rem;">
+          <strong>Meslova Systems Pvt. Ltd - 2025</strong>
+          {% comment %} All rights reserved -<strong>Meslova Systems</strong> Copyright &copy; <b><script>document.write(new Date().getFullYear());</script></b> {% endcomment %}
+        </p>
+        
+      </div>
+    </div>
+  </footer>
+
+</body>
+<script>
+const sidebar = document.getElementById("sidebar");
+const overlay = document.getElementById("sidebarOverlay");
+
+document.addEventListener('DOMContentLoaded', function () {
+  const form = document.getElementById('dateFilterForm');
+  if (!form) return;
+
+  form.addEventListener('submit', function (e) {
+    const startDate = document.getElementById('startDate').value;
+    const endDate = document.getElementById('endDate').value;
+    const status = document.getElementById('statusFilter').value;
+
+    // ✅ Prevent submission if all are empty or status is 'all'
+    if (!startDate && !endDate && (status === 'all' || !status)) {
+      e.preventDefault();
+      showAlert('Please select at least one filter — Start Date, End Date, or Status.');
+      return;
+    }
+    
+
+    // ✅ Optional: Close modal before reload
+    const modal = bootstrap.Modal.getInstance(document.getElementById('dateFilterModal'));
+    if (modal) modal.hide();
+
+    // ✅ Allow normal form submission (Django GET handles it)
+  });
+
+  // ✅ Preserve filter values when page reloads (based on URL params)
+  const params = new URLSearchParams(window.location.search);
+  const startDate = params.get('startDate');
+  const endDate = params.get('endDate');
+  const statusFilter = params.get('popupStatusFilter');
+
+  if (startDate) document.getElementById('startDate').value = startDate;
+  if (endDate) document.getElementById('endDate').value = endDate;
+  if (statusFilter) document.getElementById('popupStatusFilter').value = statusFilter;
+
+  // ✅ Clear filters only when user clicks the "Clear Filter" button (not on modal open)
+  const clearBtn = document.querySelector('.filter-btn[onclick*="window.location.href"]');
+  if (clearBtn) {
+    clearBtn.addEventListener('click', () => {
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      document.getElementById('popupStatusFilter').value = 'All';
+    });
+  }
+});
+
+
+/*
+document.addEventListener('DOMContentLoaded', function () {
+  const procurementItems = document.querySelectorAll('#procurementSidebar > li');
+
+  // Calculate date 45 days ago from now
+  const now = new Date();
+  const cutoffDate = new Date();
+
+  cutoffDate.setDate(now.getDate()-45);
+  cutoffDate.setHours(0, 0, 0, 0);
+
+  procurementItems.forEach(item => {
+    const dateElement = item.querySelector('small');
+    if (!dateElement) return;
+
+    // Your date format is "dd-mm-yyyy hh:mm:ss"
+    const rawDateText = dateElement.textContent.trim();
+    const [datePart, timePart] = rawDateText.split(' ');
+    if (!datePart || !timePart) return;
+
+    const [day, month, year] = datePart.split('-');
+    if (!day || !month || !year) return;
+
+    // Construct ISO format date string for JS Date constructor
+    const isoDateStr = `${year}-${month}-${day}T${timePart}`;
+
+    const itemDate = new Date(isoDateStr);
+
+    // If the item's date is before cutoffDate, hide it
+    if (itemDate < cutoffDate) {
+      item.style.display = 'none';
+    } else {
+      item.style.display = '';
+    }
+  });
+});*/
+
+document.getElementById("openSidebarBtn").addEventListener("click", function () {
+    sidebar.style.left = "0px";
+    overlay.style.display = "block";
+});
+
+overlay.addEventListener("click", function () {
+    sidebar.style.left = "-200px";
+    overlay.style.display = "none";
+});
+</script>
+
+  <!-- Custom Scripts -->
+<script>
+
+  var myrole = "{{request.session.active_role|safe}}"
+  console.log("myrole-->"+myrole)
+  
+  function showLoader() {
+      $('#loader').css('display', 'flex');
+  }
+  
+  function hideLoader() {
+      $('#loader').hide();
+  }
+  function resetProcurementFilter() {
+    // Show all procurement items
+    const items = document.querySelectorAll('#procurementSidebar > li');
+    items.forEach(item => {
+      item.style.display = '';
+    });
+
+    // Clear date inputs
+    const startDateInput = document.getElementById('startDate');
+    const endDateInput = document.getElementById('endDate');
+    if (startDateInput) startDateInput.value = '';
+    if (endDateInput) endDateInput.value = '';
+
+    // Also clear status filter if needed
+    const statusFilter = document.getElementById('statusFilter');
+    if (statusFilter) statusFilter.value = 'all';
+  }
+
+  function setSidebarHeight() {
+      const heroHeight = document.querySelector('.hero_area').offsetHeight;
+
+      // if(document.querySelector('.sidebar')) {  
+      //  const element = document.querySelector('.sidebar');
+      //  element.style.height = (heroHeight-100) + 'px';
+      // }
+      if (window.innerWidth  > 768){
+       $(".main-content").css("overflow","hidden")
+      const customscroll1 = document.querySelector('.custom-scroll');
+      customscroll1.style.height = (heroHeight-93) + 'px';
+      }else{
+        const customscroll1 = document.querySelector('.custom-scroll');
+      customscroll1.style.height = (heroHeight-95) + 'px';
+         $(".main-content").css("overflow","auto")
+      }
+  }
+  
+  // Set on load
+  setSidebarHeight();
+  // Update on resize
+  window.addEventListener('resize', setSidebarHeight)
+
+
+
+  function formatDate(date) {
+    const d = new Date(date);
+    const day = d.getDate().toString().padStart(2, '0'); // Ensure day is two digits
+    const month = (d.getMonth() + 1).toString().padStart(2, '0'); // Ensure month is two digits
+    const year = d.getFullYear();
+    return `${day}-${month}-${year}`;
+  }
+ // Function to format date and time to dd-mm-yyyy hh:mm:ss
+  function formatDateTime(datetime) {
+      const d = new Date(datetime);
+      const day = d.getDate().toString().padStart(2, '0'); // Ensure day is two digits
+      const month = (d.getMonth() + 1).toString().padStart(2, '0'); // Ensure month is two digits
+      const year = d.getFullYear();
+
+      const hours = d.getHours().toString().padStart(2, '0'); // Ensure hours are two digits
+      const minutes = d.getMinutes().toString().padStart(2, '0'); // Ensure minutes are two digits
+      const seconds = d.getSeconds().toString().padStart(2, '0'); // Ensure seconds are two digits
+
+      return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+  }
+
+
+document.addEventListener('DOMContentLoaded', function () {
+  
+  const form = document.getElementById('dateFilterForm');
+  if (!form) return;
+
+  form.addEventListener('submit', function (e) {
+    showLoader();
+    // REMOVE e.preventDefault(); to allow backend GET request
+    // e.preventDefault();
+
+    const startDateInput = document.getElementById('startDate').value;
+    const endDateInput = document.getElementById('endDate').value;
+    const statusFilter = document.getElementById('popupStatusFilter').value;
+
+    // Simple validation
+    console.log(statusFilter,startDateInput,endDateInput)
+    if ((statusFilter === 'All' || statusFilter === 'Approval' || statusFilter === 'Reject' || statusFilter === 'Modified') && !startDateInput && !endDateInput) {
+      e.preventDefault();
+      hideLoader();
+      showAlert('Please select a Start or End Date.');
+      return;
+    }
+    if (!startDate && !endDate) {
+      e.preventDefault();
+      hideLoader();
+
+      showAlert('Please select at least a Start Date or an End Date.');
+      return;
+    }
+
+    // Let the form submit naturally to Django (via GET)
+  });
+});
+
+
+
+
+
+  $(document).ready(function () {
+    $("#recommendModal").draggable({
+        handle: ".modal-header"
+    });
+  });
+  $(document).ready(function () {
+    $("#rejectModal").draggable({
+        handle: ".modal-header"
+    });
+  });
+
+
+  $(document).ready(function() {
+    
+    $('#prSearch').on('keyup', function(e) {
+      const searchText = $(this).val().toLowerCase();
+      let matchFound = false;
+  
+      $('#procurementSidebar .list-group-item').each(function() {
+        const prId = $(this).find('.view-pr-id').text().trim().toLowerCase();
+        if (prId.includes(searchText)) {
+          $(this).show();
+          matchFound = true;
+        } else {
+          $(this).hide();
+        }
+      });
+  
+      if (e.key === "Enter" && !matchFound && searchText !== '') {
+        
+        showAlert("PR ID is not available");
+        const typedValue = inputEl.val();
+        $(this).val('');   // Clear the search input
+        $('#procurementSidebar .list-group-item').show();  // Show all items again
+        inputEl.val(typedValue).focus();
+        
+      }
+      
+    });
+ 
+    $('#statusFilter').on('change', function () {
+        const selectedStatus = $(this).val();
+
+        $('#procurementSidebar .list-group-item').each(function () {
+            const statuses = ($(this).data('statuses') || '').toString().split(',');
+
+            if (selectedStatus === 'all' || statuses.includes(selectedStatus)) {
+                $(this).show();
+            } else {
+                $(this).hide();
+            }
+        });
+    });
+  });
+  
+
+  
+  function renderExpandableText(text, maxLength, suffix = '', showToggleLink = true) {
+    if (!text && !suffix) return '';
+    const isExpandable = text.length > maxLength;
+
+    let shortText, dotsHtml = '';
+
+    if (isExpandable) {
+      shortText = text.slice(0, maxLength);
+      dotsHtml = `<span class="dots-toggle" style="cursor:pointer;">...</span>`;
+    } else {
+      shortText = text;
+    }
+
+    return `
+      <div class="expandable-text">
+        <span class="short-text" style="word-break: break-word;background-color:transparent;">
+          ${escapeHtml(shortText)}${dotsHtml}
+        </span>
+        <span class="full-text" style="display:none; word-break: break-word;background-color:transparent;">
+          ${escapeHtml(text)}
+        </span>
+        <span class="always-visible-suffix">${suffix}</span>
+        ${isExpandable && showToggleLink ? '<a href="#" class="toggle-text">Show More</a>' : ''}
+      </div>
+    `;
+  }
+
+
+  // Simple HTML escape to avoid XSS issues if needed
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[m]));
+  }
+
+  document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('toggle-text')) {
+      // Show More / Show Less link for normal text
+      event.preventDefault();
+      const link = event.target;
+      const container = link.closest('.expandable-text');
+      const shortTextSpan = container.querySelector('.short-text');
+      const fullTextSpan = container.querySelector('.full-text');
+
+      if (link.textContent === 'Show More') {
+        shortTextSpan.style.display = 'none';
+        fullTextSpan.style.display = 'inline';
+        link.textContent = 'Show Less';
+      } else {
+        shortTextSpan.style.display = 'inline';
+        fullTextSpan.style.display = 'none';
+        link.textContent = 'Show More';
+      }
+    }
+    else if (event.target.classList.contains('dots-toggle')) {
+      // Toggle filename when clicking on dots only
+      const dotsSpan = event.target;
+      const container = dotsSpan.closest('.expandable-text');
+      const shortTextSpan = container.querySelector('.short-text');
+      const fullTextSpan = container.querySelector('.full-text');
+
+      const isExpanded = fullTextSpan.style.display === 'inline';
+
+      if (isExpanded) {
+        shortTextSpan.style.display = 'inline';
+        fullTextSpan.style.display = 'none';
+      } else {
+        shortTextSpan.style.display = 'none';
+        fullTextSpan.style.display = 'inline';
+      }
+    }
+  });
+  function formatDate(dateStr) {
+    if (!dateStr) return 'N/A';
+    const [year, month, day] = dateStr.split('-');
+    return `${day}-${month}-${year}`;
+}
+
+  document.querySelectorAll('.switch-role-item').forEach(item => {
+
+      item.addEventListener('click', function(e) {
+
+        e.preventDefault();
+        const role = this.dataset.role;
+        
+        
+    
+        fetch(`/switch-role/?role=${encodeURIComponent(role)}`)
+          .then(res => res.json())
+          .then(data => {
+       
+              
+            if (data.success) {
+            
+              // Redirect to the new dashboard
+              window.location.href = data.redirect_url;
+            } else {
+              showAlert('Failed to switch role');
+            }
+          })
+          .catch(() => {
+            document.body.removeChild(switchrole); // Remove loader in case of error
+            showAlert('Error switching role');
+          });
+      });
+  });
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll(".view-pr-id").forEach(button => {
+      button.addEventListener("click", () => {
+        document.getElementById("previewContent").scrollIntoView({
+          behavior: "smooth",
+          block: "start"
+        });
+      });
+    });
+
+    // Handle mobile select change
+    const mobilePrSelect = document.getElementById('mobilePrSelect');
+    if (mobilePrSelect) {
+      mobilePrSelect.addEventListener('change', function() {
+        if (this.value) {
+          // Trigger the same action as clicking a PR ID in desktop view
+          const event = new Event('click');
+          document.querySelector(`.view-pr-id[data-id="${this.value}"]`).dispatchEvent(event);
+        }
+      });
+    }
+  
+ 
+    const filter = document.getElementById('statusFilter');
+    const procurementItems = document.querySelectorAll('.list-group-item[data-project-id]');
+
+    filter?.addEventListener('change', function () {
+      const selectedProject = this.value;
+
+      procurementItems.forEach(item => {
+        const itemProjectId = item.getAttribute('data-project-id');
+        const shouldShow = selectedProject === 'all' || itemProjectId === selectedProject;
+        item.style.display = shouldShow ? 'block' : 'none';
+      });
+    });
+
+      
+      const dropdownButton = document.getElementById('profileDropdownButton');
+      const dropdownMenu = document.getElementById('profileDropdownMenu');
+     
+      if (dropdownButton && dropdownMenu) {
+        dropdownButton.addEventListener('click', function(e) {
+          e.stopPropagation();
+          dropdownMenu.classList.toggle('show');
+        });
+       
+        document.addEventListener('click', function() {
+          dropdownMenu.classList.remove('show');
+        });
+       
+        dropdownMenu.addEventListener('click', function(e) {
+          e.stopPropagation();
+        });
+      }
+      
+      // Initialize Bootstrap tooltips
+      var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+      var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+      });
+  });
+
+ 
+ // Create a Set to keep track of already notified updates, preventing duplicates
+ const notifiedEntries = new Set();
+ 
+ // Retrieve the last check timestamp from localStorage, or use epoch time (Jan 1, 1970) if not set
+ let lastCheckTimestamp = localStorage.getItem('lastCheckTimestamp') || new Date(0).toISOString();
+ console.log('Using lastCheckTimestamp:', lastCheckTimestamp);
+
+ /**
+  * Function to check the server for new updates since the last check.
+  * It sends a GET request to `/check_notification_status/` with the last check timestamp.
+  * For each new, unseen update, it triggers a browser notification.
+  */
+  function checkForNewNotificationEntries() {
+       // Send request to backend with the last check timestamp as query param
+       fetch(`/check_notification_status/?lastCheckTimestamp=${encodeURIComponent(lastCheckTimestamp)}`)
+           .then(response => response.json()) // Parse the JSON response
+           .then(data => {
+               let newUpdateCount = 0; // Counter for newly found updates
+
+               // Loop through each update returned by the server
+               data.updates.forEach(update => {
+                   // Generate a unique key for the update to track duplicates
+                   const entryKey = `${update.procurement_id}-${update.status}-${update.remarks}-${update.updated_at}-${update.remarktype}-${update.modified_pr}`;
+
+                   // If this update has not been notified yet
+                   if (!notifiedEntries.has(entryKey)) {
+                       notifiedEntries.add(entryKey); // Mark it as notified
+                       newUpdateCount++; // Increment counter for badge/title
+
+                       // Prepare the notification content
+                       const notificationBody = `\nFrom: ${update.username} (${update.status})\nStatus: ${update.remarktype}\nTime: ${update.updated_at}`;
+                       // If permission was already granted, show notification
+                       if (Notification.permission === 'granted') {
+                           const notification = new Notification(`Procurement ID: ${update.procurement_id}`, {
+                               body: notificationBody
+                           });
+
+                           // Focus the tab if the user clicks on the notification
+                           notification.onclick = () => { window.focus(); };
+                       }
+                       // If permission wasn't denied, request it from the user
+                       else if (Notification.permission !== 'denied') {
+                           Notification.requestPermission().then(permission => {
+                               if (permission === 'granted') {
+                                   const notification = new Notification(`Procurement ID: ${update.procurement_id}`, {
+                                       body: notificationBody
+                                   });
+                                   notification.onclick = () => { window.focus(); };
+                               }
+                           });
+                       }
+                   }
+               });
+
+               // Optional fallback: Show badge count in the browser tab title
+               if (newUpdateCount > 0) {
+                   document.title = `(${newUpdateCount}) New Updates`;
+               } else {
+                   // Reset the title if no new updates
+                   document.title = "IMM App";
+               }
+
+               // Save the current timestamp for the next check
+               const now = new Date().toISOString();
+               localStorage.setItem('lastCheckTimestamp', now); // Persist it
+               lastCheckTimestamp = now; // Update in-memory reference
+           })
+           .catch(err => console.error('Error during checkForNewEntries:', err)); // Handle fetch or parse errors
+   }
+  //  Run the checkForNewEntries function every 5 seconds (5000 ms)
+  //setInterval(checkForNewNotificationEntries, 5000);
+
+  document.addEventListener("DOMContentLoaded", function () {
+  const bell = document.getElementById("notification-bell");
+  const badge = document.getElementById("notification-count");
+  const dropdown = document.getElementById("notification-dropdown");
+  const itemList = document.getElementById("notification-items");
+
+  let notifications = []; // All notifications from backend
+    // url mapping for notifications
+  const linkMapping = {
+    'user|Returned PR': '/ims/returned/pr',
+    'user|Submitted PR - CST': '/ims/submittedpr',
+
+    'ra_user|PR Raised': '/ims/RA',
+    'ra_user|PR Modified': '/ims/RA',
+    'ra_user|Received PR - CST': '/ims/RA',
+    'ra_user|Returned PR': '/ims/retunedpr',
+    
+
+    'imm_user|PR Raised': '/ims/imm',
+    'imm_user|PR Modified': '/ims/imm',
+    'imm_user|Received PR': '/ims/imm',
+    'imm_user|Approved PR': '/ims/approvedpr',
+    'imm_user|Returned PR': '/ims/rejectedimm',
+    'imm_user|Negotiation Modified': '/ims/negotiation',
+    'imm_user|DPO': '/ims/dpo',
+    'imm_user|PO': '/ims/po',
+    'imm_user|Enquiry Approval': '/ims/enquiry-create',
+    'imm_user|Enquiry Generated': '/ims/enquiry-create',
+    'imm_user|Enquiry Modified': '/ims/enquiry-create',
+    'imm_user|CST': '/ims/comparative',
+    'imm_user| CST Modified': '/ims/comparative',
+    'imm_user|CST Generated': '/ims/comparative',
+    'imm_user|Negotiation': '/ims/negotiation',
+    'imm_user|Negotiation Returned': '/ims/negotiation',
+    'imm_user|DPO Returned': '/ims/dpo',
+
+   
+
+    'pa_user|CST Returned': '/ims/comparative',
+    'pa_user|Enquiry Returned': '/ims/enquiry-create',
+    'pa_user|Negotiation Returned': '/ims/negotiation',
+    'pa_user|DPO Returned': '/ims/dpo',
+    
+
+    'account_user|Received PR': '/ims/accounts',
+    'account_user|DPO Approval': '/ims/dpo_approval',
+    'account_user|Returned PR': '/ims/rejectedaccounts',
+    'account_user|DPO Returned': '/ims/dpo_approval',
+
+    'aa_user|Received PR': '/ims/AApr',
+    'aa_user|Negotiation': '/ims/AApr',
+    'aa_user|Negotiation Approval': '/ims/negotiation_approval',
+    'aa_user|DPO Approval': '/ims/dpo_acc_approval',
+  };
+
+  // to seggregate role based notifications
+  const roleToFieldMap = {
+    'Indentor': 'user',
+    'Recommending Authority': 'ra_user',
+    'IMM': 'imm_user',
+    'Purchase Assistant': 'pa_user',
+    'Accounts': 'account_user',
+    'Approving Authority': 'aa_user',
+    'CEO': 'ceo',
+  };
+
+  // fetch role from session and get the mapping
+  const myUserField = roleToFieldMap[myrole] || null;
+
+  // Update badge and notifications from WebSocket
+  function updateUI(data) {
+    notifications = data.notifications || [];
+
+    //  Count only notifications matching current role
+    const roleSpecific = myUserField
+      ? notifications.filter(n => n.user_field === myUserField)
+      : [];
+
+    if (roleSpecific.length > 0) {
+      badge.textContent = roleSpecific.length;
+      badge.classList.remove("d-none");
+    } else {
+      badge.classList.add("d-none");
+    }
+
+    // Store for dropdown usage
+    bell.dataset.notifications = JSON.stringify(roleSpecific);
+  }
+
+  // Bell click - show only role-specific notifications
+  bell.addEventListener("click", function () {
+    itemList.innerHTML = "";
+
+    if (!myUserField) {
+      itemList.innerHTML = "<li class='text-muted'>No role selected</li>";
+      dropdown.style.display = "block";
+      return;
+    }
+
+    const relevant = notifications.filter(n => n.user_field === myUserField);
+
+    if (relevant.length === 0) {
+      itemList.innerHTML = "<li class='text-muted'>No New notifications</li>";
+    } else {
+      const grouped = {};
+
+      relevant.forEach(notif => {
+        const key = `${notif.user_field}|${notif.action_required}`;
+        if (!grouped[key]) {
+          grouped[key] = {
+            count: 1,
+            action: notif.action_required,
+            link: linkMapping[key] || "#"
+          };
+        } else {
+          grouped[key].count += 1;
+        }
+      });
+
+      Object.entries(grouped).forEach(([key, data]) => {
+        const item = document.createElement("li");
+        item.classList.add("mb-2", "border-bottom", "pb-2");
+
+        item.innerHTML = `
+          <a href="${data.link}" class="notification-link">
+            <strong>${data.action} (${data.count})</strong>
+          </a>
+        `;
+        itemList.appendChild(item);
+      });
+    }
+
+    dropdown.style.display = dropdown.style.display === "none" ? "block" : "none";
+  });
+
+  // Click outside closes dropdown
+  document.addEventListener("click", function (event) {
+    if (!dropdown.contains(event.target) && !bell.contains(event.target)) {
+      dropdown.style.display = "none";
+    }
+  });
+
+
+    // Function to remove notification after user takes action
+    window.updateNotificationCount = function (procurementId) {
+      const notifIndex = notifications.findIndex(
+        n => String(n.procurement_id).trim() === String(procurementId).trim()
+      );
+
+      if (notifIndex === -1) {
+        console.warn(`No notification found for procurementId: ${procurementId}`);
+        return;
+      }
+
+      const removed = notifications.splice(notifIndex, 1)[0];
+      const actionRequired = removed.action_required;
+
+      // Update dropdown UI
+      const items = itemList.querySelectorAll("li");
+      for (const li of items) {
+        const strong = li.querySelector("strong");
+        const span = li.querySelector("span");
+
+        if (strong && span && strong.textContent.trim() === actionRequired) {
+          let count = parseInt(span.textContent, 10);
+          if (!isNaN(count) && count > 0) {
+            count -= 1;
+            if (count === 0) {
+              li.remove();
+            } else {
+              span.textContent = count;
+            }
+          }
+          break;
+        }
+      }
+
+      // Update badge count
+      let badgeCount = parseInt(badge.textContent, 10);
+      if (!isNaN(badgeCount) && badgeCount > 0) {
+        badgeCount -= 1;
+        badge.textContent = badgeCount;
+        if (badgeCount === 0) {
+          badge.classList.add("d-none");
+        }
+      }
+    };
+
+    // WebSocket integration
+    const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+    const socketUrl = `${protocol}://${window.location.host}/ws/notifications/`;
+    const notificationsocket = new WebSocket(socketUrl);
+
+    notificationsocket.onmessage = function (event) {
+        try {
+            console.log("Raw WebSocket data:", event.data);  // Debugging
+            const data = JSON.parse(event.data);
+            updateUI(data);
+        } catch (err) {
+            console.error("WebSocket message parse error:", err);
+        }
+    };
+
+    notificationsocket.onopen = function () {
+      console.log("Notification WebSocket connected.");
+    };
+
+    notificationsocket.onclose = function () {
+      console.warn("Notification WebSocket disconnected.");
+    };
+
+    notificationsocket.onerror = function (error) {
+      console.error("Notification WebSocket error:", error);
+    };
+
+    
+    // calendar events
+    const calendarOverlay = document.getElementById('calendarOverlay');
+    const calendarPopup = document.getElementById('calendarPopup');
+    const openCalendarBtn = document.getElementById('openCalendarBtn');
+    const closeCalendarBtn = document.getElementById('closeCalendarBtn');
+    const calendarEl = document.getElementById('calendar');
+
+    let calendarLoaded = false;
+    let calendar
+    
+    // Open Calendar
+    openCalendarBtn?.addEventListener('click', (e) => {
+      e.preventDefault();
+
+      // Show overlay and popup
+      calendarOverlay.classList.add('active');
+      calendarOverlay.removeAttribute('hidden');
+      calendarPopup.classList.add('active');
+      calendarPopup.removeAttribute('hidden');
+
+      // Load calendar only once
+      if (!calendarLoaded && calendarEl) {
+        calendar = new FullCalendar.Calendar(calendarEl, {
+          initialView: 'dayGridMonth',
+          height: 'auto',
+          headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,listMonth'
+          },
+          buttonText: {
+            today: 'Today',
+            month: 'Month',
+            list: 'List',
+          },
+            dayMaxEventRows: false, // if you're using scroll
+          events: function (fetchInfo, successCallback, failureCallback) {
+            fetch('/calendar')
+              .then(response => response.json())
+              .then(data => {
+              const events = data.map((item, index) => {
+                return {
+                  title: `<strong>Project: ${item.project_name}<br>PR ID: ${item.procurement_id}<br>Amount: ₹ ${item.amount}</strong>`,
+                  start: item.installment_date,
+                  allDay: true,
+                  backgroundColor: item.file_name !== ' ' ? '#28a745' : '#dc3545',
+                  borderColor: item.file_name !== ' ' ? '#28a745' : '#dc3545',
+                  textColor: '#fff'
+                };
+              });
+              successCallback(events);
+            })
+
+              .catch(error => {
+                console.error('Failed to load events:', error);
+                failureCallback(error);
+              });
+          },
+          eventContent: function (arg) {
+            const div = document.createElement('div');
+            div.innerHTML = arg.event.title;
+
+            // Apply text color based on view type
+            const viewType = arg.view.type;
+
+            if (viewType === 'dayGridMonth') {
+              div.style.color = '#fff'; // white for month view
+            } else if (viewType.startsWith('list')) {
+              div.style.color = '#000'; // black for list view
+            }
+
+            return { domNodes: [div] };
+          },
+          eventDidMount: function(info) {
+            if (info.el.closest('.fc-day-other')) {
+              info.el.style.opacity = '0.5';
+            }
+          }
+        });
+
+        calendar.render();
+        calendarLoaded = true;
+
+        
+    let isEditingMonth = false;
+    let isEditingYear = false;
+
+  function injectMonthYearTitleControls() {
+    const toolbarTitle = calendarEl.querySelector('.fc-toolbar-title');
+    if (!toolbarTitle) return;
+
+    const currentDate = calendar.getDate();
+    const currentMonth = currentDate.getMonth();
+    const currentYear = currentDate.getFullYear();
+
+    const monthNames = [
+      'January', 'February', 'March', 'April',
+      'May', 'June', 'July', 'August',
+      'September', 'October', 'November', 'December'
+    ];
+
+    // Create month dropdown
+    const monthSelect = document.createElement('select');
+    monthNames.forEach((month, index) => {
+      const option = document.createElement('option');
+      option.value = index;
+      option.textContent = month;
+      if (index === currentMonth) option.selected = true;
+      monthSelect.appendChild(option);
+    });
+
+    // Create year dropdown
+    const yearSelect = document.createElement('select');
+    for (let y = 1980; y <= 2050; y++) {
+      const option = document.createElement('option');
+      option.value = y;
+      option.textContent = y;
+      if (y === currentYear) option.selected = true;
+      yearSelect.appendChild(option);
+    }
+
+    // Style the dropdowns
+    [monthSelect, yearSelect].forEach(styleDropdown);
+
+    // Handle changes
+    monthSelect.addEventListener('change', () => {
+      const newDate = new Date(parseInt(yearSelect.value), parseInt(monthSelect.value), 1);
+      calendar.gotoDate(newDate);
+    });
+
+    yearSelect.addEventListener('change', () => {
+      const newDate = new Date(parseInt(yearSelect.value), parseInt(monthSelect.value), 1);
+      calendar.gotoDate(newDate);
+    });
+
+    // Clear toolbar title and append dropdowns
+    toolbarTitle.textContent = '';
+    toolbarTitle.appendChild(monthSelect);
+    toolbarTitle.appendChild(document.createTextNode(' '));
+    toolbarTitle.appendChild(yearSelect);
+  }
+
+  function styleDropdown(select) {
+    Object.assign(select.style, {
+      fontSize: '1rem',
+      padding: '4px 8px',
+      marginRight: '5px',
+      border: '2px solid #ccc',
+      borderRadius: '6px',
+      backgroundColor: '#f8f9fa',
+      height: 'auto',
+      fontWeight: '600',
+      color: '#333',
+      cursor: 'pointer'
+    });
+  }
+
+
+  // Inject custom title controls after initial render
+  setTimeout(injectMonthYearTitleControls, 0);
+
+  // Also inject on date navigation
+  calendar.setOption('datesSet', function () {
+    injectMonthYearTitleControls();
+    // Highlight today explicitly
+    const todayCell = calendarEl.querySelector('.fc-day-today');
+  });
+
+      } else if (calendar) {
+      // Reset to today on reopen
+      calendar.today();
+    }
+    });
+
+    // Close on "X" button
+    closeCalendarBtn?.addEventListener('click', () => {
+      calendarOverlay.classList.remove('active');
+      calendarOverlay.setAttribute('hidden', true);
+      calendarPopup.classList.remove('active');
+      calendarPopup.setAttribute('hidden', true);
+    });
+
+    // Close on outside click
+    calendarOverlay?.addEventListener('click', () => {
+      closeCalendarBtn?.click();
+    });
+
+    
+  });
+
+
+
+  function showAlert(message) {
+    return Swal.fire({
+        html: `
+            <div style="
+                font-size: 28px;
+                color: #e6a500;
+                border-radius: 50%;
+                background: #fff8e1;
+                width: 60px;
+                height: 60px;
+                line-height: 60px;
+                margin: 0 auto 15px;
+                text-align: center;">
+                &#9888;
+            </div>
+            <div style="font-size: 18px;">${message}</div>`,
+        confirmButtonText: 'OK',
+        customClass: {
+            popup: 'custom-popup',
+            confirmButton: 'custom-confirm-btn'
+        },
+        buttonsStyling: false
+    });
+  }
+
+  function showSuccessAlert(message) {
+    return Swal.fire({
+        html: `
+            <div style="
+                font-size: 28px;
+                color: green;
+                border-radius: 50%;
+                background: #e6ffe6;
+                width: 60px;
+                height: 60px;
+                line-height: 60px;
+                margin: 0 auto 15px;
+                text-align: center;">
+                &#10004;
+            </div>
+            <div style="font-size: 18px;">${message}</div>`,
+        confirmButtonText: 'OK',
+        customClass: {
+            popup: 'custom-popup',
+            confirmButton: 'custom-confirm-btn'
+        },
+        buttonsStyling: false
+    });
+  }
+
+  function showWarningAlert(message) {
+    return Swal.fire({
+        html: `
+        <div style="
+                font-size: 28px; 
+                color: red; 
+                border-radius: 50%; 
+                background: #ffe6e6; 
+                width: 51px;
+                height: 50px;
+                line-height: 49px; 
+                margin: 0 auto 15px;
+                border: 3px solid red;
+                text-align: center;">
+                &#10060;
+            </div>
+            
+            <div style="font-size: 18px;">${message}</div>`,
+        confirmButtonText: 'OK',
+        customClass: {
+            popup: 'custom-popup',
+            confirmButton: 'custom-confirm-btn'
+        },
+        buttonsStyling: false
+    });
+  }
+
+  function showConfirmAlert(message) {
+    return Swal.fire({
+        html: `
+            <div style="
+                font-size: 28px; 
+                color: #007080; 
+                border-radius: 50%; 
+                background: #e0f7f9; 
+                width: 60px; 
+                height: 60px; 
+                line-height: 60px; 
+                margin: 0 auto 15px;
+                text-align: center;">
+                &#10067;
+            </div>
+            <div style="font-size: 18px;">${message}</div>`,
+        showCancelButton: true,
+        confirmButtonText: 'Yes',
+        cancelButtonText: 'No',
+        customClass: {
+            popup: 'custom-popup',
+            confirmButton: 'custom-confirm-btn',
+            cancelButton: 'custom-cancel-btn'
+        },
+        buttonsStyling: false
+    });
+  }
+  // function adjustFontSize() {
+  //   const zoom = Math.round(window.devicePixelRatio * 100); // Get zoom level percentage
+  //   const fontSize = 18; // Default font size (in px)
+  //   const defaultGap = -1.5; // Default gap (in rem or px)
+
+  //   // Adjust font size and gap based on zoom level
+  //   if (zoom > 130) {
+  //     // For 150% zoom, decrease font size and gap
+  //     document.querySelector('.navbar-nav').style.fontSize = (fontSize * 0.75) + 'px'; // 150% zoom
+  //     document.querySelector('.navbar-nav').style.gap = (defaultGap *1.15) + 'rem'; // Reduce gap
+  //   } else if (zoom = 100) {
+  //     // For 100% zoom, set to normal font size and gap
+  //     document.querySelector('.navbar-nav').style.fontSize = fontSize + 'px'; // 100% zoom
+  //     document.querySelector('.navbar-nav').style.gap = defaultGap + 'rem'; // Default gap
+  //   } else {
+  //     // For less than 100% zoom, increase font size and gap
+  //     document.querySelector('.navbar-nav').style.fontSize = (fontSize * 2.75) + 'px'; // Less than 100% zoom
+  //     document.querySelector('.navbar-nav').style.gap = (defaultGap * 1.25) + 'rem'; // Increase gap
+  //   }
+  // }
+
+  // window.addEventListener('resize', adjustFontSize); // Adjust on resize
+  // window.addEventListener('load', adjustFontSize); // Adjust on initial load
+    
+
+
+   
+ 
+</script>
+  {% block scripts %}
+  {% endblock scripts %}
+
+
+</html>

@@ -1,0 +1,89 @@
+
+<form method="post" action = "{{form_action_url}}"  enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <div class="row mt-2">
+    <div class="col-12 col-md-12 ">
+    <div class="row">
+        <div class="col-md-12 mb-2 mt-2">
+            <h6>Attachment Details Form</h6>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-floating mb-3">
+                {{ form.attachment_type }}
+                <label for="floatingCode" class="form-label" >{{ form.attachment_type.label_tag }}</label>
+                {% if form.attachment_type.errors %}
+                <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                    {% for error in form.attachment_type.errors %}
+                    <li class="text-danger">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {%endif%}
+            </div>
+        </div>
+    </div>
+    <div class="row">
+         <div class="col-md-4">
+            <div class="form-floating mb-3">
+                {{ form.status }}
+                <label for="floatingMetaKeyword" class="form-label">{{ form.status.label_tag }}</label>
+                {% if form.status.errors %}
+                <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                    {% for error in form.status.errors %}
+                    <li class="text-danger">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {%endif%}
+            </div>
+        </div>
+        
+    </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form- mb-3">
+                <label for="floatingName" class="form-label">{{ form.file.label_tag }}</label>
+                {{ form.file }}
+                
+                {% if form.file.errors %}
+                <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                    {% for error in form.file.errors %}
+                    <li class="text-danger">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {%endif%}
+            </div>
+        </div>
+        </div>
+    <div class="row">
+        <div class="col-md-4">
+            <div class="form-floating mb-3">
+                {{ form.notes }}
+                <label for="floatingName" class="form-label">{{ form.notes.label_tag }}</label>
+                {% if form.notes.errors %}
+                <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                    {% for error in form.notes.errors %}
+                    <li class="text-danger">{{ error }}</li>
+                    {% endfor %}
+                </ul>
+                {%endif%}
+            </div>
+        </div>
+        </div>
+        
+    
+    
+  
+
+<div class="col-md-4">
+        
+            <button type="button" id="openSaveModal" class="btn btn-sm app-btn-primary mt-2" ><i class="fa fa-save"></i> Save Attachment Details</button>
+        
+    </div>
+   </div> 
+    
+   </div>
+    </div>
+    </form>
+    

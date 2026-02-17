@@ -1,0 +1,131 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% load static %}
+{% block content %}
+<div class="row mb-2 mt-2">
+    <div class="col-12 col-md-12 text-end">
+        <div class="button-group">
+            <a href="{% url 'vendor-tax-create' vendor_obj.pk %}" class="btn btn-sm app-btn-primary">
+                <i class="fa fa-plus"></i> Add {{ model_name }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+
+        {% include 'vendor/vendor_menu.html' %}
+
+        <div class="app-card-body p-4">
+
+            {% if not form_status %}
+            <div class="row">
+                <div class="col-md-12">
+                    <h6>Tax Details</h6>
+                </div>
+            </div>
+            <div class="table-responsive mt-2">
+                <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Tax Number</th>
+                            <th>Tax Rate</th>
+                            <th>Vendor</th>
+                            <th>Country</th>
+                            <th>Category</th>
+                            <th>Others</th>
+                            <th>Status</th>
+                            <th>Last Modified</th>
+                            <th>Modified User</th>
+                            <th>Action</th> <!-- New Action Column -->
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if object_list %}
+                            {% for eachRow in object_list %}
+                            <tr>
+                                <td class="cell">
+                                    <span class="truncate">
+                                        <a href="{% url 'vendor-tax-view' vendor_obj.pk eachRow.pk %}">{{ eachRow.name }}</a>
+                                    </span>
+                                </td>
+                                <td class="cell"><span class="truncate">{{ eachRow.tax_number }}</span></td>
+                                <td class="cell"><span class="truncate">{{ eachRow.tax_rate }}</span></td>
+                                <td class="cell"><span class="truncate">{{ eachRow.vendor.company_name1 }}</span></td>
+                                <td class="cell"><span class="truncate">{% if eachRow.country %}{{ eachRow.country.name }}{% endif %}</span></td>
+                                <td class="cell"><span class="truncate">{{ eachRow.category }}</span></td>
+                                <td class="cell"><span class="truncate">{{ eachRow.other_tax_details }}</span></td>
+                                <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td>
+                                <td class="cell">{{ eachRow.last_modified_at }}</td>
+                                <td class="cell"><span class="truncate">{{ eachRow.updated_user.username }}</span></td>
+                                <td class="cell">
+                                    <!-- View button as icon -->
+                                    <a href="{% url 'vendor-tax-view' vendor_obj.pk eachRow.pk %}">
+                                        <span class="badge app-btn-primary"><i class="fa fa-eye"></i> View</span>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center">
+                                <h6>No Records found</h6>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if form_status %}
+            <div class="row">
+                <div class="col-md-12">
+                    {% include 'vendor/vendor_tax_form.html' %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock content %}
+
+{% block pagecss %}
+
+<link href="{% static 'default/css/select2.min.css' %}" rel="stylesheet" />
+<style>
+	.select2-container .select2-selection--single {
+		height: 58px;
+		padding-top: 1.625rem;
+		padding-bottom: .625rem;
+		border-color: #e0e0e0 !important;
+	}
+	.select2-selection__rendered {
+		line-height: 26px !important;
+	}
+	.select2-selection__arrow {
+		height: 36px !important;
+	}
+</style>
+
+{% endblock pagecss %}
+
+
+{% block pagejs %}
+
+<script src="{% static 'default/js/select2.min.js' %}"></script>
+<script>
+	$(document).ready(function () {
+		$('#id_country').select2({
+			placeholder: "Select a country",
+			allowClear: false ,// Optional: enables a clear button
+			width: '100%'
+		});
+	});
+</script>
+
+{% endblock pagejs %}

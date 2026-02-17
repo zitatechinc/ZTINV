@@ -1,0 +1,630 @@
+{% extends 'core/base.html' %}
+
+{% load project_filters %}
+{% block content %}
+
+    
+   
+   
+   <div class="row">
+      <div class="col-12 col-md-12">
+         <div class="app-card app-card-settings shadow-md" >
+            
+          <div class="app-card-body p-4">
+               
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                      <div class="accordion" id="accordionPanelsStayOpenExample">
+                        <div class="accordion-item" >
+                          <h2 class="accordion-header" id="panelsStayOpen-headingOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
+                             <div class="w-100 d-flex justify-content-between align-items-center">
+                      <div>
+                      <span><strong style="font-weight: bold !important;">Project</strong> : <strong> {{project.project.project_id}} ({{project.project.name}})</strong></span>
+
+                      </div>
+                      <!-- <div class="text-end">
+                       <span> <small>{{ph_obj.project.project_id}}  ({{ph_obj.project.name}})</small></span>
+                      </div> -->
+                      </div>
+                            </button>
+                          </h2>
+                          <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingOne">
+                            <div class="accordion-body" style="border: 1px solid rgba(0, 0, 0, .125) !important;">
+                               <table class="table table-bordered ">
+                                    <tbody>                                        
+                                        <tr>
+                                            <th class="td-1">Created On </th>
+                                            <th class="td-2">{{project.created_at | date:"M.d,Y H:i"}}</th>
+                                            <th class="td-1">Created by</th>
+                                            <th class="td-2">{{project.created_user.first_name}}</th>
+
+                                            <th class="td-1">Last Modified on </th>
+                                            <th class="td-2">{{project.updated_at| date:"M.d,Y H:i"}}</th>
+                                        </tr>
+                                        <tr>                                            
+                                            <th class="td-1">Last Modified by</th>
+                                            <th class="td-2">{{project.updated_user.first_name}}</th>
+                                            <th class="td-1">Project Code </th>
+                                            <th class="td-2">{{project.project.project_id}}</th>
+                                            <th class="td-1">Project Name</th>
+                                            <th class="td-2">{{project.project.name}}</th>
+                                        </tr>
+                                      
+                                        <!-- <tr>
+                                            <th class="td-1">Voucher Code </th>
+                                            <th class="td-2">{{project.project.project_id}}</th>
+                                            <th class="td-1">Status</th>
+                                            <th class="td-2"><span class="badge {{project.voucher_status|upper }}">{{project.status}}</span></th>
+                                        </tr> -->
+                                    </tbody>
+                                </table>
+                            </div>
+                          </div>
+                        </div>
+                        
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row mt-2">
+<form method="post">
+    {% csrf_token %}
+    <div class="row mt-1">
+                            <div class="col-md-6">
+                                
+                            </div>
+                            <div class="col-md-6">
+                                
+                                 <div class="mb-2 button-group" style="float:right;">
+                                    <button type="submit" id="saveChangesBtn" onclick="return confirmSave()" class="btn btn-success" {% if po_obj.po_status.name == 'CLOSED' %}disabled{% endif %}><i class="fa fa-save"></i> Save Changes</button>
+                                <button type="reset" onclick="return confirmReset()" class="btn btn-sm btn-default" ><i class="fa fa-undo"></i> Reset</button>
+                                <a   class="btn btn-sm btn-default" href="{% url 'home' %}" id="cancel-btn"><i class="fa fa-close"></i> Cancel</a>
+                                 </div>
+                            </div>
+
+    <div class="table-responsive">
+    <table class="table table-bordered text-center">
+        <thead class="table-light">
+            <tr class="td-3">
+                       <th>Issue Voucher History</th>
+                       <th>Project Component ID</th>
+                        <th>Component Type</th>
+                        <th>ID</th>
+                        <th>Total&nbsp;<small>(Qty)</small></th>
+                        <!-- <th>Component Cost</th> -->
+                        
+                        <th>Issue&nbsp;<small>(Qty)</small></th>
+                        <th>To Be Issued</th>
+                        
+
+                        
+                        <th width="7%">Being Issued&nbsp;<small>(Qty)</small></th>
+
+                        <th>Inventory QTY</th>
+
+                        <!-- <th>Customer</th> -->
+                        <th>Location</th>
+
+                        <th>Created Time</th>                        
+                        <th>Created User</th>
+                        <th>Updated Time</th>                        
+                        <th>Updated User</th>
+            </tr>
+        </thead>
+        <tbody>
+           {% for row in component_rows %}
+<tr class="{% if row.has_stock %}stock-ok{% else %}no-stock{% endif %}">
+    
+    <td>
+      <a href="#" data-bs-toggle="modal" 
+                                  data-bs-target="{% if row.type == 'BOM' %}#bomModal_{{ row.bom_item.pk }}{% else %}#componentModal_{{ row.component.pk }}{% endif %}">
+                                      <span class="badge app-btn-primary"><i class="fa fa-eye"></i></span>
+                                  </a>
+                                  <!-- Voucher History Modal -->
+                                  <div class="modal fade" id="{% if row.type == 'BOM' %}bomModal_{{ row.bom_item.pk }}{% else %}componentModal_{{ row.component.pk }}{% endif %}" tabindex="-1" aria-labelledby="{% if row.type == 'BOM' %}bomModal_{{ row.bom_item.pk }}{% else %}      componentModal_{{ row.component.pk }}{% endif %}" aria-hidden="true">
+                                    <div class="modal-dialog modal-xl">
+                                      <div class="modal-content">
+                                        <div class="modal-header">
+                                          <h5 class="modal-title" id="{% if row.type == 'BOM' %}bomModal_{{ row.bom_item.pk }}{% else %}componentModal_{{ row.component.pk }} {% endif %}"></h5>
+                                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                          <table class="table table-bordered text-center">
+                                            <thead>
+                                              <tr>
+                                                <th>Voucher</th>
+                                                <th>Voucher Component</th>
+                                                <th>Project Component</th>
+                                                <th>Product</th>
+                                                <th>Voucher Qty</th>
+                                                
+                              
+                                                <th>Created On</th>
+                                                <th>Created By</th>
+                                              </tr>
+                                            </thead>
+                                            <tbody>
+                                              {% if row.bom_item %}
+                                              {% for eachHisItem in row.component.getVCHistory %}
+                                                {% if eachHisItem.inventory.product == row.bom_item.product %}
+                                                  <tr>
+                                                    <td>{{ eachHisItem.voucherheader.code }}</td>
+                                                    <td>{{ eachHisItem.code }}</td>
+                                                    <td>{{ eachHisItem.projectcomponent.code }}</td>
+                                                    <td>{{ eachHisItem.inventory }}</td>
+                                                    <td>{{ eachHisItem.voucher_qty }}</td>
+                                                    
+                                                    <td>{{ eachHisItem.created_at }}</td>
+                                                    <td>{{ eachHisItem.created_user.first_name }}</td>
+                                                  </tr>
+                                               {%endif%}
+                                              {% endfor %}
+                                              {%else%}
+                                              {% for eachHisItem in row.component.getVCHistory %}
+                                                
+                                                  <tr>
+                                                    <td>{{ eachHisItem.voucherheader.code }}</td>
+                                                    <td>{{ eachHisItem.code }}</td>
+                                                    <td>{{ eachHisItem.projectcomponent.code }}</td>
+                                                    <td>{{ eachHisItem.inventory }}</td>
+                                                    <td>{{ eachHisItem.voucher_qty }}</td>
+                                                    
+                                                    <td>{{ eachHisItem.created_at }}</td>
+                                                    <td>{{ eachHisItem.created_user.first_name }}</td>
+                                                  </tr>
+                                               
+                                              {% endfor %}
+                                              {% endif %}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                        <div class="modal-footer">
+                                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                               
+    </td>
+    
+
+    <td>
+        <strong>{{ row.component.code }}</strong>
+    </td>
+
+    <td class="row_type" name="{{row.type}}">
+        {{ row.type }}
+    </td>
+    
+   <td class="text-center">
+    {% if row.type == 'BOM' %}
+                  <button type="button"
+        class="btn btn-sm btn-outline-primary"
+        onclick="toggleRow('row-{{ forloop.counter }}', this)">
+    <span class="toggle-icon">▶</span> {{row.component.bom.code}}
+</button>
+{% elif row.type == 'SERVICE' %}
+{{row.component.service}}
+{%else%}
+{{row.component.product}}
+{%endif%}
+
+                </td>
+              
+
+             
+
+    <td>
+     
+                    {{ row.component.component_qty }}
+               
+    </td>
+
+    {% if row.type == "BOM"  %}
+    <td>
+    {{ row.component.get_issued_bom_qty }}
+    </td>
+    {% else %}
+    <td>
+      {{ row.component.issued_qty }}
+    </td>
+    {% endif %}
+    
+     
+            <td class="balance-qty">
+              {% if row.type == 'BOM' %}
+               {{ row.component.balance_bom_qty }}
+             
+              {%else%}
+              {{ row.component.balance_qty }}
+              {%endif%}
+            </td>
+            
+    
+
+    <td>
+    
+        {% if row.type == 'BOM' %}
+    <input type="number"
+           class="form-control qty-input"
+           name="bom_qty_{{ row.component.id }}"
+           min="0"
+           max="{{ row.component.balance_qty }}"
+           placeholder="0"
+           {% if not row.has_stock %}disabled{% endif %}>
+{% else %}
+    <input type="number"
+           class="form-control qty-input"
+           name="issue_qty_{{ row.component.id }}"
+           min="0"
+           placeholder="0"
+           {% if not row.has_stock %}disabled{% endif %}>
+{% endif %}
+    </td>
+    <td class="inventory-qty">
+      {% if row.type == 'BOM' %}
+      N/A
+      {%else%}
+      {% if row.has_stock %} 
+            {{row.inventory.quantity|add:"0"}} 
+        {% else %}
+            <span class="badge bg-danger badge-stock">
+                ❌ No Stock
+            </span>
+        {% endif %}
+      {%endif%}
+    </td>
+     <td>{% if row.component.project.location %} {{ row.component.project.location }}({{ row.component.project.sub_location.code }}){%else%}{{ row.component.project.sub_location.code }}{% endif %} </td>
+            <td>{{ row.component.created_at | date:"M d,Y H:i"}}</td> 
+            <td>{{ row.component.created_user }}</td>
+            <td style="white-space: nowrap;">{{ row.component.updated_at|date:"M d,Y H:i" }}</td>
+            <td>{{ row.component.updated_user }}</td>
+</tr>
+<!-- ===================== DETAIL ROW ===================== -->
+ {% if row.type == 'BOM' %}
+              <tr id="row-{{ forloop.counter }}" class="detail-row">
+                <td colspan="13" class="p-0">
+
+                  <div class="detail-wrapper">
+                    <div class="p-3">
+
+                      <table class="table table-bordered table-sm mb-0">
+                        <thead>
+                          <tr>
+                            <th>Component ID</th>
+                            <th>Product ID</th>
+                            <th>Total(Qty)</th>
+                            <th>Issue(Qty)</th>
+                            <th>To be Issued</th>
+                            <th>Inventory Qty</th>
+                            <th>Created Time</th>
+                            <th>Created User</th>
+                            <th>Updated Time</th>
+                            <th>Updated User</th>
+                          </tr>
+                        </thead>
+
+                        <tbody>
+                          {% for eachbom in row.component.bom.getItems %}
+                          <tr class="bom-item-row"
+    data-bom-comp="{{ row.component.id }}"
+    data-per-bom="{{ eachbom.bom_quantity }}"
+    data-inventory="{{ eachbom.getInventory|default:0 }}">
+                            <td>{{ eachbom.code }}</td>
+                            <td>{{ eachbom.product.code }}</td>
+                            <td> {{ row.component.component_qty|multiply:eachbom.bom_quantity }}({{ eachbom.bom_quantity }}*{{ row.component.component_qty }})</td>
+                            <td>{{ row.component|issued_raw_qty:eachbom}}</td>
+                            <td> {{ row.component|bom_balance:eachbom}}</td>
+                            <td>{{ eachbom.getInventory }}</td>
+                            <td>{{ eachbom.created_at|date:"M d,Y H:i" }}</td>
+                            <td>{{ eachbom.created_user }}</td>
+                            <td>{{ eachbom.updated_at|date:"M d,Y H:i" }}</td>
+                            <td>{{ eachbom.updated_user }}</td>
+                          </tr>
+                          {% endfor %}
+                        </tbody>
+                      </table>
+
+                    </div>
+                  </div>
+
+                </td>
+              </tr>
+              {%endif%}
+{% endfor %}
+        </tbody>
+    </table>
+</div>
+   
+</form>
+</div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+
+
+{% block pagecss %}
+<style type="text/css">
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+  }
+
+  .sticky-col + .sticky-col {
+    left: 6px;
+  }
+
+  .table tbody tr.highlight-row {
+    background-color: #fff3cd !important;
+  }
+
+  .border-highlight-row {
+    border: 2px solid #e0e0e0 !important;
+  }
+
+  .border-highlight-row:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .input-error {
+    border: 2px solid red !important;
+    border-radius: 4px;
+    background-color: #ffecec;
+  }
+
+  table th,
+  table td {
+    vertical-align: middle;
+  }
+
+  .accordion-body table td.text-left-override {
+    text-align: left !important;
+  }
+
+  .accordion-body table th,
+  .accordion-body table td {
+    text-align: left !important;
+  }
+
+  .table-bordered.text-center th,
+  .table-bordered.text-center td {
+    text-align: center !important;
+  }
+
+  .table td input {
+    height: 32px;
+    padding: 4px 8px;
+    text-align: left;
+  }
+  .detail-row {
+  background: #f8f9fa;
+}
+
+.detail-wrapper {
+  max-height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: max-height 0.45s ease, opacity 0.3s ease;
+}
+
+.detail-wrapper.open {
+  max-height: 1200px;
+  opacity: 1;
+}
+
+.toggle-icon {
+  display: inline-block;
+  transition: transform 0.3s ease;
+}
+
+.toggle-icon.rotate {
+  transform: rotate(90deg);
+}
+
+.main-row:hover {
+  background: #f1f5f9;
+}
+
+</style>
+{% endblock %}
+    
+
+{% block pagejs %}
+<script type="text/javascript">
+    
+    $("#id_code").val('{{po_obj.code}}');
+
+
+</script>
+<script>
+  if (window.location.search.includes('po_id=')) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+$('input[type="number"]').on('input', function() {
+    if (parseFloat($(this).val()) < 0) {
+        $(this).val(''); // or set to 0
+    }
+});
+
+$(document).ready(function () {
+
+    const $saveBtn = $('#saveChangesBtn');
+    $saveBtn.prop('disabled', true);
+
+    // Listen to ALL qty inputs (issue, bom, misc)
+    $('input[name^="issue_qty_"], input[name^="bom_qty_"], input[name^="misc_qty_"]')
+.on('input', function () {
+
+    let enable = false;
+    let valid = true;
+    let errorMessages = [];
+
+    $('input[name^="issue_qty_"], input[name^="bom_qty_"], input[name^="misc_qty_"]')
+    .each(function () {
+
+        const $input = $(this);
+        const $row = $input.closest('tr');
+        const enteredQty = parseFloat($input.val()) || 0;
+        
+        // -------------------------
+        // NORMAL PRODUCT / SERVICE
+        // -------------------------
+        if ($input.attr('name').startsWith('issue_qty_')) {
+
+            const balance = parseFloat(
+                $row.find('.balance-qty').text()
+            ) || 0;
+            const invbalance = parseFloat(
+                $row.find('.inventory-qty').text()
+            ) || 0;
+
+            if (enteredQty > balance) {
+                valid = false;
+                errorMessages.push(
+                    `Issued quantity (${enteredQty}) cannot exceed available balance (${balance}).`
+                );
+            }
+
+            if (enteredQty > invbalance) {
+                valid = false;
+                errorMessages.push(
+                    `Issued quantity (${enteredQty}) cannot exceed inventory balance (${invbalance}).`
+                );
+            }
+        }
+
+        // -------------------------
+        // BOM
+        // -------------------------
+        // if ($input.attr('name').startsWith('bom_qty_')) {
+
+        //     const bomBalance = parseFloat(
+        //         $row.find('.balance-qty').text()
+        //     ) || 0;
+
+        //     if (enteredQty > bomBalance) {
+        //         valid = false;
+        //         errorMessages.push(
+        //             `BOM Issued quantity (${enteredQty}) cannot exceed balance (${bomBalance})`
+        //         );
+        //     }
+        // }
+        // -------------------------
+// BOM (COMPONENT + ITEM LEVEL)
+// -------------------------
+if ($input.attr('name').startsWith('bom_qty_')) {
+
+    const compId = $input.attr('name').replace('bom_qty_', '');
+
+    const bomBalance = parseFloat(
+        $row.find('.balance-qty').text()
+    ) || 0;
+
+    // Component-level check
+    if (enteredQty > bomBalance) {
+        valid = false;
+        errorMessages.push(
+            `BOM quantity (${enteredQty}) exceeds balance (${bomBalance})`
+        );
+    }
+
+    // 🔥 ITEM-LEVEL INVENTORY CHECK
+    $(`.bom-item-row[data-bom-comp="${compId}"]`).each(function () {
+
+        const perBomQty = parseFloat($(this).data('per-bom')) || 0;
+        const inventoryQty = parseFloat($(this).data('inventory')) || 0;
+
+        const requiredQty = enteredQty * perBomQty;
+
+        if (requiredQty > inventoryQty) {
+            valid = false;
+            errorMessages.push(
+                `BOM Item requires ${requiredQty}, but only ${inventoryQty} available`
+            );
+        }
+    });
+}
+
+
+        // //added extra condition
+        // const inventoryQty = parseFloat(
+        //         $row.find('.inventory-qty').text()
+        //     ) || 0;
+        // const alreadyIssued = parseFloat(
+        //         $row.find('.available-stock').text()
+        //     ) || 0;
+        // if (inventoryQty !== 0) {
+        //     if (enteredQty + alreadyIssued > inventoryQty) {
+        //         valid = false;
+        //         errorMessages.push(
+        //             `BOM Issued quantity (${enteredQty}) + already issued (${alreadyIssued}) cannot exceed available inventory (${inventoryQty})`
+        //         );
+        //     }
+        // }
+
+        if (enteredQty > 0) {
+            enable = true;
+        }
+    });
+
+    if (!valid && errorMessages.length) {
+        alert(errorMessages.join('\n'));
+    }
+
+    $saveBtn.prop('disabled', !(enable && valid));
+});
+
+});
+
+
+
+</script>
+
+
+<script>
+document.getElementById("cancel-btn").addEventListener("click", function (event) {
+    event.preventDefault(); // Prevent default link behavior
+
+    if (confirm("Do you want to cancel?")) {
+        // If confirmed, submit the form
+        // const form = this.closest("form");
+        // if (form) {
+        //     form.submit();
+        // }
+      window.location.href = "{% url 'voucher-search-create' %}";
+    } 
+    // else {
+    //     // Otherwise, go to home page
+    //     window.location.href = "{% url 'home' %}";
+    // }
+});
+</script>
+<script>
+  function confirmSave() {
+    return confirm("Are you sure you want to save these changes?");
+  }
+
+  function confirmReset() {
+    return confirm("Are you sure you want to reset the form? All entered data will be lost.");
+  }
+
+ 
+</script>
+<script>
+function toggleRow(id, btn) {
+  const row = document.getElementById(id);
+  if (!row) return;
+
+  const wrapper = row.querySelector(".detail-wrapper");
+  const icon = btn.querySelector(".toggle-icon");
+
+  wrapper.classList.toggle("open");
+  icon.classList.toggle("rotate");
+}
+</script>
+{% endblock %}

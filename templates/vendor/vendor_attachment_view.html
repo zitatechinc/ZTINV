@@ -1,0 +1,86 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="row mb-2 mt-2">
+    <div class="col-12 col-md-12 text-end">
+        <button type="button" class="btn btn-sm app-btn-primary edit-link"
+                data-url="{% url 'vendor-attachment-update' vendor_obj.pk object.pk %}">
+            <i class="fa fa-edit fa-lg"></i> Edit
+        </button>
+    </div>
+</div>
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+        <!-- Vendor Menu Inclusion -->
+        {% include 'vendor/vendor_menu.html' %}
+        
+        <div class="app-card-body p-4">
+            <!-- Attachment Information -->
+            <div class="row mb-4">
+                <h6 class="mb-3">Attachment Information</h6>
+                
+                <div class="col-md-4"><strong>Attachment Type :</strong> {{ object.attachment_type }}</div>
+                <div class="col-md-4"><strong>File :</strong> 
+                    <a href="/media/{{ object.file }}" target="_blank">{{ object.file }}</a>
+                </div>
+                <div class="col-md-4"><strong>Vendor  :</strong> {{ object.vendor.company_name1 }}</div>
+                <div class="col-md-4"><strong>Notes:</strong> {{ object.notes|default:"—" }}</div>
+                <div class="col-md-4 mb-1">
+                    <strong>Status :</strong>
+                    <span class="badge 
+                        {% if object.status == 1 %}
+                            bg-success
+                        {% elif object.status == 0 %}
+                            bg-warning
+                        {% else %}
+                            bg-danger
+                        {% endif %}
+                    ">
+                        {{ object.status_name }}
+                    </span>
+                </div>
+            </div>
+            <!-- Include Audit Log Information -->
+            {% include 'core/auditlog.html' %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block pagecss %}
+<style type="text/css">
+   label.required::after { display: none !important; }
+   label, strong { font-weight: bold !important; }
+</style>
+{% endblock %}
+
+{% block pagejs %}
+<!-- SweetAlert for Edit Button -->
+<!-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.edit-link').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const url = btn.getAttribute('data-url');
+            
+            Swal.fire({
+                text: 'Do you want to edit this attachment?',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Edit',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                width: 350
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

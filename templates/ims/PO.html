@@ -1,0 +1,1251 @@
+
+{% extends 'ims/index.html' %}
+{% load static %}
+
+{% block styleblock%}
+
+<head>
+    <!-- Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Other head elements -->
+</head>
+<style>
+    .list-group-item.active {
+        color:rgb(204, 60, 60);
+        background-color:rgb(223, 234, 64);
+    }
+    .search-box {
+        position: relative;
+        width: 100%;
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 10px; /* Space from the left edge */
+        top: 50%;
+        transform: translateY(-50%); /* Vertically center the icon */
+        color: #888; /* Optional: Change color of the icon */
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 8px 10px 8px 35px; /* Extra padding on the left for the icon */
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    /* For input fields */
+    input[readonly] {
+        pointer-events: none;
+    
+    }
+
+    /* For contenteditable fields */
+    [contenteditable="true"][readonly] {
+        pointer-events: none;
+    
+    }
+
+    /* To prevent text selection inside contenteditable */
+    [contenteditable="true"][readonly] {
+        user-select: none;
+    }
+
+    /* Optionally, change cursor to indicate it's not editable */
+    input[readonly], [contenteditable="true"][readonly] {
+        cursor: not-allowed;
+    }
+    .list-group-item.active {
+        
+        background-color: #00B2CC !important; /* Light blue for highlighting */
+        border: 3px solid white;
+        position: relative;
+        overflow: hidden;
+        animation: glow-shadow 2s linear infinite;
+    }
+    
+    @keyframes glow-shadow {
+        0% {
+        box-shadow: 0 0 5px 2px white;
+        }
+        50% {
+        box-shadow: 0 0 15px 5px white;
+        }
+        100% {
+        box-shadow: 0 0 5px 2px white;
+        }
+    }
+
+    table, th, td {
+        background-color: transparent !important;
+        border: 1px solid  rgba(17, 17, 17, 0.5);/* Border to make table edges visible if needed */
+    }
+    th, td {
+        background-color: transparent !important; /* Make table headers and cells transparent */
+        color: #fff; /* Text color for better readability if needed */
+    }
+    /* Optional: To make borders less intrusive */
+    tr, th {
+        border: 1px solid rgba(17, 17, 17, 0.5); /* Semi-transparent border */
+    }
+    #quoteInput {
+        background-color: transparent !important;
+        border: 1px solid rgba(17, 17, 17, 0.5);
+    }
+    {% comment %} .list-group-item.active {
+        border-left: 3px solid #0066c0 !important;
+        background-color: #e6f2ff !important;
+        box-shadow: 0 2px 8px rgba(0, 102, 192, 0.2);
+    } {% endcomment %}
+    .list-group-item:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .with-bg {
+        position: relative;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #fff;
+        overflow: hidden; /* ensures rounded corners apply to background image */
+      }
+      
+      .with-bg::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('{% static "images/priya.png" %}');
+        background-size: 60%;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0.6; /* same as your other container */
+        pointer-events: none; /* let clicks pass through */
+        z-index: 0;
+      }
+      
+      .with-bg > * {
+        position: relative;
+        z-index: 1; /* keep content above the background image */
+      }
+     
+     body{
+        overflow-y: hidden; 
+      }
+       
+
+</style>
+{% endblock %}
+{% block previewcontent%}
+    <div id="purchaseOrderFormContainer" >
+    <!-- Content will be injected here dynamically -->
+
+    <div id="approvalsContainer" class="mt-4" style="display:none; text-align:right;">
+  
+  <div id="approvalBoxes" class="d-flex flex-column align-items-end"></div>
+</div>
+    </div>          
+
+
+    <div class="modal fade myModal" id="recommendModal" tabindex="-1" role="dialog" aria-labelledby="recommendModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="recommendModalLabel"><b>Add Remarks</b></h5>
+                </div>
+                <div class="modal-body">
+                    <form id="recommendForm" enctype="multipart/form-data"
+                    >
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="remarks"><b>Remarks:</b></label>
+                            <textarea name="remarks" id="remarks" class="form-control" rows="4" required>Recommended</textarea>
+                        </div>
+                        <!--  Users Dropdown -->
+                       {% comment %}  <div class="form-group mt-3">
+                            {% comment %} <label for="forward_users"><b>Forward To:</b></label>
+                            <select id="forward_users" name="forward_users" class="form-control" multiple>
+                                <!-- options will be injected dynamically -->
+                            </select> 
+
+                           <label for="forward_users" class="form-label">Forward to Users</label>
+                            <select id="forward_users" class="form-select" multiple>
+                                {% for u in users %}
+                                <option value="{{ u.user.id }}">
+                                    {{ u.user }} ( Roles: 
+                                    {% for r in u.role.all %}
+                                    {{ r.role }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %}
+                                    )
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">Hold CTRL/⌘ to select multiple users</small> 
+                        </div> {% endcomment %}
+
+
+                        {% comment %} <div class="form-group mt-3">
+                            <label for="forward_users" class="form-label"><b>Forward to Users</b></label>
+                            <select id="forward_users" class="form-select" name="forward_users" multiple="multiple" style="width:100%;">
+                                {% for u in users %}
+                                <option value="{{ u.user.id }}">
+                                    {{ u.user }} ( Roles:
+                                    {% for r in u.role.all %}
+                                        {{ r.role }}{% if not forloop.last %}, {% endif %}
+                                    {% endfor %} )
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <small class="text-muted">You can select multiple users.</small>
+                        </div> {% endcomment %}
+
+                    
+                        <input type="hidden" name="procurement_id" id="recommendProcurementId" />
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="approveWithRemarksBtn"style="background-color:#007080; border-color:#007080;">Submit
+                        
+                    </button>
+                    <button type="button" class="btn btn-secondary"  id="closeModalBtn" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+
+{% endblock%}
+
+{% block scripts %}
+<!-- Script to Inject Form Content -->
+<script src="{% static "js/jquery-3.6.0.min.js" %}"></script>
+<!-- Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+
+<script src="{% static "js/html2pdf.bundle.js" %}"></script>
+<link rel="stylesheet" href="{% static "css/jquery-ui.css" %}">
+<!-- jQuery UI JS -->
+<script src="{% static "js/jquery-ui.js" %}"></script>
+
+
+<script>
+    console.log('open')
+    let previousSelected = null;
+    let isFormSubmitted = false; // A flag to track whether the form has been submitted (though it's unused in the provided code)
+    // Render the form_types dictionary as a JavaScript object
+    var formTypes = {{ form_types|safe }};
+    const poid = "{{ poid }}";
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const quoteInput = document.getElementById('quoteInput');
+        const submitButton = document.getElementById('submitdraft');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+    
+
+        // If the quote field has a value, hide the submit button and disable the quote input
+        if (quoteInput && quoteInput.value.trim() !== "") {
+            hideSubmitButtonAndDisableQuote();
+            
+        }
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+        const sidebarItems = document.querySelectorAll(".view-pr-id");
+
+        sidebarItems.forEach(item => {
+             // Add a click event listener to each sidebar item
+            item.addEventListener("click", function (e) {
+                e.preventDefault();
+
+                // Remove highlight from all items
+                sidebarItems.forEach(i => i.closest("li").classList.remove("active-procurement"));
+
+                // Add highlight to the clicked item
+                this.closest("li").classList.add("active-procurement");
+            
+            });
+        });
+    });
+
+     // Function to hide the submit button and disable the quote input
+     function hideSubmitButtonAndDisableQuote() {
+       // $('#downloadBtn').show();
+        $('#submitdraft').hide();
+        $('#quoteInput').prop('disabled', true);
+    }
+
+    function getFormattedTodayDate() {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+        const year = today.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
+    function getStageName(stage) {
+        console.log('Original stage:', stage);
+        stage = stage ? stage.trim() : '';
+        console.log('Trimmed stage:', stage, 'Char codes:', Array.from(stage).map(c => c.charCodeAt(0)));
+    
+        let stageName = '';
+    
+        if (stage === "stage2") {
+            stageName = 'Recommending Authority';
+        } else if (stage === "stage3") {
+            stageName = 'IMM';
+        } else if (stage === "stage4") {
+            stageName = 'Accounts';
+        } else if (stage === "stage5") {
+            stageName = 'Approving Authority';
+        } else if (stage === "stage1") {
+            stageName = 'Indentor';
+        } else if (stage === "stage10") {
+            stageName = 'IMM';
+        }
+        else {
+            stageName = 'Not Provided';
+        }
+    
+        console.log('Resolved stage name:', stageName);
+        return stageName;
+    }
+
+{% comment %}   function renderApprovalBoxes(approvals) {
+        debugger;
+        const container = document.getElementById("approvalBoxes");
+        if (!container) {
+            console.warn("⚠️ approvalsContainer not found in DOM");
+            return;
+        }
+        container.innerHTML = "";
+
+        approvals.forEach(appr => {
+            const box = document.createElement("div");
+            box.className = "border p-2 text-center";
+            box.style.width = "150px";
+
+            box.innerHTML = `
+                <div><strong>${appr.full_name || appr.username}</strong></div>
+                <div><small>${(appr.roles || []).join(", ")}</small></div>
+                ${appr.done_sign
+                    ? `<img src="${appr.sign_url}" alt="Signature" style="max-height:50px;">`
+                    : `<div class="border mt-2" style="height:50px;">Pending</div>`
+                }
+            `;
+            container.appendChild(box);
+        });
+
+        console.log("DEBUG: Approval boxes rendered", approvals);
+
+            // ✅ Check if all signed
+        const allSigned = approvals.length > 0 && approvals.every(a => a.done_sign === true);
+        if (allSigned) {
+            $('#downloadBtn').show();
+        } else {
+            $('#downloadBtn').hide();
+        }
+    } {% endcomment %}
+ 
+
+function renderApprovalBoxes(approvals) {
+    const container = document.getElementById("approvalBoxes");
+    if (!container) {
+        console.warn("⚠️ approvalsContainer not found in DOM");
+        return;
+    }
+
+    // Align container to the right, stack children vertically
+    container.innerHTML = "";
+    container.className = "d-flex flex-column align-items-end";  
+
+    approvals.forEach(appr => {
+        const box = document.createElement("div");
+        box.className = "approval-box text-center mb-3";  // each user stacked
+        box.style.width = "200px";  
+
+        box.innerHTML = `
+            <div><strong>${appr.full_name || appr.username}</strong></div>
+            <div class="mt-1">
+                ${appr.done_sign && appr.sign_url
+                    ? `<img src="${appr.sign_url}" alt="Signature" style="max-height:60px; max-width:180px; width:180px; object-fit:contain;">`
+                    : `<div class="border mt-2 d-flex justify-content-center align-items-center" 
+                           style="height:60px; width:180px;">
+                           <span class="text-muted">Pending</span>
+                       </div>`
+                }
+            </div>
+        `;
+
+        container.appendChild(box);
+    });
+
+    console.log("✅ Approval boxes rendered", approvals);
+
+    // ✅ Show download button only if everyone signed
+    const allSigned = approvals.length > 0 && approvals.every(a => a.done_sign === true);
+    if (allSigned) {
+        $('#downloadBtn').show();
+    } else {
+        $('#downloadBtn').hide();
+    }
+}
+
+
+
+
+    $(document).ready(function () {
+        $(document).on('click', '.view-pr-id', function (e) {
+                e.preventDefault();
+                
+            
+                // Remove existing selection
+                document.querySelectorAll('.view-pr-id').forEach(el => el.classList.remove('selected-pr'));
+        
+                // Add selection to the clicked item
+                this.classList.add('selected-pr');
+            });
+   
+    
+        $("#recommendModal").draggable({
+            handle: ".modal-header"
+        });
+    
+
+        $('#prSearch').on('keyup', function() {
+          const searchText = $(this).val().toLowerCase();
+          let matchFound = false;
+      
+          $('#procurementSidebar .list-group-item').each(function() {
+            const prId = $(this).find('.view-pr-id').text().trim().toLowerCase();
+            if (prId.includes(searchText)) {
+              $(this).show();
+              matchFound = true;
+            } else {
+              $(this).hide();
+            }
+          });
+      
+          if (!matchFound && searchText !== '') {
+            showAlert("PR ID is not available");
+            $(this).val('');   // Clear the search input
+            $('#procurementSidebar .list-group-item').show();  // Show all items again
+          }
+        });
+
+    
+        
+    })
+
+    var vendorId='';
+
+    $("#procurementSidebar").on('click', '.view-pr-id', function(e) {
+            
+            console.log("sdf")
+            e.preventDefault();
+            
+        
+            if (previousSelected) {
+                previousSelected.className = "list-group-item"; 
+            }
+        
+            this.parentElement.className = "list-group-item active";
+            
+        
+            previousSelected = this.parentElement;
+                    showLoader();
+                    const prId = this.dataset.id;
+                    const formType = formTypes[prId]; // 'import' or 'indigenous'
+                    const procurementId = prId;
+                    vendor_id = $(this).data("vendor"); 
+                    console.log(vendor_id, "at click -------")
+                    $.ajax({
+                        url: "{% url 'po' %}",
+                        type: "POST",
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        data: { 'procurement_id': procurementId, mode: 'view', vendor_id: vendor_id, },
+                        success: function (response) {
+                            const poid = response.poid || '';
+                            //const vendor_address = response.vendor_address.replace(/\n/g, "<br>");
+                            const vendor_address = response.vendor_address
+                            ? response.vendor_address.replace(/\n/g, "<br>")
+                            : "";
+
+                            const vendors = response.vendors;
+                            const particulars = response.particulars;
+                            const finalPrices = response.final_prices;
+                            //const totalValue3 = response.total_value || 0;
+                            const totalValue3 = response.particulars.reduce(
+  (sum, item) => sum + (parseFloat(item.total_value) || 0),
+  0
+);
+                            hideLoader();
+                        const discount = response.discount || 0;
+                        const gstPercentage = response.gst_percentage || 0;
+                        const gstValue = response.gst_value || 0;
+                        const grandTotal = response.grand_total || 0;
+                        const paymentTerms = response.payment_terms || '';
+                        const deliveryWeeks = response.delivery_weeks || '';
+                        const warrantyPeriod = response.warranty_period || '';
+                        const quote = response.quote || ''; 
+                        const termcond = response.termcond || ''; // Assuming termcond is available in the response
+                        const gentermcond = response.gentermcond || ''; // Assuming gentermcond is available in the response
+                        const stages = response.stages || [];
+                        const packingcharges=response.packingcharges || '';
+                        const billingAddress1 = response.billing_address_1 || '';
+                        console.log('Delivery2:', response.billing_address_1);
+                        const deliveryAddress2 = response.delivery_address_2 || ''; 
+                        console.log('Delivery:', response.delivery_address_2);
+
+        
+                        console.log(response,'response')
+                            document.getElementById('purchaseOrderFormContainer').innerHTML = generateImportFormHTML(procurementId,
+                            formType,
+                            poid,
+                            vendor_address,
+                            vendors,
+                            particulars,
+                            finalPrices,
+                            totalValue3,
+                            discount,
+                            gstPercentage,
+                            gstValue,
+                            grandTotal,
+                            paymentTerms,
+                            deliveryWeeks,
+                            warrantyPeriod,
+                            termcond,  // Pass termcond to the form
+                            gentermcond,
+                            '',
+                            billingAddress1,
+                            deliveryAddress2,
+                            packingcharges,
+                        );
+
+                         // ✅ Render existing approvals when PO loads
+                        if (response.approvals) {
+                            console.log("DEBUG: Rendering approval boxes on PO view", response.approvals);
+                            renderApprovalBoxes(response.approvals);
+                        } 
+
+                   {% comment %}   if (response.approvals) {
+                        console.log("DEBUG: Rendering approval boxes on PO view", response.approvals);
+                        renderApprovalBoxes(response.approvals);
+
+                        // ✅ Check if all users have signed
+                        const allSigned = response.approvals.every(a => a.done_sign === true);
+
+                        if (allSigned) {
+                            $('#downloadBtn').show();
+                        } else {
+                            $('#downloadBtn').hide();
+                        }
+                    } {% endcomment %}
+
+                        //const hasStage10 = stages.some(stage => stage.stage === 'stage10');
+                        debugger;
+                        const hasStage10ForVendor = stages.some(stage => 
+                            stage.stage === 'stage10' &&
+                            stage.procurement_id === procurementId &&
+                            stage.vendor_id === vendor_id
+                        );
+
+
+                        if ((quote && quote.trim() !== "") || hasStage10ForVendor) {
+                            hideSubmitButtonAndDisableQuote();
+                        } else {
+                            // Show submit button if not yet submitted for this procurement-vendor pair
+                            $('#submitdraft').show();
+                            $('#quoteInput').prop('disabled', false);
+                        }
+                        document.querySelector('#quoteInput').value = quote;
+
+                        
+                            
+                            const headingField = document.querySelector('#editableField');
+                            const unitPriceHeader = document.querySelector('th:nth-child(6)'); 
+                            const totalHeader = document.querySelector('th:nth-child(7)'); 
+                            const discountLabel = document.querySelector('strong');
+                            if (formType === 'import') {
+                                //headingField.value = 'IMPORT';
+                                unitPriceHeader.textContent = 'Unit Price (FE)';
+                                totalHeader.textContent = 'Total (FE)';
+                            
+                            } else {
+                                //headingField.value = 'INDIGENOUS';
+                                unitPriceHeader.textContent = 'Unit Price (INR)';
+                                totalHeader.textContent = 'Total (INR)';
+                                
+                            }
+                        },
+                        error: function (xhr, status, error) {
+                            console.error("AJAX error:", status, error);
+                            hideLoader();
+                        }
+                    });
+    });
+
+   
+
+    $(document).on('click', '#submitdraft', function () {
+
+     // When the "submitdraft" button is clicked:
+
+        // Clear the value of the #remarks textarea and enable it for user input
+    $('#remarks').val('').prop('disabled', false);
+    $('#approveWithRemarksBtn').show();
+    $('#submitdraft').show();
+    $('#discountInput').attr('readonly', false);
+    $('#gstInput').attr('readonly', false);
+    document.querySelectorAll('[contenteditable]').forEach(elem => {
+        elem.setAttribute('contenteditable', 'true');
+        elem.style.pointerEvents = 'auto';
+    });
+    
+    const selectedPR = document.querySelector('.view-pr-id.selected-pr');
+    //const procurementLi = $(selectedPR).closest("li");  // grab current LI
+    //const procurementId = procurementLi.data("procurement");
+
+    {% comment %} console.log("🔍 Selected Procurement:", procurementId);
+
+       // Extract user info from data attributes
+    const users = [];
+    if (procurementLi.data("ra")) {
+        users.push({ id: procurementLi.data("ra"), name: "RA - " + procurementLi.data("ra-name") });
+    }
+    if (procurementLi.data("imm")) {
+        users.push({ id: procurementLi.data("imm"), name: "IMM - " + procurementLi.data("imm-name") });
+    }
+    if (procurementLi.data("aa")) {
+        users.push({ id: procurementLi.data("aa"), name: "AA - " + procurementLi.data("aa-name") });
+    }
+    if (procurementLi.data("acc")) {
+        users.push({ id: procurementLi.data("acc"), name: "Accounts - " + procurementLi.data("acc-name") });
+    }
+
+    console.log("👥 Users available for this procurement:", users);
+    
+     // Populate dropdown
+    const dropdown = $("#forward_users");
+    dropdown.empty(); // clear old options
+    users.forEach(user => {
+        dropdown.append(new Option(user.name, user.id));
+    });       {% endcomment %}
+        
+    $('#remarks').val('');
+    $('#forward_users').val([]); // clear previous selections
+   
+    $('#recommendModal').modal('show');
+    $('#recommendModal').on('shown.bs.modal', function() {
+        $('#forward_users').select2({
+            dropdownParent: $('#recommendModal'),
+            placeholder: "Select users to forward",
+            allowClear: true,
+            width: '100%'
+        });
+    });
+    
+});
+
+
+
+$(document).on('click', '#approveWithRemarksBtn', function () {
+    debugger;
+    showConfirmAlert("Are you sure you want to Submit?")
+        .then((result) => {
+            if (!result.isConfirmed) return;
+    const selectedPR = document.querySelector('.view-pr-id.selected-pr');
+    const procurementId = selectedPR?.dataset.id || '';
+    vendor_id = vendor_id; 
+
+    console.log(vendor_id, 'vendor id ------------');
+    console.log(selectedPR,'pr');
+    
+    const remarks = $('#remarks').val().trim();  // Optional
+
+    // Check if remarks are empty
+    if (remarks === '') {
+        showWarningAlert("Remarks cannot be empty. Please enter your remarks.");
+        return;  // Exit the function if remarks are empty
+    }
+
+    const selectedUsers = $('#forward_users').val() || [];
+
+    console.log("➡️ Forward Users Selected:", selectedUsers);
+
+    
+
+    showLoader();
+    
+
+    $.ajax({
+        url: "{% url 'po' %}",  
+        type: "POST",
+        headers: {
+            'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        data: {
+            procurement_id: procurementId,
+            vendor_id: vendor_id,
+            mode: 'submit', 
+            remarks: remarks, 
+            forward_users: JSON.stringify(selectedUsers),
+            // ✅ Include your hidden inputs here
+            basic_value: $('#basic_value_input').val(),
+            gst_value: $('#gst_value_input').val(),
+        },
+        success: function (response) {
+           
+            showSuccessAlert(response.message || "Purchase Order created successfully!");
+            console.log(response,'response0220')
+            {% comment %}  if (!response.showbutton) {
+
+        $('#submitdraft').hide(); // Hides the button on page load
+    } else {
+        $('#submitdraft').show(); // Show only if allowed
+    } {% endcomment %}
+
+    // If PO already submitted, you can also show download
+   {% comment %}  if (!response.showbutton) {
+        $('#downloadBtn').show(); // Show download if submit is done
+    } {% endcomment %}
+            $(`.view-pr-id[data-id='${procurementId}']`)
+                                    .closest("li")
+                                    .css("background-color", "#CCE5F0");
+            console.log(response,'responsive8765')
+            $('#recommendModal').modal('hide');
+            isFormSubmitted = true;
+            $('#downloadBtn').show();
+            $('#remarks').val('');
+            hideLoader();
+            updateNotificationCount(procurementId);
+            
+            $('#approveWithRemarksBtn, #submitdraft').hide();
+
+            $('#discountInput, #gstInput').attr('readonly', true);
+            $('ol[contenteditable="true"]').attr('contenteditable', false);
+            $('#editableField').prop('disabled', true);
+
+            if (response.form_type === 'import' || response.form_type === 'indigenous') {
+                $('input').prop('disabled', true);
+            }
+
+            // ✅ Render approval users immediately after submit
+            if (response.approvals) {
+                console.log("DEBUG: Rendering approval boxes after submit", response.approvals);
+                renderApprovalBoxes(response.approvals);
+            }
+            
+            const stage = response.stage_list;
+            const stageName = getStageName(stage.stagename) || 'Not Provided';
+            const userId = stage.user || 'Not Provided';
+            const stageDatetime = stage.datetime || 'Not Provided';
+
+            const statusHtml = `
+                <span class="status-user" style="text-align:right; margin-bottom: 10px;">
+                    <div><strong>${stageName} Name:</strong> ${userId}</div>
+                    <div><strong>${stageName} Emp ID:</strong> ${userId}</div>
+                    <div><strong>Stage Timestamp:</strong> ${stageDatetime}</div>
+                </span>
+            `;
+        },
+        error: function (xhr) {
+            showWarningAlert("Error: " + (xhr.responseJSON?.error || "Failed to create PO."));
+           hideLoader();
+        },
+        
+    });
+});
+});
+$(document).on('click', '#closeModalBtn', function () {
+    $('#recommendModal').modal('hide');
+});
+// Join the HTML for each vendor into one string
+
+function generateImportFormHTML (procurementId, formType, poid, vendor_address,
+                                      vendors, particulars, finalPrices, totalValue3, 
+                                      discount, gstPercentage, gstValue, grandTotal, paymentTerms,
+                                       deliveryWeeks, warrantyPeriod, termcond, gentermcond,remarks,billingAddress1,deliveryAddress2, packingcharges
+                                       ) {
+        // The vendors array is being processed using the map() function to generate HTML for each vendor
+        const vendorHTML = vendors.map(v => `
+       <strong>${v.company_name || ''}<br></strong>
+    ${v.vendor_name || ''}<br>
+    ${v.phone_number || ''}<br>
+    ${v.email || ''}<br>
+    ${[v.address, v.city, v.state, v.country].filter(Boolean).join(', ')}<br>
+    ${v.pincode || ''}<br><br>
+    
+    ${v.gst_number ? `<strong>GST No.:</strong> ${v.gst_number}<br>` : ''}
+    ${v.tin_number ? `<strong>TIN No.:</strong> ${v.tin_number}<br>` : ''}
+     
+    `).join('');
+ 
+        const todayFormatted = getFormattedTodayDate();
+        let totalValue = 0;
+
+ 
+        const updatedParticulars = particulars.map(p => ({ ...p })); 
+        
+        updatedParticulars.forEach((p, index) => {
+            const rawVal = (p.negotiated_value || '').toString();
+            const parts = rawVal.split(',');
+        
+            if (parts.length === 2 && updatedParticulars[index + 1]) {
+          
+                updatedParticulars[index].negotiated_value = parts[0].trim();
+                
+                updatedParticulars[index + 1].negotiated_value = parts[1].trim();
+            }
+        });
+        
+        const particularsRowsHTML = updatedParticulars.map((p, index) => {
+            const totalQty = parseFloat(p.total_qty_required || '1') || 1;
+            const totalValueItem = parseFloat((p.negotiated_value || p.cs_value || '0').toString().trim()) || 0;
+        
+            const unitPrice = totalValueItem / totalQty;
+            totalValue += totalValueItem;
+        
+            return `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${p.partno || ''}</td>
+                    <td>${p.item_name || ''}</td>
+                    <td>${p.unitname || ''}</td>
+                    <td>${p.total_qty_required || ''}</td>
+                    <td>${unitPrice.toFixed(2)}</td>
+                    <td>${totalValueItem.toFixed(2)}</td>
+                </tr>
+            `;
+        }).join('');
+        const quotationReference = updatedParticulars.length > 0 ? updatedParticulars[0].quotation_reference || 'N/A' : 'N/A';
+       // const quote = $('#quoteInput').val();
+      
+        
+        
+        
+        return `
+                <div class="card p-4 with-bg" id="hi" >
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                            <h4 style="margin: 0;">
+                                                <strong> PURCHASE ORDER </strong>
+                                                <input type="text" placeholder="" id="editableField" 
+                                                readonly style="font-weight: bold; border: none;" />
+                                            </h4>
+
+                                <!-- Display PO info -->
+                                <p style="margin: 0;">
+                                <b>PO No :</b> <strong id="dpoIdDisplay">${poid}</strong>
+                                <input type="hidden" id="poNumber" value="${poid}" />
+                                <br>
+                                <b>Dated:</b> <span id="poDateDisplay">${todayFormatted}</span>
+                                </p>
+
+
+
+                                    </div>
+
+                                    <table class="table table-bordered mt-3" style="table-layout: fixed; width: 100%;">
+                                        <thead>
+                                            <tr>
+                                                <th style="width: 33.33%;">To</th>
+                                                <th style="width: 33.33%;">Billing Address</th>
+                                                <th style="width: 33.33%;">Delivery Address</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <tr>
+                                                <td><b>M/s</b> ${vendor_address ? vendor_address :vendorHTML}</td>
+                                                <td class="no-edit">${(billingAddress1 || '').replace(/contenteditable\s*=\s*["']?true["']?/gi, 'contenteditable="false"')}</td>
+                                                <td>${deliveryAddress2}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                    <div>
+                                        Dear Sir,<br>
+
+                                            We are pleased to place the purchase order for the items below.
+                                            </div>
+                                <div>
+                                                <strong>Quotation Reference:</strong>
+                                            </div>
+                                                <p style="margin-top: 10px; padding: 10px; border: 1px solid #000; display: block; width: 100%; box-sizing: border-box;height:38px;">
+                                                    ${quotationReference}
+                                                </p>
+
+
+                    <table class="table table-bordered mt-2">
+                        <thead>
+                            <tr>
+                                <th>S. No</th>
+                                <th>Part No / Model No.</th>
+                                <th>Description</th>
+                                <th>Unit</th>
+                                <th>Qty</th>
+                                <th>Unit Price (${formType === 'import' ? 'FE' : 'INR'})</th>
+                                <th>Total (${formType === 'import' ? 'FE' : 'INR'})</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${particularsRowsHTML}
+                            <tr>
+                                <td colspan="6" style="text-align: right;"><strong>Sub Total:</strong></td>
+                                <td>${totalValue3} 
+                                 <!-- Hidden field for backend -->
+                                <input type="hidden" name="basic_value" id="basic_value_input" value="${totalValue3}">
+                                </td>
+                            </tr>
+                            <tr>
+                                <td colspan="6" style="text-align: right;"><strong>Discount (%) :</strong></td>
+                                <td>
+                                    ${discount}
+                                </td>
+                            </tr>
+                            <tr>
+                                    <td colspan="6" style="text-align: right;">
+                                        <strong>Packing Charges :</strong>
+                                    </td>
+                                    <td>
+                                       ${packingcharges}
+                                    </td>
+                                </tr>
+                            ${formType !== 'import' ? `
+                <tr>
+                    <td colspan="6" style="text-align: right;">
+                        <label for="gstInput"><strong>GST (%):</strong></label>
+                        ${gstPercentage}
+                        <!-- Hidden field for backend -->
+                        <input type="hidden" name="gst_value" id="gst_value_input" value="${gstPercentage}">
+                    </td>
+                    <td>${gstValue}</td>
+                </tr>
+                ` : ''}
+
+                            <tr>
+                                <td colspan="6" style="text-align: right;"><strong>Grand Total:</strong></td>
+                                <td>${grandTotal}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                <div style="border: 1px solid #ccc; padding: 10px; ">
+                ${(termcond + gentermcond).replace(/contenteditable\s*=\s*["']?true["']?/gi, 'contenteditable="false"')}
+
+                <!-- ✅ Approvals container (added here) -->
+                <div id="approvalsContainer" class="mt-4">
+                
+                <div id="approvalBoxes" class="d-flex flex-column align-items-end gap-3"></div>
+                </div>
+
+                <div class=" mt-3 view-pr-id" data-id="${procurementId}">
+                                        
+                                                <button 
+                                                    class="btn btn-primary" 
+                                                    id="submitdraft"
+                                                    style="margin-top:0%;margin-right: 87%;background-color:#007080; border-color:#007080; display:block"
+                                                    onclick="submitDPO(this)">
+                                                    Submit 
+                                                    
+                                                </button>
+                                            
+                                            <button class="btn btn-primary"  id="downloadBtn" style="display: none;background-color:#007080; border-color:#007080;"onclick="downloadPDF()">Download</button> 
+                                        </div>
+
+        </div>
+
+                </div>
+
+
+                
+
+       {% comment %}             <!-- Download Button (hidden by default) -->
+    <div class=" mt-3">
+    <button class="btn btn-primary" id="downloadBtn" 
+            style="display: none; background-color:#007080; border-color:#007080;"
+            onclick="downloadPDF()">
+        Download
+    </button>
+    </div> {% endcomment %}
+
+      {% comment %} <div class=" mt-3 view-pr-id" data-id="${procurementId}">
+                                        
+                                                <button 
+                                                    class="btn btn-primary" 
+                                                    id="submitdraft"
+                                                    style="margin-top:0%;margin-right: 87%;background-color:#007080; border-color:#007080;"
+                                                    onclick="submitDPO(this)">
+                                                    Submit 
+                                                    
+                                                </button>
+                                            
+                                            <button class="btn btn-primary"  id="downloadBtn" style="display: none;background-color:#007080; border-color:#007080;"onclick="downloadPDF()">Download</button> 
+                                        </div>
+
+        </div>
+
+                </div> {% endcomment %}
+
+              
+
+                
+
+
+                        `;
+       
+}
+function downloadPDF() {
+    console.log('Download PDF triggered');
+
+    const element = document.getElementById('purchaseOrderFormContainer');
+    if (!element) {
+        showAlert('Content not found!');
+        return;
+    }
+    showLoader();
+    const hiElement = document.getElementById('hi'); // element with background image
+    const submitButton = document.getElementById('submitdraft');
+    const downloadButton = document.querySelector('button[onclick="downloadPDF()"]');
+    const spinner = document.getElementById('spinner');
+
+    // Hide UI elements before rendering (use visibility to keep layout)
+    if (submitButton) submitButton.style.visibility = 'hidden';
+    if (downloadButton) downloadButton.style.visibility = 'hidden';
+    if (spinner) spinner.style.display = 'none';
+
+    // Temporarily remove background image class
+    if (hiElement) hiElement.classList.remove('with-bg');
+
+    // Save original styles to restore after PDF generation
+    const originalHeight = element.style.height;
+    const originalMaxHeight = element.style.maxHeight;
+    const originalOverflow = element.style.overflow;
+
+    // Expand container to full height to capture everything
+    element.style.height = 'auto';
+    element.style.maxHeight = 'none';
+    element.style.overflow = 'visible';
+
+    window.scrollTo(0, 0);
+
+    // Add temp style for table borders inside PDF
+    const style = document.createElement('style');
+    style.id = 'pdf-temp-style';
+    style.innerHTML = `
+        table, th, td {
+            border: 1px solid black !important;
+            border-collapse: collapse !important;
+        }
+        th, td {
+            padding: 6px !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    const imgUrl = '{% static "images/messylog.png" %}';
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imgUrl;
+
+    img.onload = function () {
+        setTimeout(() => {
+            const poid = document.getElementById('poNumber')?.value || 'unknown';
+            const opt = {
+                margin: 0.2,
+                filename: `PO-${poid}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 3, useCORS: true, scrollY: -window.scrollY },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+            };
+
+            html2pdf()
+                .set(opt)
+                .from(element)
+                .toPdf()
+                .get('pdf')
+                .then(function (pdf) {
+                    const totalPages = pdf.internal.getNumberOfPages();
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const imageWidth = pageWidth * 0.7;
+                    const imageHeight = (imageWidth / img.width) * img.height;
+                    const xPos = (pageWidth - imageWidth) / 2;
+                    const yPos = (pageHeight - imageHeight) / 2;
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        pdf.setPage(i);
+                        // pdf.addImage(imgUrl, 'PNG', xPos, yPos, imageWidth, imageHeight);
+                        pdf.setDrawColor(0);
+                        pdf.setLineWidth(0.02);
+                        pdf.rect(0.2, 0.2, pageWidth - 0.4, pageHeight - 0.4);
+                    }
+                })
+                .save()
+                .finally(() => {
+                    // Restore UI elements visibility
+                    if (submitButton) submitButton.style.visibility = 'visible';
+                    if (downloadButton) downloadButton.style.visibility = 'visible';
+                    if (spinner) spinner.style.display = 'none';
+
+                    // Remove temporary style
+                    const tempStyle = document.getElementById('pdf-temp-style');
+                    if (tempStyle) tempStyle.remove();
+
+                    // Restore background image class
+                    if (hiElement) hiElement.classList.add('with-bg');
+
+                    // Restore original container styles
+                    element.style.height = originalHeight;
+                    element.style.maxHeight = originalMaxHeight;
+                    element.style.overflow = originalOverflow;
+
+                    hideLoader();
+                });
+        }, 100); // small delay to ensure layout update
+    };
+
+    img.onerror = function () {
+        showaAlert("Failed to load the image for the PDF.");
+
+        // Restore UI elements visibility
+        if (submitButton) submitButton.style.visibility = 'visible';
+        if (downloadButton) downloadButton.style.visibility = 'visible';
+        if (spinner) spinner.style.display = 'none';
+
+        // Remove temporary style
+        const tempStyle = document.getElementById('pdf-temp-style');
+        if (tempStyle) tempStyle.remove();
+
+        // Restore background image class
+        if (hiElement) hiElement.classList.add('with-bg');
+
+        // Restore original container styles
+        element.style.height = originalHeight;
+        element.style.maxHeight = originalMaxHeight;
+        element.style.overflow = originalOverflow;
+
+        hideLoader();
+    };
+}
+    
+
+(function() {
+    const role = "imm";  // IMM role
+    const pageKey = "po";  // Default to 'imm', but can be dynamic based on remark type
+    
+    const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const ws_url = `${ws_scheme}://${window.location.host}/ws/sidebar/${role}/${pageKey}/`;
+    const po_socket = new WebSocket(ws_url);
+    
+    po_socket.onopen = function() {
+        console.log("po sidebar WebSocket opened.");
+
+    }
+    po_socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        console.log("po data", data)
+
+        if (data.update_type === "refresh_sidebar_po") {
+            // Only update if message is for IMM role and corresponding page
+           
+
+            const procurementId = data.procurement_id;
+            const dateObj = new Date(data.timestamp);
+            let formattedDatetime = '';
+
+            if (!isNaN(dateObj)) {
+                const pad = num => String(num).padStart(2, '0');
+                const day = pad(dateObj.getDate());
+                const month = pad(dateObj.getMonth() + 1);
+                const year = dateObj.getFullYear();
+                const hours = pad(dateObj.getHours());
+                const minutes = pad(dateObj.getMinutes());
+                const seconds = pad(dateObj.getSeconds());
+                formattedDatetime = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+            }
+
+            const listItem = $(`#procurementSidebar .list-group-item a.view-pr-id[data-id="${procurementId}"]`).closest('.list-group-item');
+            if (data.role !== "imm" || data.page !== pageKey) {
+                console.log("Ignoring update for role/page:", data.role, data.page);
+                if (data.page=="rejectedimm"){
+                    listItem.css('background-color', '#CCE5F0');
+                }
+            
+                return;
+            }
+            if (listItem.length) {
+                listItem.find('div').eq(1).text(formattedDatetime);
+                console.log('hi',data.forwarded_to_imm_user);
+                // Apply background logic based on conditions
+                if (data.forwarded_to_imm_user && pagekey) {
+                    listItem.css('background-color', '#f8f9fa'); // Reset background if forwarded
+                } else {
+                    // Assuming procurement was recommended, update the background color
+                    listItem.css('background-color', '#CCE5F0'); // Highlight the item when recommended
+                }
+                $('#procurementSidebar').on('click', '.list-group-item', function() {
+                    // Remove the active class from all items
+                    $('#procurementSidebar .list-group-item').removeClass('active-procurement');
+                
+                    // Add active class to the clicked item
+                    $(this).addClass('active-procurement');
+                });
+                
+            } else {
+                // New procurement item
+                const statusesString = (data.statuses || []).join(',');
+                let backgroundColor = '#f8f9fa'; // Default background color
+
+                // Apply background color for forwarded or recommended stage
+                if (data.forwarded_to_imm_user) {
+                    backgroundColor = '#f8f9fa'; // Reset if forwarded
+                } else {
+                    backgroundColor = '#CCE5F0'; // Highlight if recommended
+                }
+
+                const newListItem = `
+                    <li id="procurement-${procurementId}" class="list-group-item" data-statuses="${statusesString}"
+                        style="background-color: ${backgroundColor}; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top:7px; padding:9px;">
+                        <a href="#" class="view-pr-id" data-id="${procurementId}" style="text-decoration: none; color: inherit; display: block;">
+                            <div style="font-weight: 500; font-size: 14px; color: black;">
+                                ${procurementId}
+                            </div>
+                            <div style="font-size: 11px; color: black;">
+                                ${formattedDatetime}
+                            </div>
+                        </a>
+                    </li>
+                `;
+
+                $('#procurementSidebar').prepend(newListItem);
+                $('#procurementSidebar').on('click', '.list-group-item', function() {
+                    // Remove the active class from all items
+                    $('#procurementSidebar .list-group-item').removeClass('active-procurement');
+                
+                    // Add active class to the clicked item
+                    $(this).addClass('active-procurement');
+                });
+                
+            }
+            
+
+            // Reapply any filter you have
+            $('#statusFilter').trigger('change');
+        }
+    };
+
+    po_socket.onclose = function() {
+        console.warn("po sidebar WebSocket closed.");
+    };
+})();
+
+
+</script>
+
+{%endblock scripts%}

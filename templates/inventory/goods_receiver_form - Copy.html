@@ -1,0 +1,164 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+<div class="row">
+  <div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+      <div class="app-card-body p-4">
+
+        <!-- PO Search Form -->
+        <form method="post" action="{{ form_action_url }}" id="poSearchForm" novalidate>
+          {% csrf_token %}
+          <div class="row align-items-center">
+            <div class="col-auto">
+              {{ form.PurchaseOrderHeader.label_tag }}
+            </div>
+            <div class="col-md-3">
+              {{ form.PurchaseOrderHeader }}
+              {{ form.code }}
+            </div>
+          </div>
+        </form>
+
+        <!-- PO Details -->
+        {% if po_obj %}
+        <div class="row mt-4">
+          <div class="col-md-12">
+
+            <!-- ====== YOUR PO DETAILS (UNCHANGED) ====== -->
+            {{ block.super }}
+
+            <!-- PO Items Form -->
+            <form method="post" action="{% url 'bulk_goods_receipt' po_obj.pk %}" novalidate>
+              {% csrf_token %}
+
+              <div class="row mt-1">
+                <div class="col-md-6"></div>
+                <div class="col-md-6">
+                  <div class="mb-2 button-group" style="float:right;">
+                    <button type="submit" id="saveChangesBtn"
+                            onclick="return confirmSave()"
+                            class="btn btn-success"
+                            {% if po_obj.po_status.name == 'CLOSED' %}disabled{% endif %}>
+                      <i class="fa fa-save"></i> Save Changes
+                    </button>
+                    <button type="reset" onclick="return confirmReset()" class="btn btn-sm btn-default">
+                      <i class="fa fa-undo"></i> Reset
+                    </button>
+                    <a class="btn btn-sm btn-default" href="{% url 'home' %}" id="cancel-btn">
+                      <i class="fa fa-close"></i> Cancel
+                    </a>
+                  </div>
+                </div>
+
+                <!-- ====== TABLE (UNCHANGED) ====== -->
+                {{ block.super }}
+
+              </div>
+            </form>
+
+          </div>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block pagecss %}
+<!-- 🔹 ADDED: Select2 CSS -->
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet"/>
+
+<style>
+  .select2-container .select2-selection--single {
+    height: 38px;
+    padding: 5px 10px;
+  }
+  .select2-selection__rendered {
+    line-height: 26px !important;
+  }
+  .select2-selection__arrow {
+    height: 36px !important;
+  }
+</style>
+{% endblock %}
+
+{% block pagejs %}
+
+<!-- 🔹 ADDED: Select2 JS -->
+<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+
+<script>
+$(document).ready(function () {
+
+  /* ===============================
+     PO DROPDOWN WITH SEARCH
+     =============================== */
+  $('#id_PurchaseOrderHeader').select2({
+    placeholder: "Select PO Number",
+    allowClear: true,
+    width: '100%'
+  });
+
+  $('#id_PurchaseOrderHeader').on('change', function () {
+    if (this.value) {
+      $('#id_code').val(this.value);
+      $('#poSearchForm').submit();
+    }
+  });
+
+  /* ===============================
+     QUANTITY VALIDATION (POPUP)
+     =============================== */
+  const $saveBtn = $('#saveChangesBtn');
+  $saveBtn.prop('disabled', true);
+
+  $('input[name^="qty_being_received"]').on('input', function () {
+    let enable = false;
+    let valid = true;
+
+    $('input[name^="qty_being_received"]').each(function () {
+      const $row = $(this).closest('tr');
+      const pendingQty = parseFloat($row.find('.yet_to_be_received').text()) || 0;
+      const receivedQty = parseFloat($(this).val()) || 0;
+
+      if (receivedQty > pendingQty) {
+        alert(
+          `Received quantity (${receivedQty}) cannot be greater than pending quantity (${pendingQty}).`
+        );
+        $(this).val('');
+        valid = false;
+        return false; // stop loop
+      }
+
+      if (receivedQty > 0) enable = true;
+    });
+
+    $saveBtn.prop('disabled', !(enable && valid));
+  });
+
+});
+
+/* ===============================
+   CANCEL CONFIRMATION
+   =============================== */
+document.getElementById("cancel-btn").addEventListener("click", function (event) {
+  event.preventDefault();
+  if (confirm("Do you want to cancel?")) {
+    window.location.href = "{% url 'goods-receiver-create' %}";
+  }
+});
+
+function confirmSave() {
+  return confirm("Are you sure you want to save these changes?");
+}
+
+function confirmReset() {
+  return confirm("Are you sure you want to reset the form? All entered data will be lost.");
+}
+</script>
+
+{% endblock %}

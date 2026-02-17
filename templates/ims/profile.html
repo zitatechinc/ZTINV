@@ -1,0 +1,676 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+{% block mainblock %}
+{% comment %} <style>
+  .container-flex {
+    display: flex;
+    gap: 41px;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    margin-top:4%;
+  }
+
+  /* Profile pic small circle on left */
+  .profile-upload-wrapper {
+    flex-shrink: 0;
+    width: 100px;
+    text-align: center;
+  }
+
+  .profile-upload {
+    position: relative;
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background-color: #f0f4f8;
+    border: 2px solid #007080;
+    cursor: pointer;
+    overflow: hidden;
+    transition: box-shadow 0.3s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #007080;
+    font-size: 50px;
+    margin: 0 auto;
+  }
+
+  .profile-upload:hover {
+    box-shadow: 0 0 10px #007080aa;
+  }
+
+  .profile-upload img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .profile-upload input[type="file"] {
+    position: absolute;
+    width: 100px;
+    height: 100px;
+    opacity: 0;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+  }
+
+  .profile-label {
+    margin-top: 8px;
+    font-weight: 600;
+    color: #333;
+    font-size: 0.9rem;
+    user-select: none;
+  }
+
+  /* Form fields on right */
+  .form-fields {
+    flex-grow: 1;
+    min-width: 280px;
+  }
+
+  .form-fields .row > .col {
+    margin-bottom: 1rem;
+  }
+
+  /* Submit button aligned right and margin top */
+  .submit-btn-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 1rem;
+  }
+
+  /* Other existing styles */
+  #submit:focus {
+    outline: 2px solid white;
+    outline-offset: 2px;
+    box-shadow: 0 0 0 3px white;
+  }
+  .row.align-items-start {
+    align-items: flex-start;
+  }
+  
+  #file-link-container {
+    max-height: 40px;      /* limit height */
+    overflow: hidden;      /* hide overflow */
+    white-space: nowrap;   /* keep in one line */
+    text-overflow: ellipsis; /* add ... if too long */
+  }
+  
+</style> {% endcomment %}
+
+<!-- Spinner loader container -->
+<div class="spinner-border loader" id="loader" role="status"
+     style="
+        width: 3rem;
+        height: 3rem;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        z-index: 9999;
+        display: none;
+        backdrop-filter: blur(6px);
+        background-color: rgba(0, 0, 0, 0.3);
+     ">
+    <span class="visually-hidden">Loading...</span>
+    <div class="spinner"></div>
+</div>
+
+<style>
+    .info-row {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: space-between;
+        margin-bottom: 12px;
+        gap: 20px;
+      }
+      
+      .info-item {
+        flex: 1 1 30%;
+        color: #333;
+        font-size: 0.95rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      
+      .info-item strong {
+        color: #007080;
+      }
+      
+    /* Reset and basics */
+    body, form {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #333;
+      background: #f9fafb;
+    }
+  
+    .profile-container {
+      max-height: 83.5vh;
+      overflow-y: auto;
+      padding: 20px;
+      max-width: 909px;
+      margin: 20px auto;
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 4px 16px rgb(0 0 0 / 0.1);
+      border: 1px solid #cce4f7;
+    }
+  
+    h2 {
+      text-align: center;
+      color: #007080;
+      margin-bottom: 24px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+  
+    .profile-flex {
+      display: flex;
+      gap: 30px;
+      flex-wrap: wrap;
+      align-items: flex-start;
+    }
+  
+    /* Profile image upload */
+    .profile-pic-wrapper {
+        flex: 0 0 140px;
+        text-align: center;
+        user-select: none;
+      }
+      
+      #profile-container {
+        width: 140px;
+        height: 140px;
+        border-radius: 50%;
+        overflow: hidden;
+        position: relative;
+        border: 2px solid #007080;
+        cursor: pointer;
+        background: #e0f0f7;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #007080;
+        font-size: 64px;
+        transition: box-shadow 0.3s ease;
+        margin: 0 auto; /* center inside wrapper */
+      }
+      #profile-container:hover {
+        box-shadow: 0 0 10px #007080aa;
+      }
+      
+      #profile-container img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;  /* crucial for aspect ratio & cropping */
+        display: block;
+        border-radius: 50%;
+        pointer-events: none; /* so click passes through img to container */
+      }
+      
+      #profile_pic_upload {
+        display: none;
+      }
+      
+      .profile-label {
+        margin-top: 10px;
+        font-weight: 600;
+        color: #007080;
+        font-size: 0.9rem;
+        cursor: pointer;
+        user-select: none;
+        text-align: center;
+        display: block;
+        max-width: 140px;
+        margin-left: auto;
+        margin-right: auto;
+      }
+      
+  
+    /* Form fields */
+    .form-fields {
+      flex: 1;
+      min-width: 280px;
+    }
+  
+    .field-row {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        margin-bottom: 20px;
+      }
+      
+      .flex-half {
+        flex: 1 1 48%;
+      }
+      
+      @media (max-width: 768px) {
+        .flex-half {
+          flex: 1 1 100%;
+        }
+      }
+      
+    .field-label {
+      font-weight: 600;
+      flex: 1 1 30%;
+      min-width: 120px;
+      color: #444;
+    }
+  
+    .field-value {
+      flex: 1 1 60%;
+      min-width: 150px;
+      color: #222;
+    }
+  /* File inputs & password inputs */
+.upload-group,
+.password-group {
+  margin-bottom: 22px;
+}
+
+label[for="sign_upload"],
+label[for="password"],
+label[for="phoneno"],
+label[for="confirmpassword"] {
+  font-weight: 600;
+  color: #007080;
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Keep password input full width and padding for the icon */
+.input-group {
+  position: relative;
+  width: 100%;
+  max-width: 300px;
+}
+
+.input-group input[type="password"],
+.input-group input[type="text"] {
+  width: 100%;
+  padding: 7px 38px 7px 12px; /* right padding for the icon */
+  border: 1.5px solid #ccc;
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s ease;
+  box-sizing: border-box;
+}
+
+.input-group input:focus {
+  border-color: #007080;
+  outline: none;
+}
+
+/* Fix Bootstrap's .input-group-text style */
+.input-group-text {
+  background: transparent !important;
+  border: none !important;
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #888;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0;
+  line-height: 1;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.input-group-text:hover {
+  color: #007080;
+}
+
+.password-group {
+  width: 100%;
+  max-width: 300px;
+}
+
+@media (max-width: 600px) {
+  .password-group {
+    max-width: 100%; /* full width on small screens */
+  }
+}
+
+  
+    /* File link */
+    #file-link-container a {
+      color: #007080;
+      font-weight: 600;
+      text-decoration: none;
+      word-break: break-word;
+    }
+    #file-link-container a:hover {
+      text-decoration: underline;
+    }
+  
+    /* Submit button */
+    .submit-btn-wrapper {
+      text-align: center;
+      margin-top: 30px;
+    }
+   
+    button#submit:hover {
+      background-color: #005f63;
+    }
+  
+    /* Responsive tweaks */
+    @media (max-width: 600px) {
+      .profile-flex {
+        flex-direction: column;
+        align-items: center;
+      }
+      .form-fields {
+        width: 100%;
+      }
+      .field-row {
+        flex-direction: column;
+      }
+      .field-label, .field-value {
+        min-width: 100%;
+        margin-bottom: 6px;
+      }
+    }
+</style>
+  
+  <div class="profile-container">
+    <form id="procurementForm" enctype="multipart/form-data" method="POST">
+      {% csrf_token %}
+      <h2>Profile</h2>
+  
+      <div class="profile-flex">
+        <!-- Profile picture upload -->
+        <div class="profile-pic-wrapper">
+          <label for="profile_pic_upload" id="profile-container" title="Click to upload profile picture" style="cursor: pointer;">
+            {% if profile_img %}
+              <img src="{{ profile_img.url }}" alt="Profile Picture Preview" id="profile-preview" />
+            {% else %}
+              <i class="fas fa-user"></i>
+            {% endif %}
+          </label>
+          <input type="file" id="profile_pic_upload" name="profile_pic_upload" accept="image/*" onchange="previewProfilePic(event)" style="display:none;" />
+          <label for="profile_pic_upload" class="profile-label">Upload Picture</label>
+        </div>
+        
+          
+  
+        <!-- Profile info & inputs -->
+        <div class="form-fields">
+            <div class="info-row">
+                <div class="info-item"><strong>Employee ID:</strong> {{ emp_id }}</div>
+                <div class="info-item"><strong>First Name:</strong> {{ first_name }}</div>
+                <div class="info-item"><strong>Last Name:</strong> {{ last_name }}</div>
+              </div>
+              
+              <div class="info-row">
+                <div class="info-item"><strong>Email:</strong> {{ email }}</div>
+                <div class="info-item"><strong>Department:</strong> {{ department }}</div>
+                <div class="info-item"><strong>Roles:</strong>
+                  {% for role in roles_list %}
+                    {{ role }}{% if not forloop.last %}, {% endif %}
+                  {% empty %}
+                    No roles assigned
+                  {% endfor %}
+                </div>
+              </div>
+              
+              <div class="field-row">
+                <div class="form-group flex-half">
+                  <label for="phoneno" class="form-label">Phone No:</label>
+                  <div class="input-group" style="width: 86%;">
+                    <input
+                    type="text"
+                    id="phoneno"
+                    name="phoneno"
+                    class="form-control"
+                    maxlength="10"
+                    inputmode="numeric"
+                    pattern="^\d{10}$"
+                    title="Phone number must be exactly 10 digits"
+                    required
+                    oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);"
+                    value="{{ phoneno|default:'' }}" 
+                  />
+                  
+                  </div>
+                </div>
+              
+                <div class="upload-group flex-half" style="margin-left: -52px;">
+                  <label for="sign_upload">Signature Upload:</label>
+                  <input type="file" name="sign_upload" id="sign_upload" accept="image/*" />
+              
+                  {% if sign_upload %}
+                    <div id="file-link-container">
+                      <a href="{{ sign_upload }}" target="_blank" rel="noopener noreferrer">{{ sign_filename }}</a>
+                    </div>
+                  {% else %}
+                    <div id="file-link-container" style="display:none;"></div>
+                  {% endif %}
+                  
+                  <div id="file-name-container" style="color: #555; margin-top: 6px;"></div>
+                </div>
+              </div>
+              
+              
+          <div class="field-row password-row">
+            <div class="password-group">
+              <label for="password">New Password: </label>
+              <div class="input-group">
+                <input
+                type="password"
+                id="password"
+                name="password"
+                pattern="^(?=.*[!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?]).{6,}$"
+                title="Password must be at least 6 characters and include a special character"
+                required
+              />
+                <span class="input-group-text toggle-password" data-target="password"><i class="fas fa-eye-slash"></i></span>
+              </div>
+            </div>
+          
+            <div class="password-group">
+              <label for="confirmpassword">Confirm Password: </label>
+              <div class="input-group">
+                <input type="password" id="confirmpassword" name="confirmpassword" required />
+                <span class="input-group-text toggle-password" data-target="confirmpassword"><i class="fas fa-eye-slash"></i></span>
+              </div>
+            </div>
+          </div>
+          
+        </div>
+      </div>
+  
+      <div class="d-flex justify-content-end mt-3">
+        <button
+          type="button"
+          class="btn btn-primary"
+          id="submit"
+          onclick="Submitreg()"
+          style="background-color:#007080; border-color:#007080; color:white;width: 10%;"
+        >
+          Save
+        </button>
+      </div>
+      
+    </form>
+  </div>
+  
+  <script>
+    // Password toggle logic
+
+  
+    // Profile pic preview
+    function previewProfilePic(event) {
+      const preview = document.getElementById('profile-preview');
+      if (event.target.files && event.target.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          if (preview) {
+            preview.src = e.target.result;
+          } else {
+            // If no img tag, create one
+            const container = document.getElementById('profile-container');
+            container.innerHTML = `<img id="profile-preview" src="${e.target.result}" alt="Profile Picture Preview" style="width:100%; height:100%; object-fit:cover; border-radius:50%;">`;
+          }
+        }
+        reader.readAsDataURL(event.target.files[0]);
+      }
+    }
+  </script>
+  
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+  // Signature file input
+  const signInput = document.getElementById('sign_upload');
+  const fileLinkContainer = document.getElementById('file-link-container');
+  const fileNameContainer = document.getElementById('file-name-container');
+  if (signInput && fileLinkContainer && fileNameContainer) {
+    signInput.addEventListener('change', function () {
+      if (this.files.length > 0) {
+        fileNameContainer.textContent = this.files[0].name;
+        fileLinkContainer.style.display = 'none';
+      } else {
+        fileNameContainer.textContent = '';
+        {% if sign_upload %}
+          fileLinkContainer.style.display = 'block';
+        {% else %}
+          fileLinkContainer.style.display = 'none';
+        {% endif %}
+      }
+    });
+  }
+
+  // Password toggle
+document.querySelectorAll('.toggle-password').forEach(toggle => {
+  toggle.addEventListener('click', () => {
+    const targetId = toggle.getAttribute('data-target');
+    const input = document.getElementById(targetId);
+    const icon = toggle.querySelector('i');
+
+    if (!input || !icon) return;
+
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.classList.remove('fa-eye-slash');
+      icon.classList.add('fa-eye');
+    } else {
+      input.type = 'password';
+      icon.classList.remove('fa-eye');
+      icon.classList.add('fa-eye-slash');
+    }
+  });
+});
+
+
+  // Profile pic preview - updated
+  const profilePicInput = document.getElementById('profile_pic_upload');
+  if (profilePicInput) {
+    profilePicInput.addEventListener('change', (event) => {
+      const input = event.target;
+      if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          let img = document.getElementById('profile-preview');
+          if (!img) {
+            img = document.createElement('img');
+            img.id = 'profile-preview';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.objectFit = 'cover';
+            img.style.borderRadius = '50%';
+            const container = input.parentElement;
+            container.insertBefore(img, input);
+          }
+          img.src = e.target.result;
+        };
+        reader.readAsDataURL(input.files[0]);
+      }
+    });
+  }
+});
+
+      
+      // Submit registration handler (keep outside DOMContentLoaded so callable globally)
+      function Submitreg() {
+        const profilePicInput = document.getElementById("profile_pic_upload");
+        const signatureInput = document.getElementById("sign_upload");
+        const password = document.getElementById("password").value;
+        const confirmPassword = document.getElementById("confirmpassword").value;
+        const phoneno = document.getElementById("phoneno").value;
+        const employeeId = "{{ emp_id }}";  // Django template context variable
+      
+        let formData = new FormData();
+        if (profilePicInput && profilePicInput.files[0]) formData.append("profile_pic_upload", profilePicInput.files[0]);
+        if (signatureInput && signatureInput.files[0]) formData.append("sign_upload", signatureInput.files[0]);
+        formData.append("password", password);
+        formData.append("confirmpassword", confirmPassword);
+        formData.append("employee_id", employeeId);
+        formData.append("phoneno", phoneno);
+        showLoader(); // your own loader function
+      
+        fetch("", {
+          method: "POST",
+          body: formData
+        })
+        .then(res => res.json())
+        .then(data => {
+          hideLoader(); // your own loader function
+          if (data.status === "success") {
+            alert(data.message);
+            console.log(data, 'data');
+      
+            if (data.profile_img_url) {
+              const container = document.getElementById('profile-container');
+              if (container) {
+                container.innerHTML = `<img src="${data.profile_img_url}" alt="Profile Picture Preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+      
+                // Re-append file input so user can change picture again
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.name = 'profile_pic_upload';
+                input.id = 'profile_pic_upload';
+                input.accept = 'image/*';
+                input.style.display = 'none'; // keep input hidden
+                input.addEventListener('change', previewProfilePic);
+                container.appendChild(input);
+              }
+            }
+            $("#password").val('');
+            $("#confirmpassword").val('');
+          } else {
+            alert("Error: " + data.message);
+          }
+        })
+        .catch(err => {
+          hideLoader();
+          alert("Something went wrong: " + err);
+        });
+      }
+      
+      // helper for dynamically added input in Submitreg
+      function previewProfilePic(event) {
+        const input = event.target;
+        const container = input.parentElement;
+        if (input.files && input.files[0]) {
+          const reader = new FileReader();
+          reader.onload = function(e) {
+            container.innerHTML = `<img src="${e.target.result}" alt="Profile Picture Preview" style="width: 100%; height: 100%; object-fit: cover; border-radius: 50%;">`;
+            container.appendChild(input);
+          };
+          reader.readAsDataURL(input.files[0]);
+        }
+      }
+      
+  
+  
+</script>
+
+{% endblock %}

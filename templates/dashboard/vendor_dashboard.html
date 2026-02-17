@@ -1,0 +1,171 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+    <div class="container">
+        <h2>Vendor Dashboard</h2>
+
+        <!-- Row 1: Vendor Chart and Products by Category -->
+        <div class="chart-row">
+            <div class="chart">
+                <h3>Vendors by Country</h3>
+                <div id="vendor-pie-chart" style="height: 300px;"></div>
+            </div>
+
+            <div class="chart">
+                <h3>Products by Category</h3>
+                <div id="product-category-pie-chart" style="height: 300px;"></div>
+            </div>
+        </div>
+
+        <!-- Row 2: Products by Brand -->
+        <div class="chart-row">
+            <div class="chart">
+                <h3>Products by Brand</h3>
+                <div id="product-brand-pie-chart" style="height: 300px;"></div>
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block pagejs %}
+    <script>
+        // Retrieve the labels and data passed from Django
+        var vendorLabels = {{ vendor_chart_labels_json|safe }};
+        var vendorData = {{ vendor_chart_data_json|safe }};
+        
+        var categoryLabels = {{ product_category_labels_json|safe }};
+        var categoryData = {{ product_category_data_json|safe }};
+        
+        var brandLabels = {{ product_brand_labels_json|safe }};
+        var brandData = {{ product_brand_data_json|safe }};
+        
+        // Plotly pie chart configuration for Vendor by Country
+        var vendorPieChart = {
+            labels: vendorLabels,
+            values: vendorData,
+            type: 'pie',
+            layout: {
+                height: 400,
+                width: 500,
+                margin: { l: 40, r: 40, t: 40, b: 40 },
+                legend: {
+                    orientation: 'h', 
+                    yanchor: 'bottom', 
+                    xanchor: 'center', 
+                    font: { size: 14 },
+                    itemwidth: 30, 
+                    traceorder: 'normal', 
+                    borderwidth: 2, 
+                    bordercolor: '#ddd', 
+                    
+                },
+                hovermode: false,
+            }
+        };
+
+        // Plotly pie chart configuration for Products by Category
+        var categoryPieChart = {
+            labels: categoryLabels,
+            values: categoryData,
+            type: 'pie',
+            layout: {
+                height: 400,
+                width: 500,
+                margin: { l: 40, r: 40, t: 40, b: 40 },
+                legend: {
+                    orientation: 'h', 
+                    yanchor: 'bottom', 
+                    xanchor: 'center', 
+                    font: { size: 14 },
+                    itemwidth: 30, 
+                    traceorder: 'normal', 
+                    borderwidth: 2, 
+                    bordercolor: '#ddd', 
+                }
+            }
+        };
+
+        // Plotly pie chart configuration for Products by Brand
+        var brandPieChart = {
+            labels: brandLabels,
+            values: brandData,
+            type: 'pie',
+            layout: {
+                height: 400,
+                width: 500,
+                margin: { l: 40, r: 40, t: 40, b: 40 },
+                legend: {
+                    orientation: 'h', 
+                    yanchor: 'bottom', 
+                    xanchor: 'center', 
+                    font: { size: 14 },
+                    itemwidth: 30, 
+                    traceorder: 'normal', 
+                    borderwidth: 2, 
+                    bordercolor: '#ddd', 
+                }
+            }
+        };
+
+        // Remove "Produced with Plotly" watermark and enable zoom and interaction
+        var config = { 
+            displayModeBar: true,  // Display mode bar
+            displaylogo: false,    // Hide Plotly logo
+            modeBarButtonsToRemove: [],  // Do not remove any buttons (zoom and pan will be enabled)
+            toImageButtonOptions: {
+                format: 'png',  // Image format
+                filename: 'plotly_chart',  // Default filename
+                height: 500,  // Height of the image
+                width: 700,   // Width of the image
+                scale: 1       // Scale of the image
+            },
+            scrollZoom: true,  // Enable zooming with mouse scroll
+        };
+
+        // Render the charts
+        Plotly.newPlot('vendor-pie-chart', [vendorPieChart], {}, config);
+        Plotly.newPlot('product-category-pie-chart', [categoryPieChart], {}, config);
+        Plotly.newPlot('product-brand-pie-chart', [brandPieChart], {}, config);
+    </script>
+{% endblock %}
+
+
+{% block pagecss %}
+    <style>
+        /* Flexbox layout for the charts */
+        .container {
+            width: 100%;
+            margin: 0 auto;
+            padding-top: 20px;
+        }
+
+        /* Row for the charts */
+        .chart-row {
+            display: flex;
+            justify-content: space-between; /* Distribute the charts evenly */
+            gap: 30px;  /* Space between the charts */
+            margin-bottom: 40px;
+        }
+
+        /* Each individual chart */
+        .chart {
+            flex: 1;
+            min-width: 300px; /* Prevent charts from shrinking too much */
+            max-width: 600px; /* Max width for each chart */
+        }
+
+        /* Responsive behavior for smaller screens */
+        @media (max-width: 768px) {
+            .chart-row {
+                flex-direction: column; /* Stack charts vertically on small screens */
+                align-items: center; /* Center charts vertically */
+            }
+
+            .chart {
+                min-width: 100%;  /* Allow charts to take full width on smaller screens */
+                max-width: 100%;  /* Ensure charts do not exceed screen width */
+            }
+        }
+    </style>
+{% endblock %}

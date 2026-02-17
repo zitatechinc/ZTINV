@@ -1,0 +1,164 @@
+
+<form method="post" action = "{{form_action_url}}" enctype="multipart/form-data" novalidate>
+   {% csrf_token %}
+<input type="hidden" name="vendor" value="{{vendor_obj.pk}}" class="form-control">
+
+    <div class="row ">
+    <div class="col-12 col-md-12 ">
+    <div class="row">
+        <div class="col-md-12 mb-2">
+            <h6>Purchase Order Form</h6>
+        </div>
+    </div>
+                  
+               <div class="row">
+                  <div class="col-md-4">
+                     <div class="form-floating mb-2">
+                        
+                        {{ form.code }}
+                           <label for="floatingName" class="form-label">{{ form.code.label_tag }}</label>
+                  
+                        
+                        {% if form.code.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.code.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+              
+                 
+               
+                  <div class="col-md-4">
+                     <div class="form-floating mb-3">
+                        {{ form.po_date }}
+                        <label for="floatingName" class="form-label">{{ form.po_date.label_tag }}</label>
+                        {% if form.po_date.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.po_date.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <div class="col-md-4">
+                     <div class="form-floating mb-3">
+                        {{ form.po_requested_by }}
+                        <label for="floatingName" class="form-label">{{ form.po_requested_by.label_tag }}</label>
+                        {% if form.po_requested_by.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.po_requested_by.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+               
+               
+                  <div class="col-md-4">
+                     <div class="form-floating mb-3">
+                        {{ form.po_status }}
+                        <label for="floatingName" class="form-label">{{ form.po_status.label_tag }}</label>
+                        {% if form.po_status.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.po_status.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                   
+                  <div class="col-md-4">
+                     <div class="form-floating mb-3">
+                        {{ form.po_type }}
+                        <label for="floatingName" class="form-label">{{ form.po_type.label_tag }}</label>
+                        {% if form.po_type.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.po_type.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  
+               
+
+               
+                  <div class="col-md-4">
+                     <div class="form-floating mb-3">
+                        {{ form.requested_delivery_date }}
+                        <label for="floatingName" class="form-label">{{ form.requested_delivery_date.label_tag}}</label>
+                        {% if form.requested_delivery_date.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.requested_delivery_date.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <div class="col-md-4">
+                     <div class="form-floating mb-3">
+                        {{ form.header_notes }}
+                        <label for="floatingName" class="form-label">{{ form.header_notes.label_tag }}</label>
+                        {% if form.header_notes.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.header_notes.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                   <div class="col-md-4">
+                     <div class="form-floating mb-3">
+                        {{ form.description }}
+                        <label for="floatingName" class="form-label">{{ form.description.label_tag}}</label>
+                        {% if form.ean.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.description.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                   <div class="col-md-4">
+                     <div class="form-floating mb-3">
+                        {{ form.status }}
+                        <label for="floatingName" class="form-label">{{ form.status.label_tag}}</label>
+                        {% if form.ean.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.status.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                 
+               
+               </div>
+            
+
+           
+            </div>
+
+<div class="col-md-4">
+        
+            <button type="submit" class="btn btn-sm app-btn-primary mt-2" ><i class="fa fa-save"></i> Save PO Headers</button>
+        
+    </div>
+         </div>
+
+         
+                
+        
+   
+</form>

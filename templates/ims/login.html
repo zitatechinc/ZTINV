@@ -1,0 +1,399 @@
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IMS Login</title>
+    <link rel="icon" href="{% static 'images/logo234.png' %}" type="image/x-icon">
+
+    <!-- External CSS Libraries -->
+    <link href="{% static "css/mdb.min.css" %}" rel="stylesheet" />
+    <link href="{% static "fontawesome/css/all.min.css" %}" rel="stylesheet">
+    <link href="{% static "css/bootstrap.min.css" %}" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            background: url("{% static 'images/bg.jpg' %}") no-repeat center center fixed;
+            background-size: cover;
+        }
+
+        .page-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .login-card {
+            display: flex;
+            flex-direction: row;
+            max-width: 1000px;
+            width: 100%;
+            /* height: 500px; */
+            background-color: #fff;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            flex-wrap: wrap; /* Allow wrapping for mobile */
+            border: 1px solid #007080; 
+        }
+
+        .login-left, .login-right {
+            flex: 1;
+            padding: 40px;
+        }
+
+        .login-left {
+            background-color: #ffffff;
+        }
+
+        .login-right {
+            background: linear-gradient(to bottom right, #004d4d, #007080);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .form-box {
+            display: contents;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .logo-img {
+            width: 40px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            font-size: 26px;
+            margin-bottom: 8px;
+        }
+
+        .subtitle {
+            margin-bottom: 24px;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 12px 12px 36px;
+            font-size: 18px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            border-color: #007080;
+        }
+
+        .position-relative {
+            position: relative;
+        }
+
+        .input-icon {
+            position: absolute;
+            top: 50%;
+            left: 10px;
+            transform: translateY(-50%);
+            color: #888;
+        }
+
+        .password-wrapper {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            color: #888;
+        }
+
+        .forgot-container {
+            text-align: right;
+            margin-top: -10px;
+            margin-bottom: 16px;
+        }
+
+        .forgot-password {
+            font-size: 16px;
+            color:#007080;
+            text-decoration: none;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+         html, body{
+            height: 100%;
+            margin: 0;
+            font-size: 16px;
+            }
+    
+
+    @media (max-width: 1450px) {
+      html,body,label {
+        font-size: 13.5px;
+      }
+      
+    }
+    @media (max-width: 1200px) {
+        html,body,label {
+        font-size: 12px;
+      }
+      
+    }
+
+        /* Mobile adjustments */
+        @media (max-width: 768px) {
+            .login-card {
+                flex-direction: column;
+                height: auto;
+            }
+
+            .login-left {
+                padding: 20px;
+                text-align: center;
+            }
+
+            .login-right {
+                padding: 20px;
+                height: auto;
+            }
+
+            h2 {
+                font-size: 22px;
+            }
+
+            .form-group {
+                font-size: 12px;
+            }
+
+            .form-control,label {
+                font-size: 12px;
+            }
+
+            .btn {
+                font-size: 12px;
+                padding: 10px;
+            }
+
+            .logo-img {
+                width: 50px;
+            }
+
+            /* Make images responsive */
+            .team-logos img, .logo-img, .login-left img {
+                width: 100%;
+                height: auto;
+            }
+
+            /* Adjust margin and padding */
+            .forgot-container {
+                text-align: left;
+            }
+        }
+
+        /* Very small screens (mobile phones) */
+        @media (max-width: 480px) {
+            .form-box {
+                max-width: 100%;
+            }
+
+            h2 {
+                font-size: 20px;
+            }
+
+            .form-control,label {
+                font-size: 10px;
+            }
+
+            .btn {
+                font-size: 10px;
+                padding: 10px;
+            }
+
+            .input-icon {
+                left: 8px;
+            }
+
+            .toggle-password {
+                right: 10px;
+            }
+        }
+        input::-ms-reveal,
+            input::-ms-clear {
+            display: none;
+            }
+            
+            input::-webkit-credentials-auto-fill-button {
+            visibility: hidden;
+            display: none !important;
+            }
+           
+            
+    </style>
+</head>
+
+<body>
+    <div class="page-wrapper">
+        <div class="login-card">
+            <!-- Left: Login Form -->
+            <div class="login-left">
+                <div class="form-box">
+                    <div class="d-flex justify-content-center align-items-center mb-4" style="gap: 20px;">
+                        <img src="{% static 'images/meslova_img123.png' %}" alt="Meslova Logo" style="width: 30%;" />
+                    </div>
+                    <form id="loginForm" action="javascript:void(0);">
+                        {% csrf_token %}
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label for="employeeId"><b>Employee ID</b></label>
+                            <div class="position-relative">
+                                <i class="fas fa-user-tie input-icon"></i>
+                                <input type="text" id="employeeId" class="form-control" maxlength="10" placeholder="Enter your employee ID" />
+                            </div>
+                            <div class="error-message" id="employeeIdError" style="font-size: 12px; color: #dc3545;"></div>
+                        </div>
+
+                        <div class="form-group" style="margin-top: 10px;">
+                            <label for="password"><strong>Password</strong></label>
+                            <div class="password-wrapper">
+                                <i class="fas fa-lock input-icon"></i>
+                                <input type="password" id="password" class="form-control" placeholder="Enter your password" />
+                                <i id="togglePassword" class="fas fa-eye-slash toggle-password"></i>
+                            </div>
+                            <div class="error-message" id="passwordError" style="font-size: 12px; color: #dc3545;"></div>
+                        </div>
+
+                      
+                        <button type="submit" class="btn sign-in-btn" style="background-color:#007080;width:80%;display: block !important; margin: 0 auto;">
+                            <span id="loginText" style="color:white;">Login</span>
+                            <div id="spinner" class="spinner-border spinner-border-sm text-light" role="status" style="display: none;">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </button>
+                        <div style="margin-top: 20px;text-align:center;">
+                             <strong>Meslova Systems Pvt. Ltd - 2025</strong>
+                            {% comment %} All rights reserved - Meslova Systems Pvt. Ltd., &copy; <script>document.write(new Date().getFullYear());</script> {% endcomment %}
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Right: Testimonial Section -->
+            <div class="login-right">
+                <div class="testimonial-box">
+                    <div class="team-section">
+                        <div style="display:flex;justify-content:center;margin-top:5px;">
+                            <img src="{% static 'images/kritihlogo1409.png' %}" alt="Krithi Logo" style="width: 200px;height:70px;" />
+                        </div>
+
+                        <div class="team-logos">
+                            <img src="{% static 'images/ims.png' %}" style="width: 100%; height: auto;" />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="{% static "js/jquery-3.6.0.min.js" %}"></script>
+    <script src="{% static "js/popper.min.js" %}"></script>
+    <script src="{% static "js/bootstrap.min.js" %}"></script>
+    <script src="{% static "js/mdb.min.js" %}"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Password visibility toggle
+            $('#togglePassword').click(function() {
+                const passwordField = $('#password');
+                const icon = $(this);
+
+                if (passwordField.attr('type') === 'password') {
+                    passwordField.attr('type', 'text');
+                    icon.removeClass('fa-eye-slash').addClass('fa-eye');
+                } else {
+                    passwordField.attr('type', 'password');
+                    icon.removeClass('fa-eye').addClass('fa-eye-slash');
+                }
+            });
+
+            // Form validation and submission
+            $('#loginForm').submit(function(e) {
+                e.preventDefault();
+
+                // Reset error messages
+                $('.error-message').hide();
+                let isValid = true;
+
+                // Validate employee ID
+                const employeeId = $('#employeeId').val().trim();
+                if (!employeeId) {
+                    $('#employeeIdError').text('Please enter your Employee ID').show();
+                    isValid = false;
+                }
+
+                // Validate password
+                const password = $('#password').val().trim();
+                if (!password) {
+                    $('#passwordError').text('Please enter your password').show();
+                    isValid = false;
+                }
+
+                if (!isValid) return;
+
+                // Show loading spinner
+                $('#spinner').show();
+                $('#loginText').text('Logging in...');
+
+                // AJAX request
+                $.ajax({
+                    url: "",
+                    type: "POST",
+                    data: {
+                        employee_id: employeeId,
+                        password: password,
+                        csrfmiddlewaretoken: '{{ csrf_token }}'
+                    },
+                    dataType: "json",
+                    success: function(response) {
+                        if (response.success && response.employee_id) {
+                            // Add a slight delay for better UX
+                            setTimeout(function() {
+                                window.location.href = response.redirect_url;
+                            }, 500);
+                        } else if (response.error) {
+                            $('#passwordError').text(response.error).show();
+                        } else {
+                            $('#passwordError').text('Login failed. Please check your credentials.').show();
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Login error:', error);
+                        $('#passwordError').text('An error occurred. Please try again.').show();
+                    },
+                    complete: function() {
+                        $('#spinner').hide();
+                        $('#loginText').text('Login');
+                    }
+                });
+            });
+        });
+    </script>
+</body>
+</html>

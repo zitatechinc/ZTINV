@@ -1,0 +1,1004 @@
+ 
+{% extends 'ims/index.html' %}
+{% load static %}
+{% load custom_tags %}
+ 
+{% block mainblock %}
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+ 
+<style>
+  /* General Layout */
+  .container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 1rem;
+    font-family: Arial, sans-serif;
+    display: flex;
+    gap: 2rem;
+  }
+ 
+  /* Left: Form Panel */
+  form#budgetForm {
+    width: 350px;
+    border: 1px solid #ccc;
+    padding: 1rem;
+    border-radius: 6px;
+    background: #fafafa;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+ 
+  form#budgetForm fieldset {
+    border: none;
+    padding: 0;
+    margin: 0;
+  }
+ 
+  form#budgetForm legend {
+    font-weight: bold;
+    font-size: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+ 
+  form#budgetForm label {
+    font-size: 0.9rem;
+    margin-top: 0.6rem;
+    margin-bottom: 0.2rem;
+    display: block;
+  }
+ 
+  form#budgetForm select,
+  form#budgetForm input[type="number"],
+  form#budgetForm textarea {
+    width: 100%;
+    padding: 5px 7px;
+    font-size: 0.9rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-bottom: 0.15rem; /* Reduce spacing below the textarea */
+  }
+ 
+  form#budgetForm textarea {
+    resize: vertical;
+  }
+ 
+  form#budgetForm small {
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 0.3rem;
+    display: block;
+  }
+ 
+  form#budgetForm .button-group {
+    display: flex;
+    gap: 10px;
+    margin-top: 1rem;
+    /* Slightly reduced from 1.5rem */
+  }
+ 
+  form#budgetForm button.btn-primary,
+  form#budgetForm button.btn-clear {
+    flex: 1;
+    padding: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+  }
+ 
+  form#budgetForm button.btn-primary {
+    background-color: #3178c6;
+    color: white;
+    transition: background-color 0.3s ease;
+  }
+ 
+  form#budgetForm button.btn-primary:hover {
+    background-color: #679ed8;
+  }
+ 
+  form#budgetForm button.btn-clear {
+    background-color: #e74c3c;
+    color: white;
+    transition: background-color 0.3s ease;
+  }
+ 
+  form#budgetForm button.btn-clear:hover {
+    background-color: #c0392b;
+  }
+ 
+ 
+  /* Make .form-group consistent with label + input spacing */
+  .form-group {
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+ 
+  /* Style the labels to align with other labels */
+  .form-group>label {
+    min-width: 140px;
+    /* match width with other labels */
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #333;
+  }
+ 
+  /* Style readonly span to look like input but non-editable */
+  .readonly-field {
+    display: inline-block;
+    min-width: 180px;
+    /* similar to input width */
+    padding: 0.375rem 0.75rem;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #555;
+    user-select: none;
+  }
+ 
+  .table-container {
+    background: #fff;
+    padding: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
+  }
+ 
+  table.dataTable thead th {
+    background-color: #87b0db;
+    color: black;
+    font-weight: bold;
+    padding: 6px 10px !important;
+    /* slightly increased for headers */
+    text-align: left;
+    border: 1px solid #ddd;
+    font-size: 0.9rem;
+    /* smaller font for header */
+  }
+ 
+  table.dataTable tbody td {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    padding: 4px 8px !important;
+    /* reduced padding for compact rows */
+    font-size: 0.85rem;
+    /* smaller font */
+    vertical-align: middle;
+  }
+ 
+  table.dataTable tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+ 
+  table.dataTable tbody tr:hover {
+    background-color: #eef5ff;
+  }
+ 
+  /* Right: Table Panel */
+  .table-panel {
+    flex-grow: 1;
+  }
+ 
+  .table-panel h2 {
+    margin-bottom: 1rem;
+    font-size: 1.25rem;
+    font-weight: bold;
+  }
+ 
+  table.dataTable {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 0.95rem;
+  }
+ 
+  table.dataTable th {
+    background-color: #f1f1f1;
+    font-weight: bold;
+  }
+ 
+  /* Style DataTables Search Box Wrapper */
+  .dataTables_filter {
+    margin-bottom: 0.5rem;
+    /* space below search box */
+    text-align: right;
+    /* aligns search box to the right */
+    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+  }
+ 
+  /* Style the Search Input box */
+  .dataTables_filter input[type="search"] {
+    width: 180px;
+    /* make search box smaller */
+    padding: 6px 8px;
+    font-size: 0.9rem;
+    font-family: Arial, sans-serif;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease;
+  }
+ 
+  /* On focus - subtle border highlight */
+  .dataTables_filter input[type="search"]:focus {
+    outline: none;
+    border-color: #679ed8;
+    box-shadow: 0 0 5px rgba(103, 158, 216, 0.5);
+  }
+ 
+  /* Optional: Style the label 'Search:' if visible */
+  .dataTables_filter label {
+    font-weight: 600;
+    color: #333;
+    margin-right: 0.5rem;
+    user-select: none;
+    font-size: 0.9rem;
+  }
+ 
+ 
+  /* Smaller View Log Button */
+  .view-log-btn {
+    background-color: #3178c6;
+    color: white;
+    border: none;
+    padding: 4px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-width: auto;
+    height: 28px;
+    transition: background-color 0.3s ease;
+  }
+ 
+  .view-log-btn i.fa-eye {
+    font-size: 0.85rem;
+    margin-right: 4px;
+  }
+ 
+  .view-log-btn:hover {
+    background-color: #679ed8;
+  }
+ 
+  /* Overlay & Popup Modal */
+  .overlay,
+  #logOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    display: none;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+  }
+ 
+  .overlay.active,
+  #logOverlay.active {
+    display: block;
+    opacity: 1;
+    visibility: visible;
+  }
+ 
+  .popup,
+  #logPopup {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #fff;
+    width: 90%;
+    max-width: 1000px;
+    max-height: 100vh;
+    padding: 1.5rem 2rem;
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    z-index: 9999;
+    font-family: Arial, sans-serif;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease;
+  }
+ 
+  .popup.active,
+  #logPopup.active {
+    opacity: 1;
+    visibility: visible;
+  }
+ 
+  .popup h3 {
+    margin-top: 0;
+    margin-bottom: 1rem;
+  }
+ 
+  .close-btn,
+  #closePopup {
+    position: absolute;
+    top: 12px;
+    right: 15px;
+    background: transparent;
+    border: none;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    color: #555;
+    transition: color 0.2s ease;
+  }
+ 
+  .close-btn:hover,
+  #closePopup:hover,
+  #closePopup:focus {
+    color: #d33;
+    outline: none;
+  }
+ 
+  /* Log Table Styling */
+  /* Add border to the entire table */
+  #logTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1rem;
+    font-size: 0.95rem;
+    color: #333;
+    border: 1px solid #ccc;
+    /* Outer border */
+  }
+ 
+  /* Add borders around header cells */
+  #logTable thead th {
+    background-color: #679ed8;
+    color: white;
+    padding: 10px 12px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    user-select: none;
+    border: 1px solid #ccc;
+    /* Add border to header cells */
+  }
+ 
+  /* Add borders around body cells */
+  #logTable tbody td {
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    /* Add border to body cells */
+    vertical-align: middle;
+    word-break: break-word;
+  }
+ 
+  /* Row striping and hover */
+  #logTable tbody tr:nth-child(even) {
+    background-color: #f9f9f9;
+  }
+ 
+  #logTable tbody tr:hover {
+    background-color: #e6f0ff;
+  }
+ 
+  /* Responsive Styles */
+  @media (max-width: 600px) {
+    #logPopup {
+      width: 95%;
+      padding: 1rem 1.2rem;
+    }
+ 
+    #logTable thead {
+      display: none;
+    }
+ 
+    #logTable,
+    #logTable tbody,
+    #logTable tr,
+    #logTable td {
+      display: block;
+      width: 100%;
+    }
+ 
+    #logTable tr {
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 0.5rem;
+    }
+ 
+    #logTable td {
+      border: none;
+      padding: 0.3rem 0.5rem;
+      position: relative;
+      padding-left: 50%;
+      text-align: left;
+    }
+ 
+    #logTable td::before {
+      content: attr(data-label);
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-weight: 600;
+      white-space: nowrap;
+    }
+  }
+  @media (max-width: 768px) {
+  .container {
+    flex-direction: column;
+    gap: 1rem;
+  }
+  form#budgetForm {
+    width: 100%;
+  }
+  .table-panel {
+    width: 100%;
+  }
+}
+ 
+@media (max-width: 480px) {
+  .form-group {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .form-group > label {
+    min-width: auto;
+    margin-bottom: 0.25rem;
+  }
+  .readonly-field {
+    min-width: 100%;
+  }
+  form#budgetForm select,
+  form#budgetForm input[type="number"],
+  form#budgetForm textarea {
+    width: 100%;
+  }
+  .button-group {
+    flex-direction: column;
+  }
+  form#budgetForm button.btn-primary,
+  form#budgetForm button.btn-clear {
+    width: 100%;
+  }
+}
+ 
+@media (max-width: 600px) {
+  .table-container {
+    overflow-x: auto;
+  }
+}
+ 
+ 
+</style>
+ 
+<div class="container">
+ 
+  <form id="budgetForm" method="POST" action="{% url 'budget_allocation_view' %}" novalidate>
+    {% csrf_token %}
+    <fieldset>
+      <legend>Budget Allocation</legend>
+      <label for="project">Project: <span style="color:red">*</span></label>
+      <select id="project" name="project" required>
+        <option value="" disabled selected>Select Project</option>
+        {% for p in projects %}
+        <option value="{{ p.project_id }}">{{ p.project_id }} - {{ p.name }}</option>
+        {% endfor %}
+      </select>
+ 
+      <label for="financial_year">Financial Year: <span style="color:red">*</span></label>
+      <select id="financial_year" name="financial_year" required>
+        <option value="" disabled selected>Select Financial Year</option>
+        {% for fy in financial_years %}
+        <option value="{{ fy }}">{{ fy }}</option>
+        {% endfor %}
+      </select>
+ 
+      <div id="newAllocationFields" style="display: none;">
+        <label for="allocated_budget">Allocated Budget: <span style="color:red">*</span></label>
+        <input type="number" id="allocated_budget" name="allocated_budget" step="0.01" min="0" required />
+        <small>Enter the allocated budget amount.</small>
+ 
+        <label for="remaining_budget">Remaining Budget:</label>
+        <input type="number" id="remaining_budget" name="remaining_budget" step="0.01" min="0" readonly
+          style="background-color: #f0f0f0;" />
+        <small>This field is auto-filled based on the allocated budget.</small>
+      </div>
+ 
+      <div id="existingAllocationFields" style="display: none;">
+        <label for="existingAllocated">Current Allocated:</label>
+        <input type="number" id="existingAllocated" name="existingAllocated" step="0.01" min="0" readonly
+          style="background-color: #f0f0f0;" />
+ 
+        <label for="existingRemaining">Current Remaining:</label>
+        <input type="number" id="existingRemaining" name="existingRemaining" step="0.01" min="0" readonly
+          style="background-color: #f0f0f0;" />
+ 
+        <label for="additional_budget">Additional Budget: <span style="color:red">*</span></label>
+        <input type="number" id="additional_budget" name="additional_budget" step="0.01" required />
+        <small>Negative values are allowed up to the maximum of remaining budget.</small>
+      </div>
+ 
+      <label for="remarks">Remarks: <span style="color:red">*</span></label>
+      <textarea id="remarks" name="remarks" rows="2" style="resize: none;"></textarea>
+ 
+      <div class="button-group">
+        <button type="submit" class="btn-primary">Submit</button>
+        <button type="reset" class="btn-clear">Reset</button>
+      </div>
+    </fieldset>
+  </form>
+ 
+  <!-- RIGHT: Budget Summary Table -->
+  <section class="table-panel">
+    <div class="table-container">
+ 
+      <h2>Project Budget Summary</h2>
+      <table id="summaryTable" class="dataTable">
+        <thead>
+          <tr>
+            <th>Project ID</th>
+            <th>Project Name</th>
+            <th>Financial Year(s)</th>
+            <th>Allocated Budget(s)</th>
+            <th>Remaining Budget(s)</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% regroup allocations by project__project_id as allocation_groups %}
+          {% for group in allocation_groups %}
+          {% for alloc in group.list %}
+          <tr>
+            <td>{{ group.grouper }}</td>
+            <td>
+              {% for p in projects %}
+              {% if p.project_id == group.grouper %}
+              {{ p.name }}
+              {% endif %}
+              {% endfor %}
+            </td>
+            <td>{{ alloc.financial_year }}</td>
+            <td>{{ alloc.allocated_budget }}</td>
+            <td>{{ alloc.remaining_budget }}</td>
+            <td>
+              <button type="button" class="view-log-btn" data-project="{{ group.grouper }}"
+                data-fy="{{ alloc.financial_year }}" data-project-name="{% for p in projects %}
+              {% if p.project_id == group.grouper %}
+                {{ p.name }}
+              {% endif %}{% endfor %}">
+                <i class="fa fa-eye"></i> Logs
+              </button>
+            </td>
+          </tr>
+          {% endfor %}
+          {% empty %}
+          <tr>
+            <td colspan="6">No budget allocations available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+ 
+      </table>
+    </div>
+  </section>
+ 
+</div>
+ 
+<!-- Log Popup -->
+<div id="logOverlay" class="overlay" aria-hidden="true" tabindex="-1"></div>
+ 
+<div id="logPopup" class="popup" role="dialog" aria-modal="true" aria-labelledby="logTitle" aria-describedby="logDesc"
+  hidden>
+  <!-- Loader -->
+        <div class="spinner-border loader" id="loader" role="status"
+          style="width: 3rem; height: 3rem; position: absolute; top: 50%; left: 50%; z-index: 9999; display: none; backdrop-filter: blur(6px); background-color: rgba(0, 0, 0, 0.3);">
+          <span class="visually-hidden">Loading...</span>
+        </div>
+  <button id="closePopup" class="close-btn" aria-label="Close popup">&times;</button>
+  <h3 id="logTitle" style="cursor: move;">Budget Allocation Logs - <span id="project_name"></span> (<span id="financialyear"></span>)</h3>
+ 
+  <!-- Move the table INSIDE the modal -->
+  <table id="logTable" border="1" style="width: 100%; border-collapse: collapse;" aria-describedby="logDesc">
+    <!-- <caption id="logDesc">Detailed logs of budget allocations and changes</caption> -->
+    <thead>
+      <tr>
+        <th>Updated Time</th>
+        <th>Previous Allocated</th>
+        <th>Previous Remaining</th>
+        <th>Additional Budget</th>
+        <th>Remarks</th>
+      </tr>
+    </thead>
+    <tbody id="logTableBody">
+      <!-- Filled by JS -->
+    </tbody>
+  </table>
+</div>
+ 
+<!-- JSON data for JS -->
+{{ allocations|json_script:"allocData" }}
+ 
+<!-- DataTables JS + CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.4/css/jquery.dataTables.min.css" />
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.4/js/jquery.dataTables.min.js"></script>
+ 
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+ 
+    // // Initialize DataTable (requires jQuery & DataTables lib)
+    if (window.$ && $.fn.DataTable) {
+      const $table = $('#summaryTable');
+ 
+      if ($table.length) {
+        // Only initialize if the number of <td> cells in the first row matches the number of <th>
+        const colCount = $table.find('thead th').length;
+        const validRows = $table.find('tbody tr').filter(function () {
+          return $(this).find('td').length === colCount &&
+            !$(this).text().toLowerCase().includes('no data');
+        });
+ 
+        if (validRows.length > 0) {
+          $table.DataTable({
+            responsive: true,
+            pageLength: 10,
+            lengthMenu: [5, 10, 25, 50],
+            order: [[0, 'asc'], [2, 'asc']]
+          });
+        }
+      }
+    }
+ 
+    // Parse allocations data passed from Django context
+    const allocDataElem = document.getElementById('allocData');
+    const allocations = allocDataElem ? JSON.parse(allocDataElem.textContent) : [];
+ 
+    // Form elements
+    const projectSelect = document.getElementById('project');
+    const fySelect = document.getElementById('financial_year');
+ 
+    // New allocation inputs
+    const newAllocationFields = document.getElementById('newAllocationFields');
+    const allocatedInput = document.getElementById('allocated_budget');
+    const remainingInput = document.getElementById('remaining_budget');
+ 
+    if (allocatedInput && remainingInput) {
+      allocatedInput.addEventListener("input", function () {
+        // Only update remaining if it's empty or equal to the old allocated value
+        if (!remainingInput.dataset.manualEdit) {
+          remainingInput.value = this.value;
+        }
+      });
+    }
+ 
+    // Existing allocation inputs (readonly spans)
+    const existingAllocationFields = document.getElementById('existingAllocationFields');
+    const existingAllocatedSpan = document.getElementById('existingAllocated');
+    const existingRemainingSpan = document.getElementById('existingRemaining');
+    const additionalBudgetInput = document.getElementById('additional_budget');
+    const remarksInput = document.getElementById('remarks');
+ 
+    // Update budget inputs based on selected project and financial year
+    function updateBudgetFields() {
+      const projectId = projectSelect ? projectSelect.value : null;
+      const fy = fySelect ? fySelect.value : null;
+ 
+      // Reset all fields and hide sections if incomplete selection
+      if (!projectId || !fy) {
+        if (newAllocationFields) newAllocationFields.style.display = 'none';
+        if (existingAllocationFields) existingAllocationFields.style.display = 'none';
+ 
+        if (allocatedInput) allocatedInput.value = '';
+        if (remainingInput) remainingInput.value = '';
+        if (existingAllocatedSpan) existingAllocatedSpan.value = '';
+        if (existingRemainingSpan) existingRemainingSpan.value = '';
+        if (additionalBudgetInput) {
+          additionalBudgetInput.value = '';
+          additionalBudgetInput.min = '';
+          additionalBudgetInput.max = '';
+        }
+        return;
+      }
+ 
+      // Find allocation for this project and year
+      const alloc = allocations.find(a => a['project__project_id'] === projectId && a.financial_year === fy);
+      console.log('Selected allocation:', alloc);
+ 
+      if (alloc) {
+        // Show existing allocation section
+        if (existingAllocationFields) existingAllocationFields.style.display = 'block';
+        if (newAllocationFields) newAllocationFields.style.display = 'none';
+ 
+        // Display existing values in spans (readonly)
+        if (existingAllocatedSpan) existingAllocatedSpan.value = alloc.allocated_budget;
+        if (existingRemainingSpan) existingRemainingSpan.value = alloc.remaining_budget;
+ 
+        // Clear inputs for new allocation
+        if (allocatedInput) allocatedInput.value = '';
+        if (remainingInput) remainingInput.value = '';
+ 
+        if (additionalBudgetInput) {
+          additionalBudgetInput.value = '';
+ 
+          // Set min attribute to -remaining_budget so additional budget cannot reduce remaining below 0
+          const remainingVal = parseFloat(alloc.remaining_budget);
+          additionalBudgetInput.min = -remainingVal;
+        }
+      } else {
+        // Show new allocation section
+        if (newAllocationFields) newAllocationFields.style.display = 'block';
+        if (existingAllocationFields) existingAllocationFields.style.display = 'none';
+ 
+        // Clear all inputs/spans
+        if (allocatedInput) allocatedInput.value = '';
+        if (remainingInput) remainingInput.value = '';
+        if (additionalBudgetInput) {
+          additionalBudgetInput.value = '';
+          additionalBudgetInput.min = '';
+          additionalBudgetInput.max = '';
+        }
+        if (existingAllocatedSpan) existingAllocatedSpan.value = '';
+        if (existingRemainingSpan) existingRemainingSpan.value = '';
+      }
+    }
+ 
+    if (projectSelect) projectSelect.addEventListener('change', updateBudgetFields);
+    if (fySelect) fySelect.addEventListener('change', updateBudgetFields);
+ 
+    // Modal popup elements
+    const logOverlay = document.getElementById('logOverlay');
+    const logPopup = document.getElementById('logPopup');
+    const closePopup = document.getElementById('closePopup');
+    const logTableBody = document.getElementById('logTableBody');
+ 
+    // Show logs modal for a project (fetch logs from API)
+    function showLogs(projectId, selectedFY = null, projectName) {
+      $(".loader").show();  // Show loading spinner
+      // Set the project name and FY in the heading
+      document.getElementById('project_name').textContent = projectName;
+      document.getElementById('financialyear').textContent = selectedFY;
+      if (!logTableBody) return;
+      logTableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Loading...</td></tr>';
+      const budgetLogsUrl = "{% url 'budget_logs_api' 0 %}".replace('/0/', `/${projectId}/`);
+ 
+      fetch(budgetLogsUrl)
+        .then(response => {
+          if (!response.ok) throw new Error('Network response was not ok');
+          return response.json();
+        })
+        .then(data => {
+          const logs = data.logs || [];
+          const grouped = {};
+ 
+          logs.forEach(log => {
+            const fy = log.financial_year || 'Unknown';
+            if (!grouped[fy]) grouped[fy] = [];
+            grouped[fy].push(log);
+          });
+ 
+          if (selectedFY && grouped[selectedFY]) {
+            renderLogs({ [selectedFY]: grouped[selectedFY] });
+          } else {
+            logTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No logs available for ${selectedFY}.</td></tr>`;
+          }
+        })
+        .catch(err => {
+          if (logTableBody) {
+            logTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center; color:red;">Error loading logs.</td></tr>`;
+          }
+          console.error('Error fetching logs:', err);
+         })
+        .finally(() => {
+                 $(".loader").hide();// hide loader after fetch
+        });
+ 
+      if (logOverlay) logOverlay.classList.add('active');
+      if (logPopup) {
+        logPopup.classList.add('active');
+        logPopup.removeAttribute('hidden');
+        logPopup.focus();
+      }
+      document.body.style.overflow = 'hidden';
+    }
+ 
+    function renderLogs(grouped) {
+      if (!logTableBody) return;
+      logTableBody.innerHTML = '';
+      const years = Object.keys(grouped).sort((a, b) => b.localeCompare(a)); // descending order
+      if (years.length === 0) {
+        logTableBody.innerHTML = `<tr><td colspan="5" style="text-align:center;">No logs available for this project.</td></tr>`;
+        return;
+      }
+ 
+      for (const fy of years) {
+        const logs = grouped[fy];
+ 
+        logs.forEach(log => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+           <td>${new Date(log.updated_at).toLocaleString("en-IN", {
+              hour12: true
+            }) || 'N/A'}</td>
+            <td>${log.previous_allocated || '-'}</td>
+            <td>${log.previous_remaining || '-'}</td>
+            <td>${log.updated_allocated - log.previous_allocated}</td>
+            <td>${log.remarks || ''}</td>
+          `;
+          logTableBody.appendChild(tr);
+        });
+      }
+    }
+ 
+    // Hide logs modal
+    function hideLogs() {
+      if (logOverlay) logOverlay.classList.remove('active');
+      if (logPopup) {
+        logPopup.classList.remove('active');
+        logPopup.setAttribute('hidden', true);
+      }
+      document.body.style.overflow = '';
+    }
+ 
+    // Attach click event to all log buttons
+    document.querySelectorAll('.view-log-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const projectId = btn.getAttribute('data-project');
+        const projectName = btn.getAttribute('data-project-name');
+        const selectedFY = btn.getAttribute('data-fy');
+        if (projectId) {
+          showLogs(projectId, selectedFY, projectName);
+        }
+      });
+    });
+ 
+    // Close modal on overlay or close button click
+    if (logOverlay) logOverlay.addEventListener('click', hideLogs);
+    if (closePopup) closePopup.addEventListener('click', hideLogs);
+ 
+    // Close modal on Escape key press
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && logPopup && logPopup.classList.contains('active')) {
+        hideLogs();
+      }
+    });
+ 
+    // Form validation on submit
+    const budgetForm = document.getElementById("budgetForm");
+    if (budgetForm) {
+      budgetForm.addEventListener("submit", function (e) {
+        const project = document.getElementById("project");
+        const year = document.getElementById("financial_year");
+        const remarks = document.getElementById("remarks");
+        const newAllocSection = document.getElementById("newAllocationFields");
+        const existingAllocSection = document.getElementById("existingAllocationFields");
+ 
+        let isValid = true;
+        let errorMessages = [];
+ 
+        // Check common required fields
+        if (!project.value) {
+          isValid = false;
+          errorMessages.push("Project is required.");
+        }
+ 
+        if (!year.value) {
+          isValid = false;
+          errorMessages.push("Financial Year is required.");
+        }
+ 
+        if (!remarks.value.trim()) {
+          isValid = false;
+          errorMessages.push("Remarks are required.");
+        }
+ 
+        // Check new allocation if visible
+        if (newAllocSection && newAllocSection.style.display !== "none") {
+          const alloc = document.getElementById("allocated_budget");
+          if (!alloc.value || parseFloat(alloc.value) <= 0) {
+            isValid = false;
+            errorMessages.push("Allocated Budget must be greater than 0.");
+          }
+        }
+ 
+        // Check additional budget if visible
+        if (existingAllocSection && existingAllocSection.style.display !== "none") {
+          const addBudgetInput = document.getElementById("additional_budget");
+          const existingRemainingSpan = document.getElementById("existingRemaining");
+ 
+          if (!addBudgetInput.value) {
+            isValid = false;
+            errorMessages.push("Additional Budget is required.");
+          }
+          else if ( parseFloat(addBudgetInput.value) === 0) {
+            isValid = false;
+            errorMessages.push("Additional Budget cannot be zero");
+          }
+          else {
+            const addBudgetVal = parseFloat(addBudgetInput.value);
+            const existingRemainingVal = parseFloat(existingRemainingSpan.value);
+ 
+            // Remaining budget after addition cannot go below 0
+            if (existingRemainingVal + addBudgetVal < 0) {
+              isValid = false;
+              errorMessages.push(`Additional Budget is too low. It cannot reduce remaining budget below zero. Max negative allowed is ${-existingRemainingVal}.`);
+            }
+          }
+        }
+ 
+       if (!isValid) {
+          e.preventDefault();
+          alert(errorMessages.join("\n"));
+        } else {
+          const isNewAlloc = newAllocSection && newAllocSection.style.display !== "none";
+          const isExistingAlloc = existingAllocSection && existingAllocSection.style.display !== "none";
+ 
+          const projectName = project.options[project.selectedIndex]?.text || project.value;
+          const yearValue = year.value;
+          let amount = "";
+ 
+          if (isNewAlloc) {
+            amount = document.getElementById("allocated_budget").value;
+          } else if (isExistingAlloc) {
+            amount = document.getElementById("additional_budget").value;
+          }
+ 
+          let successMessage = ``;
+ 
+          if (isNewAlloc) {
+            successMessage = `Budget allocated succesfully`;
+          } else if (isExistingAlloc) {
+            successMessage = `Budget updated successfully`;
+          }
+ 
+          alert(successMessage);
+        }
+ 
+ 
+      });
+ 
+      // Reset handler
+      budgetForm.addEventListener('reset', () => {
+        if (newAllocationFields) newAllocationFields.style.display = 'none';
+        if (existingAllocationFields) existingAllocationFields.style.display = 'none';
+      });
+    }
+ 
+  });
+ 
+  const popup = document.getElementById('logPopup');
+  const header = document.getElementById('logTitle');
+  let offsetX = 0, offsetY = 0, isDown = false;
+ 
+  header.addEventListener('mousedown', (e) => {
+    isDown = true;
+    offsetX = e.clientX - popup.offsetLeft;
+    offsetY = e.clientY - popup.offsetTop;
+    popup.style.cursor = 'grabbing';
+    e.preventDefault();
+  });
+ 
+ 
+  document.addEventListener('mouseup', () => {
+    isDown = false;
+    popup.style.cursor = 'default';
+  });
+ 
+  document.addEventListener('mousemove', (e) => {
+    if (isDown) {
+      popup.style.left = (e.clientX - offsetX) + 'px';
+      popup.style.top = (e.clientY - offsetY) + 'px';
+    }
+  });
+ 
+</script>
+ 
+{% endblock %}
+ 

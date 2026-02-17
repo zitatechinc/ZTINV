@@ -1,0 +1,746 @@
+<!-- Extends all features from the parent template -->
+{% extends 'ims/index.html' %}
+
+<!-- Loads static files -->
+{% load static %}
+
+<!-- Loads custom_tags.py file from template tags folder to apply filters -->
+{% load custom_tags %}
+
+<!-- This block content is inserted into the parent template (index.html) -->
+{% block mainblock %}
+<div class="container py-2 px-2 px-sm-2" style="max-width: 100%;">
+  <!-- <h3 class="mb-4 text-center">Inventory Management</h3> -->
+  
+  <!-- Flex container with wrapping and gap -->
+  <div class="d-flex flex-wrap gap-2 justify-content-start" style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">
+
+    <!-- Total Vendors -->
+    <a href="{% url "vender-create" %}" style="text-decoration:none; text-dark;" title="Number of Vendors">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-vendor">
+          <i class="bi bi-people"></i>
+        </div>
+        <h6 class="text-muted mb-1">Vendors</h6>
+        <div class="card-metric text-primary" id="card-vendors">{{ total_vendors|indian_notation }}</div>
+      </div>
+    </a>
+
+    <!-- Total Projects -->
+    <a href="{% url "project-create" %}" style="text-decoration:none; text-dark;" title="Number of Projects">
+    <div class="dashboard-card p-3">
+      <div class="card-icon bg-project">
+        <i class="bi bi-kanban"></i>
+      </div>
+      <h6 class="text-muted mb-1">Projects</h6>
+      <div class="card-metric text-warning" id="card-projects">{{ total_projects|indian_notation }}</div>
+    </div>
+    </a>
+   
+
+    <!-- Total Procurements -->
+    <div href="{% url 'imm' %}" class="text-decoration-none text-dark" id="raised-link" title="Raised Procurements">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-procurement">
+          <i class="bi bi-bag-check"></i>
+        </div>
+        <h6 class="text-muted mb-1">Raised PR</h6>
+        <div class="card-metric text-success" id="card-raised">{{ total_procurements|indian_notation }}</div>
+      </div>
+    </div>
+
+    <!--Approving Authority approved PR'S-->
+    <div href="{% url 'imm' %}" class="text-decoration-none text-dark" id="aa-approval-link" style="cursor: pointer;" title="AA Approved PR's">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-procurement">
+          <i class="bi bi-bag-check"></i>
+        </div>
+        <h6 class="text-muted mb-1">Approved PR</h6>
+        <div class="card-metric text-success" id="card-aa">{{ aa_approved_count|indian_notation }}</div>
+      </div>
+    </div>
+
+    <!--IMM Recommended PR'S-->
+    <div href="{% url 'imm' %}" class="text-decoration-none text-dark" id="imm-procurements-link" style="cursor: pointer;" title="Your Recommended PR's">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-procurement">
+          <i class="bi bi-bag-check"></i>
+        </div>
+        <h6 class="text-muted mb-1">Procurements</h6>
+        <div class="card-metric text-success" id="card-imm-procurements">{{ imm_recommended_count|indian_notation }}</div>
+      </div>
+    </div>
+
+    <!-- Enquiry Stage Card -->
+    <div href="{% url "enquiry-create" %}" style="text-decoration:none; text-dark; cursor: pointer;" id="enquiry-approval-link" title="when Imm approves Enquiry count Increase">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-warning">
+          <i class="bi bi-search"></i>
+        </div>
+        <h6 class="text-muted mb-1">Enquiry Approval</h6>
+        <div class="card-metric text-warning" id="card-enquiry">{{ stage_summary.enquiry_approval.count|indian_notation }}</div>
+      </div>
+    </div>
+
+    <!-- CST Stage Card -->
+    <div href="{% url "comparative" %}" style="text-decoration:none; text-dark; cursor: pointer;" id="cst-approval-link" title="when Imm approves CST count Increase">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-purple">
+          <i class="bi bi-file-earmark-bar-graph-fill"></i>
+        </div>
+        <h6 class="text-muted mb-1">CST</h6>
+        <div class="card-metric" style="color: #6f42c1;" id="card-cst">{{ stage_summary.CST_approval_new.count|indian_notation }}</div>
+      </div>
+    </div>
+
+    <!-- Negotiation Stage Card -->
+    <div href="{% url "negotiation" %}" style="text-decoration:none; text-dark; cursor: pointer;" id="negotiation-approval-link" title="when AA approves the all particulars itesm for that particular pr is count Increases">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-primary">
+          <i class="bi bi-journal-check"></i>
+        </div>
+        <h6 class="text-muted mb-1">For Negotiation</h6>
+        <div class="card-metric text-primary" id="card-negotiation">{{ stage_summary.Negotiation_approval.count|indian_notation }}</div>
+      </div>
+    </div>
+
+    <!-- DPO Created Stage Card -->
+    <div href="{% url "dpo" %}" style="text-decoration:none; text-dark; cursor: pointer;" id="dpo-approval-link" title="when AA approval count Increase">
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-info">
+          <i class="bi bi-file-earmark"></i>
+        </div>
+        <h6 class="text-muted mb-1">DPO</h6>
+        <div class="card-metric text-info" id="card-dpo">{{ stage_summary.DPO_approval.count|indian_notation }}</div>
+      </div>
+    </div>
+    <!-- PO Issued Stage Card -->
+    <div href="{% url "po" %}" style="text-decoration:none; text-dark; cursor: pointer;" title="when PO approval is done count Increase">
+      
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-success">
+          <i class="bi bi-bag-check-fill"></i>
+        </div>
+        <h6 class="text-muted mb-1">PO</h6>
+        <div class="card-metric text-success" id="card-po">{{ stage_summary.PO.count|indian_notation}}</div>
+      </div>
+    </div>
+
+    <!-- Delivery Stage Card -->
+    {% comment %} <div class="dashboard-card p-3">
+      <div class="card-icon bg-danger">
+        <i class="bi bi-truck"></i>
+      </div>
+      <h6 class="text-muted mb-1">Delivery</h6>
+      <div class="card-metric text-danger" id="card-delivery">{{ delivered_procurements|indian_notation }}</div>
+    </div> {% endcomment %}
+
+      <div class="dashboard-card p-3" >
+        <div class="card-icon bg-primary" data-bs-toggle="tooltip" 
+        title="Total allocated budget across all projects">
+          <i class="bi bi-cash-stack"></i>
+        </div>
+        <h6 class="text-muted mb-1">Allocated Budget</h6>
+        <div class="card-metric text-primary" id="card-allocated" data-bs-toggle="tooltip" title="₹ {{ total_allocated_budget}}">₹ {{ total_allocated_budget|indian_notation }}</div>
+      </div>
+
+       <div class="dashboard-card p-3">
+        <div class="card-icon bg-warning" data-bs-toggle="tooltip" 
+        title="Allocated amouont minus committed amount">
+          <i class="bi bi-piggy-bank"></i>
+        </div>
+        <h6 class="text-muted mb-1">Available Budget</h6>
+        <div class="card-metric text-warning" id="card-remaining" data-bs-toggle="tooltip" title="₹ {{ total_remaining_budget}}">₹ {{ total_remaining_budget|indian_notation }}</div>
+      </div>
+
+      <div class="dashboard-card p-3">
+        <div class="card-icon bg-success" data-bs-toggle="tooltip" 
+        title="Sum of Total committed amount in all the approved POs">
+          <i class="bi bi-wallet2"></i>
+        </div>
+        <h6 class="text-muted mb-1">Committed Budget</h6>
+        <div class="card-metric text-success" id="card-used" data-bs-toggle="tooltip" title="₹ {{ total_used_budget}}">₹ {{ total_used_budget|indian_notation }}</div>
+      </div>
+
+  </div>
+
+  <!-- Top Vendors Section -->
+  <!-- Top Vendors Section -->
+<div class="mt-3">
+  <div class="row g-3">
+
+    <!-- Left Column: Procurement Status Doughnut Chart -->
+    <div class="col-12 col-md-4">
+    <div class="procurement-dashboard-card p-3">
+      <div class="card-icon bg-status">
+        <i class="bi bi-pie-chart-fill"></i>
+      </div>
+      <h6 class="fw-bold fs-5">Procurement Status</h6>
+      <canvas id="procurementStatusChart"></canvas>
+    </div>
+    </div>
+
+    <!-- Right Column: Top Vendors Table -->
+    <div class="col-12 col-md-8">
+      <div class="table-dashboard-card p-3">
+
+        <!-- Section title with icon -->
+        <h6 class="fw-bold fs-5">Top 5 Vendors</h6>
+
+        <!-- Responsive wrapper for horizontal scroll on small screens -->
+        <div class="table-responsive">
+          <table class="table table-sm table-bordered text-center align-middle compact-table">
+            
+            <!-- Table header with icons and compact layout -->
+            <thead class="table-light" style="font-size: 0.85rem;">
+              <tr>
+                <th><i class="bi bi-person-circle"></i> Vendor</th>
+                <th><i class="bi bi-briefcase-fill"></i> Procurements</th>
+                <th><i class="bi bi-clock-history"></i> Avg. Days</th>
+                <th><i class="bi bi-currency-rupee"></i> Total Committed Amount </th>
+                <th><i class="bi bi-currency-rupee"></i> Total Expenditure </th>
+              </tr>
+            </thead>
+
+            <!-- Table body -->
+            <tbody>
+              {% for vendor in top_vendors %}
+              <tr style="font-size: 1rem;">
+                <td>{{ vendor.vendor_name }}</td>
+                <td><span class="badge bg-primary">{{ vendor.procurement_count|indian_notation }}</span></td>
+                <td>
+                  {% if vendor.avg_delivery_days < 15 %}
+                  <span class="badge bg-success">{{ vendor.avg_delivery_days }}</span>
+                  {% elif vendor.avg_delivery_days < 30 %}
+                  <span class="badge bg-warning text-dark">{{ vendor.avg_delivery_days }}</span>
+                  {% else %}
+                  <span class="badge bg-danger">{{ vendor.avg_delivery_days }}</span>
+                  {% endif %}
+                </td>
+                <td><span class="fw-medium">₹{{ vendor.total_committed_price|indian_notation }}</span></td>
+                <td><span class="text-success fw-medium">₹{{ vendor.total_expenditure_price|indian_notation }}</span></td>
+              </tr>
+              {% empty %}
+              <tr><td colspan="5">No vendors available</td></tr>
+              {% endfor %}
+            </tbody>
+
+          </table>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+</div>
+{% endblock %}
+
+{% block styleblock %}
+<style>
+  .dashboard-card {
+    flex: 1 0 155px;
+    min-width: 120px;
+    max-width: 100%;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #fff;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 1;
+  }
+
+  .table-dashboard-card {
+    width: 100%;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    background: #fff;
+    text-align: center;
+  }
+
+  .procurement-dashboard-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.5rem;
+    width: 100%;
+    max-width: 100%;
+    padding: 1.5rem 1rem;
+    border: 2px solid #e5e7eb;
+    border-radius: 0.75rem;
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+    background: #fff;
+    text-align: center;
+    min-height: 100px;
+  }
+
+  .procurement-dashboard-card .card-icon {
+    margin: 0 auto;
+    font-size: 1.5rem;
+  }
+
+  .procurement-dashboard-card h6 {
+    margin: 0;
+    font-weight: 600;
+    font-size: 1rem;
+    color: #6c757d;
+  }
+
+  #procurementStatusChart {
+    width: 180px !important;
+    height: 180px !important;
+    max-width: 100%;
+    display: block;
+  }
+
+  .dashboard-card:hover,
+  .table-dashboard-card:hover,
+  .procurement-dashboard-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  .card-icon {
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.5rem;
+    margin: 0 auto 0.75rem;
+    font-size: 1.3rem;
+    color: white;
+  }
+
+  .card-metric {
+    font-size: 1.8rem;
+    font-weight: 600;
+  }
+
+  .bg-vendor { background-color: #0d6efd; }
+  .bg-procurement { background-color: #198754; }
+  .bg-project { background-color: #ffc107; color: #212529; }
+  .bg-status { background-color: #6f42c1; }
+  .bg-purple { background-color: #6f42c1; color: white; }
+
+  .compact-table th,
+  .compact-table td {
+    padding: 0.35rem 0.4rem !important;
+    vertical-align: middle;
+    white-space: nowrap;
+    font-size: 0.9rem;
+  }
+
+  .compact-table th {
+    font-weight: 600;
+  }
+
+  .compact-table td:first-child {
+    padding-left: 0.6rem;
+    padding-right: 0.6rem;
+    text-align: center;
+  }
+
+  .compact-table .badge {
+    font-size: 0.75rem;
+    padding: 0.3em 0.55em;
+  }
+
+  @media (max-width: 576px) {
+    .dashboard-card {
+      width: 100% !important;
+      margin-bottom: 1rem;
+      white-space: normal;
+    }
+
+    .procurement-dashboard-card {
+      max-width: 100%;
+    }
+
+    .card-metric {
+      font-size: 1.1rem;
+    }
+
+    .compact-table th,
+    .compact-table td {
+      font-size: 0.75rem;
+      padding: 0.25rem;
+      white-space: normal;
+    }
+  }
+
+  .tooltip-inner {
+    max-width: 250px;  /* Max width of tooltip */
+    white-space: normal;  /* Allow wrapping of text */
+    word-wrap: break-word; /* Break long words */
+    text-align: left; /* Optional: align text to left */
+}
+
+.dashboard-card[data-bs-toggle="tooltip"]:hover:not(:has([data-bs-toggle="tooltip"]:hover)) {
+  /* Show tooltip only if no child tooltip is hovered */
+  pointer-events: auto;
+}
+
+
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  let procurementChart = null;
+
+  function indianFormat(value) {
+    const num = Number(value);
+    return isNaN(num) ? '0' : num.toLocaleString('en-IN');
+  }
+
+   function indianNotation(value) {
+    debugger;
+        value = parseFloat(value);
+        if (isNaN(value)) return value;
+ 
+        if (value >= 10000000) {
+            return (value / 10000000).toFixed(2) + ' Cr';
+        } else if (value >= 100000) {
+            return (value / 100000).toFixed(2) + ' L';
+        } else if (value >= 1000) {
+            return (value / 1000).toFixed(2) + ' K';
+        } else {
+            return Math.round(value).toString();
+        }
+    }
+
+  function renderProcurementChart(approved, inProgress, delivered) {
+    debugger;
+    const total = approved + inProgress + delivered;
+    const chartContainer = document.getElementById('procurementStatusChart')?.parentElement;
+
+    if (!chartContainer) return;
+
+    if (total === 0) {
+      chartContainer.innerHTML = '<div style="text-align:center; padding: 2rem; color: #888;">No procurement data available</div>';
+      return;
+    }
+
+    const ctx = document.getElementById('procurementStatusChart').getContext('2d');
+    if (procurementChart) procurementChart.destroy();
+
+    procurementChart = new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: ['PO Approved', 'In Progress', 'Delivered'],
+        datasets: [{
+          data: [approved, inProgress, delivered],
+          backgroundColor: ['#198754', '#ffc107', '#0d6efd'],
+          borderWidth: 1
+        }]
+      },
+      options: {
+        cutout: '60%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              boxWidth: 18,
+              font: { size: 18, weight: '500' },
+              padding: 10
+            }
+          },
+          tooltip: {
+            bodyFont: { size: 18 },
+            titleFont: { size: 18 },
+            callbacks: {
+              label: ctx => `${ctx.label}: ${ctx.parsed || 0}`
+            }
+          }
+        }
+      }
+    });
+  }
+
+
+  function updateTextContent(id, value, prefix = '') {
+    const el = document.getElementById(id);
+    if (el) el.textContent = prefix + indianNotation(value);
+  }
+
+  function renderTopVendors(vendors) {
+    const tableBody = document.querySelector("table tbody");
+    if (!tableBody) return;
+
+    if (!vendors || vendors.length === 0) {
+      tableBody.innerHTML = '<tr><td colspan="5">No vendors available</td></tr>';
+      return;
+    }
+
+    tableBody.innerHTML = vendors.map(vendor => {
+      const badgeClass = vendor.avg_delivery_days < 15 ? 'bg-success'
+                        : vendor.avg_delivery_days < 30 ? 'bg-warning text-dark'
+                        : 'bg-danger';
+
+      return `
+        <tr style="font-size: 1rem;">
+          <td>${vendor.vendor_name}</td>
+          <td><span class="badge bg-primary">${indianNotation(vendor.procurement_count)}</span></td>
+          <td><span class="badge ${badgeClass}">${vendor.avg_delivery_days}</span></td>
+          <td><span class="fw-medium">₹${indianNotation(vendor.total_committed_price)}</span></td>
+          <td><span class="text-success fw-medium">₹${indianNotation(vendor.total_expenditure_price)}</span></td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  function updateStageCards(summary) {
+   
+    updateTextContent("card-enquiry", summary["enquiry_approval"].count || 0);
+    updateTextContent("card-cst", summary["CST_approval_new"].count || 0);
+    updateTextContent("card-negotiation", summary["Negotiation_approval"].count || 0);
+    updateTextContent("card-dpo", summary["DPO_approval"].count || 0);
+    updateTextContent("card-po", summary["PO"].count || 0);
+    updateTextContent("card-delivery", summary["Delivered"] || 0);
+  }
+    function submitPrIdsAndRedirect(prids, url) {
+    showLoader();
+    $.ajax({
+        url: "",   // same page POST
+        type: "POST",
+        data: {
+            stage_action: "filter_by_prids",
+            prids: prids,
+            url: url,   
+            csrfmiddlewaretoken: $('#csrf_token').val()
+        },
+        success: function (response) {
+            console.log("POST successful:", response);
+
+            // ✅ ACTUAL REDIRECT
+            if (response.status === "success" && response.redirect_url) {
+                window.location.href = response.redirect_url;
+                hideLoader();
+            }
+        },
+        error: function (xhr) {
+            console.error("POST filter failed:", xhr.responseText);
+            hideLoader();
+        }
+    });
+}
+
+  document.addEventListener("DOMContentLoaded", () => {
+    //tooltip
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+    debugger;
+
+    const approved = Number({{ approved_procurements|default:"0" }});
+    const inProgress = Number({{ in_progress_procurements|default:"0" }});
+    const delivered = Number({{ delivered_procurements|default:"0" }});
+
+    
+
+    renderProcurementChart(approved, inProgress, delivered);
+
+
+    const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+    const immdashboardsocket = new WebSocket(`${wsScheme}://${window.location.host}/ws/imm-dashboard/`);
+
+    immdashboardsocket.onopen = () => console.log("IMM Dashboard WebSocket connected.");
+    immdashboardsocket.onclose = () => console.warn("IMM Dashboard WebSocket disconnected.");
+    immdashboardsocket.onerror = err => console.error("IMM Dashboard WebSocket error:", err);
+
+    immdashboardsocket.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      console.log("data received", data);
+
+      total_allocated_budget = data.total_allocated_budget;
+        total_remaining_budget = data.total_remaining_budget;
+        total_used_budget = data.total_used_budget;
+
+      // Update chart
+      renderProcurementChart(
+        Number(data.approved_procurements || 0),
+        Number(data.in_progress_procurements || 0),
+        Number(data.delivered_procurements || 0)
+      );
+
+      updateTextContent("card-allocated", total_allocated_budget);
+      updateTextContent("card-remaining", total_remaining_budget);
+      updateTextContent("card-used", total_used_budget);
+
+      // Update top cards
+      updateTextContent("card-vendors", data.total_vendors);
+      updateTextContent("card-projects", data.total_projects);
+      updateTextContent("card-procurements", data.total_procurements);
+
+      //budget related cards
+      /*document.getElementById("card-allocated").textContent = '₹ '+ total_allocated_budget;
+      document.getElementById("card-remaining").textContent = '₹ '+ total_remaining_budget;
+      document.getElementById("card-used").textContent = '₹ '+ total_used_budget;*/
+
+      const allPRs = data.all_procurement_ids || [];
+
+      // Build query string: prids=PR001,PR002,PR003
+      const prQuery = allPRs.join(",");
+
+      const aaapprovalprs = data.aa_approved_prid || [];
+      const paaQuery = aaapprovalprs.join(",");
+      console.log("AA Approved query:", paaQuery);
+
+      const immrecomended = data.imm_recommended_prid || [];
+      const pimmQuery = immrecomended.join(",");
+
+      /*const immrecommendedprs = data.imm_recommended_count || [];
+      const pimmQuery = immrecommendedprs.join(",");*/
+      //console.log("IMM Recommended query:", pimmQuery);
+      
+      const enquiryapprovalprs = data.stage_summary["enquiry_approval"].pr_ids || [];
+      const prenqQuery = enquiryapprovalprs.join(",");
+
+      const cstCount = (data.stage_summary?.CST_approval_new?.count) || 0;
+      updateTextContent("card-cst", cstCount.toLocaleString('en-IN'));
+      
+      const cstapprovalprs = data.stage_summary["CST_approval_new"].pr_ids || [];
+      const pcstQuery = cstapprovalprs.join(",");
+      // Optional: log PR ids for debugging
+      console.log("CST approved PR IDs:", data.stage_summary?.CST_approval_new?.pr_ids || []);
+
+        // Negotiation Approval PRs with particulars
+        /*const negotiationapprovalprs = data.stage_summary["Negotiation_approval"].pr_ids || [];
+        const partPairs = data.stage_summary["Negotiation_approval"].pr_particular_pairs || [];
+
+        let negotiationParam = "";
+
+        // Convert pr_particular_pairs → PRID_PPARTID,PRID_PPARTID,...
+        if (partPairs.length > 0) {
+            negotiationParam = partPairs
+                .map(item => `${item.pr_id}_P${item.particular_id}`)
+                .join(",");
+        } else {
+            negotiationParam = "";
+        }*/
+        const negotiationapprovalprs = data.stage_summary["Negotiation_approval"].pr_ids || [];
+        const negotiationQuery = negotiationapprovalprs.join(",");
+
+        console.log("Negotiation query:", negotiationQuery);
+
+
+      const dpoapprovalprs = data.stage_summary["DPO_approval"].pr_ids || [];
+      
+      const dpoapprovalprs2 = data.stage_summary["DPO_approval"].vendor_pairs || [];
+
+      
+      const dpoPairs = dpoapprovalprs2
+          .map(item => `${item.pr_id}-${item.vendor_id}`)
+          .join(",");
+
+      const poVendors = data.stage_summary["PO"].vendors || []; 
+
+      const poPairs = poVendors
+          .map(item => `${item.pr_id}-${item.vendor_id}`)
+          .join(",");
+
+
+  
+
+      // AA Approval
+$('#aa-approval-link').css("cursor", (data.aa_approved_prid?.length || 0) === 0 ? "default" : "pointer");
+$('#aa-approval-link').off("click").on('click', function (e) {
+    if ((data.aa_approved_prid?.length || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(paaQuery, "/ims/approvedpr/");
+});
+
+// IMM Procurements
+$('#imm-procurements-link').css("cursor", (data.imm_recommended_prid?.length || 0) === 0 ? "default" : "pointer");
+$('#imm-procurements-link').off("click").on('click', function (e) {
+    if ((data.imm_recommended_prid?.length || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(pimmQuery, "/ims/imm/");
+});
+
+// IMM Recommended
+$('#imm-recommended-link').css("cursor", (data.imm_recommended_prid?.length || 0) === 0 ? "default" : "pointer");
+$('#imm-recommended-link').off("click").on('click', function (e) {
+    if ((data.imm_recommended_prid?.length || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    //submitPrIdsAndRedirect(pimmQuery, "/imm/"); // Uncomment if needed
+});
+
+// Enquiry Approval
+$('#enquiry-approval-link').css("cursor", (data.stage_summary?.enquiry_approval?.count || 0) === 0 ? "default" : "pointer");
+$('#enquiry-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.enquiry_approval?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(prenqQuery, "/ims/enquiry-create/");
+});
+
+// CST Approval
+$('#cst-approval-link').css("cursor", (data.stage_summary?.CST_approval_new?.count || 0) === 0 ? "default" : "pointer");
+$('#cst-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.CST_approval_new?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(pcstQuery, "/ims/comparative/");
+});
+
+// Negotiation Approval
+$('#negotiation-approval-link').css("cursor", (data.stage_summary?.Negotiation_approval?.count || 0) === 0 ? "default" : "pointer");
+$('#negotiation-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.Negotiation_approval?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(negotiationQuery, "/ims/negotiation/");
+});
+
+// DPO Approval
+$('#dpo-approval-link').css("cursor", (data.stage_summary?.DPO_approval?.count || 0) === 0 ? "default" : "pointer");
+$('#dpo-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.DPO_approval?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(dpoPairs, "/ims/dpo/");
+});
+
+// PO Approval
+$('#po-approval-link').css("cursor", (data.stage_summary?.PO?.count || 0) === 0 ? "default" : "pointer");
+$('#po-approval-link').off("click").on('click', function (e) {
+    if ((data.stage_summary?.PO?.count || 0) === 0) {
+        e.preventDefault();
+        return;
+    }
+    submitPrIdsAndRedirect(poPairs, "/ims/po/");
+});
+
+
+
+      // Update stage summary cards
+      updateStageCards(data.stage_summary || {});
+      
+
+      // Update vendor table
+      renderTopVendors(data.top_vendors || []);
+    };
+  });
+</script>
+{% endblock scripts %}
+

@@ -1,0 +1,516 @@
+{% extends 'index.html' %}
+{% load static %}
+{% comment %} <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"> {% endcomment %}
+{% block mainblock %}
+<div class="hh">
+    <!-- Dashboard Count Section -->
+    <div class="dashboard-counts">
+        <div class="container">
+            <div class="row justify-content-center align-items-center">
+                {% for stage in stage_counts %}
+                <div class="col-md-2 col-sm-4 mb-4">
+                    <div class="card count-box" data-stage="{{ stage.stage }}">
+                        <div class="card-body">
+                            <h5 class="card-title">
+                                {% if stage.stage == "stage1" %}
+                                    {{ stage_mapping.stage1 }}
+                                {% elif stage.stage == "stage2" %}
+                                    {{ stage_mapping.stage2 }}
+                                {% elif stage.stage == "stage3" %}
+                                    {{ stage_mapping.stage3 }}
+                                {% elif stage.stage == "stage4" %}
+                                    {{ stage_mapping.stage4 }}
+                                {% elif stage.stage == "stage5" %}
+                                    {{ stage_mapping.stage5 }}
+                                {% elif stage.stage == "stage6" %}
+                                    {{ stage_mapping.stage6 }}
+                                {% elif stage.stage == "stage7" %}
+                                    {{ stage_mapping.stage7 }}
+                                {% elif stage.stage == "stage8" %}
+                                    {{ stage_mapping.stage8 }}
+                                {% elif stage.stage == "stage9" %}
+                                    {{ stage_mapping.stage9 }}
+                                {% elif stage.stage == "stage10" %}
+                                    {{ stage_mapping.stage10 }}
+                                {% else %}
+                                    {{ stage.stage|capfirst }} PR
+                                {% endif %}
+                            </h5>
+                            <p class="card-text">{{ stage.count }}</p>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="content mt-4">
+    
+    {% if current_stage %}
+    <div class="tab-pane fade show active" id="{{ current_stage }}">
+        <div class="card">
+            <div class="card-header" style="padding:0%;">
+                <h3 style="text-align:center;margin-top:7px;">
+                    {% if current_stage == "stage1" %}
+                        {{ stage_mapping.stage1 }}
+                    {% elif current_stage == "stage2" %}
+                        {{ stage_mapping.stage2 }}
+                    {% elif current_stage == "stage3" %}
+                        {{ stage_mapping.stage3 }}
+                    {% elif current_stage == "stage4" %}
+                        {{ stage_mapping.stage4 }}
+                    {% elif current_stage == "stage5" %}
+                        {{ stage_mapping.stage5 }}
+                    {% elif current_stage == "stage6" %}
+                        {{ stage_mapping.stage6 }}
+                    {% elif stage.stage == "stage7" %}
+                        {{ stage_mapping.stage7 }}
+                    {% elif stage.stage == "stage8" %}
+                        {{ stage_mapping.stage8 }}
+                    {% elif stage.stage == "stage9" %}
+                        {{ stage_mapping.stage9 }}
+                    {% elif stage.stage == "stage10" %}
+                        {{ stage_mapping.stage10 }}
+                    {% else %}
+                        {{ current_stage|capfirst }} PR
+                    {% endif %}
+                </h3>
+            </div>
+            <div class="card-body">
+                <table class="table table-responsive-sm" id="procurement-table">
+                    <thead>
+                        <tr>
+                            <th>S.No.</th> <!-- Serial Number Column -->
+                            <th>Procurement ID</th>
+                            <th>Current Stage</th>
+                            <th>Status</th> 
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for procurement in procurements %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td> <!-- Serial Number -->
+                            {% if current_stage == "stage3" %}
+                                <td><a href="{% url 'imm' %}?procurement_id={{ procurement.procurement_id }}" class="view-pr-id" data-id="{{ procurement.procurement_id }}">{{ procurement.procurement_id }}</a></td>
+                            {% else %}
+                                <td>{{ procurement.procurement_id }}</td>
+                            {% endif %}
+                            <td>{{ procurement.current_stage }}</td>
+                            <td>{{ procurement.current_status }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted">No data available for this stage.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+    </div>
+    {% else %}
+    {% comment %} <div class="tab-pane fade show active">
+        <div class="alert alert-info text-center" role="alert">
+            Please select a stage to view procurement data.
+        </div>
+    </div> {% endcomment %}
+    {% endif %}
+</div>
+{% comment %} <div class="content mt-4">
+    <div class="card">
+        <div class="card-header" style="padding:0%;">
+            <h3 style="text-align:center;margin-top:7px;">
+                Procurement Data Graph
+            </h3>
+        </div>
+        <div class="card-body">
+            <canvas id="procurementGraph"></canvas> <!-- This is where the graph will be rendered -->
+        </div>
+    </div>
+</div> {% endcomment %}
+
+{% comment %} <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> {% endcomment %}
+
+{{ procurements|json_script:"procurements-data" }}
+
+<link rel="stylesheet" href="{% static "css/jquery.dataTables.min.css" %}" />
+
+
+<script type="text/javascript" charset="utf8" src="{% static "js/jquery-3.6.0.min.js" %}"></script>
+
+
+<script type="text/javascript" charset="utf8" src="{% static "js/jquery.dataTables.min.js" %}"></script>
+
+
+<script>
+    $(document).ready(function() {
+        $('#procurement-table').DataTable({
+            "responsive": true,
+            "pageLength": 10, // Number of rows per page (you can adjust this)
+            "lengthMenu": [10, 25, 50, 100], // Options for number of rows per page
+        });
+    });
+    document.addEventListener("DOMContentLoaded", function () {
+        const cards = document.querySelectorAll(".count-box");
+    
+        // Function to display procurements for the clicked stage
+        function showProcurements(stage) {
+            const url = new URL(window.location.href);
+            url.searchParams.set('stage', stage);
+            window.location.href = url.toString(); 
+        }
+    
+        cards.forEach(card => {
+            card.addEventListener("click", function () {
+                const stage = this.getAttribute("data-stage");
+                showProcurements(stage); // Show procurements for this stage
+            });
+        });
+    
+        const urlParams = new URLSearchParams(window.location.search);
+        const stage = urlParams.get('stage');
+        const procurementIdFromUrl = urlParams.get('procurement_id'); // Capture procurement_id from the URL
+    
+     
+        if (procurementIdFromUrl) {
+      
+            const procurementLink = document.querySelector(`.view-pr-id[data-id="${procurementIdFromUrl}"]`);
+            
+            if (procurementLink) {
+           
+                procurementLink.click(); 
+            }
+        }
+    
+        if (stage) {
+            const activeCard = document.querySelector(`.count-box[data-stage="${stage}"]`);
+            if (activeCard) {
+                activeCard.classList.add("active-card");
+            }
+        }
+    
+    });
+    window.addEventListener('DOMContentLoaded', (event) => {
+        let cards = document.querySelectorAll('.card');
+        cards.forEach((card, index) => {
+            card.style.animationDelay = `${index * 0.1}s`; // Delay based on card index
+            card.classList.add('animate__fadeInUp');
+        });
+    });
+    
+    {% comment %} document.addEventListener("DOMContentLoaded", function () {
+       
+        const procurementData = JSON.parse(document.getElementById('procurements-data').textContent);
+
+       
+        let stages = [];
+        let remarkTypes = [];
+        let stageData = {};
+
+        procurementData.forEach(procurement => {
+            let stage = procurement.current_stage;
+            let remarkType = procurement.current_status; 
+            
+            if (!stages.includes(stage)) {
+                stages.push(stage);
+            }
+            if (!remarkTypes.includes(remarkType)) {
+                remarkTypes.push(remarkType);
+            }
+
+            if (!stageData[stage]) {
+                stageData[stage] = {};
+            }
+            if (!stageData[stage][remarkType]) {
+                stageData[stage][remarkType] = 0;
+            }
+            stageData[stage][remarkType]++;
+        });
+
+        // Prepare data for Chart.js
+        const chartData = {
+            labels: remarkTypes, // Labels for the X-axis (e.g., Remark Types)
+            datasets: stages.map(stage => {
+                return {
+                    label: stage,
+                    data: remarkTypes.map(remarkType => stageData[stage] && stageData[stage][remarkType] ? stageData[stage][remarkType] : 0),
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                };
+            })
+        };
+
+        // Initialize the chart
+        const ctx = document.getElementById('procurementGraph').getContext('2d');
+        new Chart(ctx, {
+            type: 'bar', // You can choose a different type (e.g., 'line', 'pie', etc.)
+            data: chartData,
+            options: {
+                responsive: true,
+                scales: {
+                    x: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Remark Type' // Customize this if needed
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        title: {
+                            display: true,
+                            text: 'Stages' // Customize this if needed
+                        }
+                    }
+                }
+            }
+        });
+    });
+     {% endcomment %}
+   
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<style>
+    .card-header {
+        padding: -2.25rem 1.25rem;
+        margin-bottom: 0;
+        background-color: rgba(0, 0, 0, 0.03);
+        border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    }
+   
+    .active-card {
+        border: 2px solid #007bff !important;
+        background-color: rgba(0, 123, 255, 0.1);
+        box-shadow: 0 6px 12px rgba(0, 0, 255, 0.2) !important;
+    }
+    .dashboard-counts {
+        margin-top: 20px;
+    }
+    
+    .count-box {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        transition: box-shadow 0.3s ease-in-out;
+    }
+    
+    .count-box:hover {
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    }
+    
+    .card-body {
+        padding: 20px;
+        text-align: center;
+    }
+    
+    .card-title {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #333;
+        margin-bottom: 10px;
+    }
+    
+    .card-text {
+        font-size: 1.5rem;
+        color: #007bff;
+        margin-bottom: 20px;
+    }
+    
+    .btn {
+        text-decoration: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-size: 1rem;
+        transition: background-color 0.3s ease;
+    }
+    
+    .btn-primary {
+        background-color: #007bff;
+        color: white;
+    }
+    
+    .btn-primary:hover {
+        background-color: #0056b3;
+    }
+    
+    /* Responsive Design */
+    @media (max-width: 767px) {
+        .col-md-2 {
+            flex: 0 0 100%;
+            max-width: 100%;
+        }
+    }
+
+    /* General Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+}
+
+/* Content Section */
+.content {
+    margin-top: 40px;
+    padding: 5px;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Table Styling */
+.table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+    background-color: #fff;
+}
+
+.table thead {
+    background-color: #007bff;
+    color: #fff;
+}
+
+.table th{
+    padding: 7px;
+    text-align: center;
+    border-bottom: 1px solid #ddd;
+}
+.table td {
+    padding: 12px;
+    text-align: left;
+    border-bottom: 1px solid #ddd;
+}
+
+.table tbody tr:hover {
+    background-color: #f1f1f1;
+}
+
+.table td {
+    font-size: 14px;
+}
+
+/* Tab Panel Styling */
+.tab-pane {
+    display: none;
+}
+
+.tab-pane.active {
+    display: block;
+}
+
+h3 {
+    font-size: 24px;
+    margin-bottom: 20px;
+    color: #333;
+    font-weight: 600;
+}
+
+
+.table tbody tr td {
+    font-size: 16px;
+    text-align: center;
+    color: #888;
+}
+
+
+#raised-pr {
+    background-color: #e9f7fe;
+}
+
+#approved-pr {
+    background-color: #e9ffe9;
+}
+
+#rejected-pr {
+    background-color: #ffe9e9;
+}
+
+#open-tender {
+    background-color: #fff8e6;
+}
+
+#closed-tender {
+    background-color: #f5f5f5;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .content {
+        padding: 10px;
+    }
+    h3 {
+        font-size: 20px;
+    }
+    .table th, .table td {
+        font-size: 12px;
+    }
+}
+
+.card {
+    opacity: 0;
+    transform: translateY(20px) scale(0.9);
+    background-image: linear-gradient(to right, #f7c6c7, #d0e8f2); /* Initial gradient */
+    transition: transform 0.4s ease, opacity 0.7s ease;
+    animation-duration: 0.7s;
+    animation-fill-mode: forwards;
+}
+
+.card.animate__fadeInUp {
+    animation: fadeInUp 0.3s ease-out forwards, gradientEffect 0.7s ease-out forwards;
+}
+
+
+@keyframes fadeInUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px) scale(0.9);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Gradient pop effect */
+@keyframes gradientEffect {
+    0% {
+        background-image: linear-gradient(to right,rgb(250, 248, 248), #d0e8f2); /* Light pastel gradient */
+    }
+    50% {
+        background-image: linear-gradient(to right,rgb(255, 253, 253),rgb(253, 253, 253),rgb(247, 251, 247)); /* Lighter pink and green gradient */
+    }
+    100% {
+        background-image: linear-gradient(to right,rgb(252, 251, 252),rgb(252, 252, 252),rgb(254, 255, 253)); /* Vibrant yellow and green */
+    }
+}
+
+/* Optionally, customize the card hover effect */
+.card:hover {
+    transform: scale(1.05);  /* Slight hover zoom effect */
+    background-image: linear-gradient(to right,rgb(251, 251, 251),rgb(250, 254, 250));  /* Lighter green gradient on hover */
+    transition: transform 0.2s ease-in-out, background-image 0.3s ease-in-out;
+}
+
+</style>    
+
+
+{% endblock %}

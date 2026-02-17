@@ -1,0 +1,2312 @@
+
+{% extends 'ims/index.html' %}
+{% load static %}
+{% block styleblock%}
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+
+<style>
+ 
+    .search-box {
+        position: relative;
+        width: 100%;
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 10px; /* Space from the left edge */
+        top: 50%;
+        transform: translateY(-50%); /* Vertically center the icon */
+        color: #888; /* Optional: Change color of the icon */
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 8px 10px 8px 35px; /* Extra padding on the left for the icon */
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    .list-group-item.active {
+    
+            background-color: #00B2CC !important; /* Light blue for highlighting */
+            border: 3px solid white;
+            position: relative;
+            overflow: hidden;
+            animation: glow-shadow 2s linear infinite;
+          }
+          
+          @keyframes glow-shadow {
+            0% {
+              box-shadow: 0 0 5px 2px white;
+            }
+            50% {
+              box-shadow: 0 0 15px 5px white;
+            }
+            100% {
+              box-shadow: 0 0 5px 2px white;
+            }
+          }
+
+    table, th, td {
+        background-color: transparent !important;
+        border: 0.5px solid  rgba(98, 98, 98, 0.5);/* Border to make table edges visible if needed */
+    }
+    th, td {
+        background-color: transparent !important; /* Make table headers and cells transparent */
+        color: #fff; /* Text color for better readability if needed */
+    }
+    /* Optional: To make borders less intrusive */
+    tr, th {
+        border: 0.5px solid rgba(98, 98, 98, 0.5); /* Semi-transparent border */
+    }
+    #termsContainer {
+        background-color: transparent !important;
+    }
+    .no-border {
+        border: none !important;
+        box-shadow: none !important;
+    }
+   
+    .list-group-item:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+   
+      
+      .with-bg {
+        position: relative;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #fff;
+        overflow: hidden; /* ensures rounded corners apply to background image */
+      }
+      
+      .with-bg::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('{% static "images/priya.png" %}');
+        background-size: 60%;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0.6; /* same as your other container */
+        pointer-events: none; /* let clicks pass through */
+        z-index: 0;
+      }
+      
+      .with-bg > * {
+        position: relative;
+        z-index: 1; /* keep content above the background image */
+      }
+      
+     
+     body{
+        overflow-y: hidden; 
+      }
+      .word-wrap {
+        word-wrap: break-word;
+        word-break: break-all;
+        max-width: 15ch; /* Limits width of the content to 15 characters */
+    }
+     
+    
+</style>
+{% endblock %}
+{% block previewcontent%}
+    <div id="purchaseOrderFormContainer" >
+    <!-- Content will be injected here dynamically -->
+    </div>  
+    <div class="modal fade myModal" id="recommendModal" tabindex="-1" role="dialog" aria-labelledby="recommendModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="recommendModalLabel"><b>Add Remarks</b></h5>
+                </div>
+                <div class="modal-body">
+                    <form id="recommendForm" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="form-group">
+                            <label for="remarks"><b>Remarks:</b></label>
+                            <textarea name="remarks" id="remarks" class="form-control" rows="4" required>Recommended</textarea>
+                        </div>
+                       
+                        
+                        
+                        <input type="hidden" name="procurement_id" id="recommendProcurementId" />
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary" id="approveWithRemarksBtn" style="background-color:#007080;border-color:#007080;">Submit
+                        <div id="spinner2" class="spinner-border spinner-border-sm text-light" role="status" style="display: none;">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                    </button>
+                    <button type="button" class="btn btn-secondary" id="closeModalBtn" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade myModal" id="approveModal" tabindex="-1" role="dialog" aria-labelledby="approveModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="approveForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="approveremarks"><b>Remarks:</b></label>
+                        <textarea name="approveremarks" id="approveremarks" class="form-control" rows="4" required>Recommended</textarea>
+                    </div>
+                    {% comment %} <div class="form-group">
+                        <label for="purchaseassistant"><b>Select Purchase Assistant User:</b></label>
+                        <select id="purchaseassistant" name="purchaseassistant" class="form-control" required>
+                            <option value="">Select User</option>
+                            {% for user in approveusers %}
+                            <option value="{{ user.emp_id }}" data-firstname="{{ user.first_name }}" data-lastname="{{ user.last_name }}">
+                                {{ user.first_name }} {{ user.last_name }} ({{ user.emp_id }})
+                              </option>
+                              
+                        {% endfor %}
+                        </select>
+                    </div> {% endcomment %}
+                    <div class="form-group">
+                        <label for="Approving"><b>Select User:</b></label>
+                        <select id="Approving" name="Approving" class="form-control" required>
+                            <option value="">Select User</option>
+                            {% for user in approved_users %}
+                                <option value="{{ user.emp_id }}"
+                                        data-firstname="{{ user.first_name }}"
+                                        data-lastname="{{ user.last_name }}">
+                                    {{ user.first_name }} {{ user.last_name }} ({{ user.emp_id }})
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+
+                    <input type="hidden" name="procurement_id" id="approveProcurementId" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="approveenquiry"style="background-color:#007080;">Submit</button>
+                <button type="button" class="btn btn-secondary"  id="closeModalBtnapprove" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade myModal" id="rejectModal" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="rejectForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="rejectremarks"><b>Remarks:</b></label>
+                        <textarea name="rejectremarks" id="rejectremarks" class="form-control" rows="4" required>Returned</textarea>
+                    </div>
+
+
+                    <input type="hidden" name="procurement_id" id="rejectProcurementId" />
+                    <input type="hidden" id="rejectstage" value="stage6">  <!-- or whatever stage it is -->
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="rejectenquiry"style="background-color:#007080;">Submit</button>
+                <button type="button" class="btn btn-secondary"  id="closeModalBtnreject" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>  
+{% endblock%}
+
+{% block scripts %}
+<!-- Script to Inject Form Content -->
+<script src="{% static "js/jquery-3.6.0.min.js" %}"></script>
+<script src="{% static "js/html2pdf.bundle.js" %}"></script>
+<link rel="stylesheet" href="{% static "css/jquery-ui.css" %}">
+<script src="{% static "js/jquery-ui.js" %}"></script>
+
+<script>
+    var formTypes = {{ form_types|safe }};
+    {{ dpo.termcond|safe }}
+    {{ dpo.gentermcond|safe }}
+
+    var imm_user = ''
+  
+     
+    let isFormSubmitted = false;  // A flag to track whether the form has been submitted (though it's unused in the provided code)
+
+    document.addEventListener("DOMContentLoaded", function () {
+        const sidebarItems = document.querySelectorAll(".view-pr-id");
+
+        sidebarItems.forEach(item => {
+            
+        // Add a click event listener to each sidebar item
+            item.addEventListener("click", function (e) {
+                e.preventDefault();
+
+                // Remove highlight from all items
+                sidebarItems.forEach(i => i.closest("li").classList.remove("active-procurement"));
+
+                // Add highlight to the clicked item
+                this.closest("li").classList.add("active-procurement");
+        
+            });
+        });
+    });
+
+    $(document).on('click', '.view-pr-id', function (e) {
+            e.preventDefault();
+           
+    
+    
+            // Remove existing selection
+            document.querySelectorAll('.view-pr-id').forEach(el => el.classList.remove('selected-pr'));
+    
+            // Add selection to the clicked item
+            this.classList.add('selected-pr');
+        });
+    
+    $(document).ready(function() {
+        $('#prSearch').on('keyup', function() {
+          const searchText = $(this).val().toLowerCase();
+          let matchFound = false;
+      
+          $('#procurementSidebar .list-group-item').each(function() {
+            const prId = $(this).find('.view-pr-id').text().trim().toLowerCase();
+            if (prId.includes(searchText)) {
+              $(this).show();
+              matchFound = true;
+            } else {
+              $(this).hide();
+            }
+          });
+      
+          if (!matchFound && searchText !== '') {
+            showAlert("PR ID is not available");
+            $(this).val('');   // Clear the search input
+            $('#procurementSidebar .list-group-item').show();  // Show all items again
+          }
+        });
+      });
+    
+    function getFormattedTodayDate() {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+        const year = today.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+    function validateNonNegative(inputElement) {
+        
+        if (parseFloat(inputElement.value) < 0) {
+            showAlert("Value cannot be negative!");
+            inputElement.value = 0; 
+        }
+    }
+    $(document).ready(function () {
+        $("#recommendModal").draggable({
+            handle: ".modal-header"
+        });
+    });
+    let previousSelected = null;    // Variable to store the previously selected sidebar item
+    var vendorId='';
+    var quotationParticularIds={}
+    var users='';
+    var isIMM='';
+    var showbutton='';
+    var isApproved='';
+    var dpoApproveExists='';
+    // Event listener for clicks on the sidebar with the id "procurementSidebar"
+    $("#procurementSidebar").on('click', '.view-pr-id', function(e) {
+        debugger;
+       
+        e.preventDefault();
+
+        if (previousSelected) {
+            previousSelected.className = "list-group-item"; 
+        }
+     
+        this.parentElement.className = "list-group-item active";
+        
+       
+        previousSelected = this.parentElement;
+        
+        showLoader();
+                const prId = this.dataset.id;
+                const formType = formTypes[prId]; // 'import' or 'indigenous'
+                const procurementId = prId;
+                vendorId = this.dataset.vendor;
+    
+                $.ajax({
+                    url: "{% url 'dpo_approval' %}",
+                    type: "POST",
+
+                    headers: {
+                          'X-CSRFToken': '{{ csrf_token }}'
+                    },
+                    data: {
+                        'procurement_id': procurementId,
+                        'vendor_id': vendorId,
+                        "stage_action":"getData"
+                    },
+                    success: function (response) {
+                        console.log(response,'response')
+                         // Extract data from the response
+                        const vendors = response.vendors;
+                        const particulars = response.particulars;
+                        const dpoparticulars=response.dpo_particulars;
+                        console.log(dpoparticulars,'dpoparticulars')
+                        const downloadButtonStatus = response.stage5After9;
+                        const finalPrices = response.final_prices;
+                        const dpoData = response.dpo_data;
+                        const unitsList = response.unitsList || [];
+                        showbutton=response.showbutton;
+                        quotationParticularIds = {};
+                        users = response.user_details || {};
+                        console.log('🧾 Raw user details:', response.user_details);
+                        console.log('🧾 Raw roles:', response.user_details?.roles);
+
+                        isIMM = Array.isArray(response.user_details.roles) && response.user_details.roles.includes("IMM");
+
+                        if (response.approved_users && Array.isArray(response.approved_users)) {
+                            const $dropdown = $('#Approving');
+                            $dropdown.empty(); // Clear previous options
+                            $dropdown.append('<option value="">Select User</option>'); // Default option
+                        
+                            response.approved_users.forEach(user => {
+                                const fullName = `${user.first_name} ${user.last_name}`.trim();
+                                const option = `<option value="${user.emp_id}" data-firstname="${user.first_name}" data-lastname="${user.last_name}">
+                                                    ${fullName} (${user.emp_id})
+                                                </option>`;
+                                $dropdown.append(option);
+                            });
+                        } else {
+                            console.warn("No approved_users found in response.");
+                        }
+                        
+                            
+                        particulars.forEach(particular => {
+                            // Assuming your backend sends 'quotation_particular_id' in each particular object
+                            quotationParticularIds = particular.quotation_particular_id;
+                        });
+                        imm_user = response.imm_user.id
+                        hideLoader();
+                        console.log(response,'response')
+                        dpoApproveExists = response.stage5After9
+                            
+            
+                        // Inject form
+                        document.getElementById('purchaseOrderFormContainer').innerHTML = generateImportFormHTML(vendors, particulars, finalPrices, procurementId, dpoData,formType,downloadButtonStatus,unitsList,dpoparticulars,);
+    
+                        
+                        const headingField = document.querySelector('#editableField');
+                        const unitPriceHeader = document.querySelector('th:nth-child(6)'); 
+                        const totalHeader = document.querySelector('th:nth-child(7)'); 
+                        const discountLabel = document.querySelector('strong');
+                        if (formType === 'import') {
+                            headingField.value = '(IMPORT)';
+                            unitPriceHeader.textContent = 'Unit Price (FE)'; // if form type is import the symbol at unit price should be FE(Foreign Currency) if not then it is INR
+                            totalHeader.textContent = 'Total (FE)';
+                           
+                        } else {
+                            headingField.value = '(INDIGENOUS)';
+                            unitPriceHeader.textContent = 'Unit Price (INR)';
+                            totalHeader.textContent = 'Total (INR)';
+                            
+                        }
+    
+                        // Add event listeners for inputss
+                        const discountInput = document.getElementById('discountInput');
+                        const gstInput = document.getElementById('gstInput');
+                        
+                        if (discountInput) {
+                            discountInput.addEventListener('input', function () {
+                                validateNonNegative(discountInput);
+                                calculateFinals();
+                            });
+                        }
+                        
+                        if (gstInput) {
+                            gstInput.addEventListener('input', function () {
+                                validateNonNegative(gstInput);
+                                calculateFinals();
+                            });
+                        }
+                        
+                        // Initial calculation
+                        calculateFinals();
+
+                        // Check if imm_user is a non-empty object
+                        
+                        
+                    },
+                    error: function (xhr, status, error) {
+                        console.error("Error loading form:", error);
+                        hideLoader();
+                    }
+                });
+            });
+
+     function calculateFinals() {
+        debugger;
+        const totalText = document.getElementById('totalValue').innerText.replace(/[^\d.-]/g, '');
+        const total = parseFloat(totalText) || 0;
+
+        // Read the discount from text
+        const discountTextElem = document.getElementById('discount');
+        const discountText = discountTextElem 
+            ? discountTextElem.innerText.replace(/[^\d.-]/g, '') 
+            : "0";
+
+        // Try to get the input element
+        const discountInputElem = document.getElementById('discountInput');
+
+        let discount = 0;
+
+        // If input exists, use input value first
+        if (discountInputElem && discountInputElem.value !== "") {
+            discount = parseFloat(discountInputElem.value) || 0;
+        }
+
+        // If no input or invalid, fallback to discount text
+        if (!discount) {
+            discount = parseFloat(discountText) || 0;
+        }
+
+        // Validate input only if it exists
+        if (discountInputElem) {
+            validateNonNegative(discountInputElem);
+        }
+        let gstPercent = 0;
+        let gstAmount = 0;
+    
+        const gstInput = document.getElementById('gstInput');// Get the GST input if it exists and extract its numeric value.
+        if (gstInput) {
+            gstPercent = parseFloat(gstInput.value) || 0;
+            validateNonNegative(gstInput);
+        }
+    
+        // Calculate percentage-based discount
+        const discountAmount = total * (discount / 100); 
+        const afterDiscount = total - discountAmount;
+    
+        gstAmount = afterDiscount * (gstPercent / 100);
+        const grandTotal = afterDiscount + gstAmount;
+   
+     
+   
+        const gstValueElem = document.getElementById('gstValue');
+        if (gstValueElem) {
+            gstValueElem.innerText = gstAmount.toFixed(2);
+        }
+    
+        document.getElementById('grandTotalValue').innerText = grandTotal.toFixed(2);
+    
+        const autoPayment = document.getElementById('autoPayment');
+        const autoDate = document.getElementById('autoDate');
+    
+        if (autoPayment) autoPayment.innerText = `₹${grandTotal.toFixed(2)}`; // if any autopayment field get it fit by the grandtotal value
+        if (autoDate) autoDate.innerText = getFormattedTodayDate(); // Date field should be by default today date 
+    }
+    
+    let dpoData = {}; // Global temporary store
+
+    {% comment %} $(document).on('click', '#submitdraft', function () {
+        debugger;
+        // When the "submitdraft" button is clicked:
+        // Clear the value of the #remarks textarea and enable it for user input
+        $('#remarks').val('').prop('disabled', false);
+        $('#approveWithRemarksBtn').show();
+        $('#submitdraft').show();
+        $('#discountInput').attr('readonly', false);
+        $('#gstInput').attr('readonly', false);
+        document.querySelectorAll('[contenteditable]').forEach(elem => {
+            elem.setAttribute('contenteditable', 'true');
+            elem.style.pointerEvents = 'auto';
+        });
+       
+    
+        // Begin validations here
+        const selectedPR = document.querySelector('.view-pr-id.selected-pr');
+        const procurementId = selectedPR?.dataset.id || '';
+        const dpoId = `DPO-${procurementId}`;
+        const total = parseFloat(document.getElementById('totalValue').innerText) || 0;
+        const discount = parseFloat(document.getElementById('discountInput').value) || 0;
+        const gstInputElem = document.getElementById('gstInput');
+        let gstPercent = 0;
+        let gstValue = 0;
+        const grandTotal = parseFloat(document.getElementById('grandTotalValue').innerText) || 0;
+        
+        const termsConditionsHTML = document.querySelector('ol[contenteditable="true"]')?.outerHTML || '';
+        const generalTermsElement = document.querySelectorAll('ol[contenteditable="true"]')[1];
+        const generalTermsHTML = generalTermsElement ? generalTermsElement.outerHTML : '';
+        const payment = document.getElementById('autoPayment')?.innerText.replace('₹', '') || '';
+        
+        // Extract delivery text and match
+        // Extract and sanitize delivery text
+        // Extract and sanitize delivery text
+        const deliveryText = [...document.querySelectorAll("ol li")]
+        .find(li => li.innerText.toLowerCase().startsWith("delivery"))?.innerText || '';
+    
+        const deliveryMatch = deliveryText.match(/(\d+)\s*(weeks?|months?|days?|years?)/i);
+        const delivery = deliveryMatch ? `${deliveryMatch[1]} ${deliveryMatch[2]}` : '';
+    
+
+        // Extract and sanitize warranty text
+        const warrantyText = [...document.querySelectorAll("ol li")]
+        .find(li => li.innerText.toLowerCase().startsWith("guarantee / warranty"))?.innerText || '';
+        const warrantyMatch = warrantyText.match(/(\d+)\s*(months?)/i);
+        const warranty = warrantyMatch ? `${warrantyMatch[1]} months` : '';
+        const particularsData = [];
+
+        document.querySelectorAll('table tbody tr').forEach((row, index) => {
+            const partNo = row.querySelector('.partno-input')?.value.trim() || '';
+            const itemName = row.querySelector('.itemname-input')?.value.trim() || '';
+            const unitSelect = row.querySelector('.unit-dropdown');
+            const unitId = unitSelect ? unitSelect.value : '';
+            const unitText = unitSelect ? unitSelect.options[unitSelect.selectedIndex].text : '';
+            const quantity = parseFloat(row.querySelector('.qty-input')?.value) || 0;
+            const unitPrice = parseFloat(row.querySelector('.unitprice-input')?.value) || 0;
+            const totalValue = parseFloat(row.querySelector('.totalvalue-input')?.value) || 0;
+            const hasContent = partNo || itemName || unitId || quantity > 0 || unitPrice > 0 || totalValue > 0;
+            if (!hasContent) return;
+            particularsData.push({
+                part_no: partNo,
+                item_name: itemName,
+                unit_id: unitId,
+                unit_text: unitText,
+                quantity: quantity,
+                unit_price: unitPrice,
+                total_value: totalValue
+            });
+        });
+
+
+        // Final validations
+        if (
+            !deliveryMatch || 
+            isNaN(deliveryMatch[1]) || 
+            !/(weeks?|months?|days?|years?)/i.test(deliveryText)
+        ) {
+            showAlert("Delivery must include a valid number and a valid unit (weeks, months, days, or years).");
+            return;
+        }
+        
+
+        if (!warrantyMatch || isNaN(warrantyMatch[1]) || !/months?/i.test(warrantyText)) {
+        showAlert("Warranty must include a valid number and the word 'months'.");
+        return;
+        }
+
+        //validations for mandatory fields and non negative fields validations
+   
+        if (grandTotal <= 0) {
+            showAlert("Grand Total cannot be zero.");
+            return;
+        }
+    
+        if (discount < 0 || isNaN(discount)) {
+            showAlert("Discount cannot be negative or empty.");
+            document.getElementById('discountInput').focus();
+            return;
+        }
+    
+        if (gstInputElem) {
+            gstPercent = parseFloat(gstInputElem.value) || 0;
+            gstValue = parseFloat(document.getElementById('gstValue').innerText) || 0;
+    
+            if (gstPercent < 0 || isNaN(gstPercent)) {
+                showAlert("GST percentage must be a non-negative number.");
+                gstInputElem.focus();
+                return;
+            }
+        }                   
+        //validation for Addresses
+        const vendorAddress1 = document.getElementById('vendor_address_1')?.innerHTML || '';
+        const vendorAddress2 = document.getElementById('vendor_address_2')?.innerHTML || '';
+        
+        function isEmptyContent(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return true;  // no element found, treat as empty
+        
+            // Get textContent (removes all HTML tags) and trim spaces/newlines
+            const text = el.textContent.trim();
+        
+            // Check if empty string after trimming
+            return text.length === 0;
+        }
+        
+        function highlightEmptyField(elementId) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                // Light red color for highlighting
+                el.style.border = '2px solid red'; // Optional: red border for more emphasis
+            }
+        }
+        
+        function clearHighlight(elementId) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.style.backgroundColor = '';  // Reset background
+                el.style.border = '';  // Reset border
+            }
+        }
+        
+        if (isEmptyContent('vendor_address_1')) {
+            highlightEmptyField('vendor_address_1');
+            showAlert('Please enter Billing Address.');
+            return;  // STOP further execution
+        } else {
+            clearHighlight('vendor_address_1');
+        }
+        
+        if (isEmptyContent('vendor_address_2')) {
+            highlightEmptyField('vendor_address_2');
+            showAlert('Please enter Delivery Address.');
+            return;  // STOP further execution
+        } else {
+            clearHighlight('vendor_address_2');
+        }
+        
+        console.log('Both addresses are filled.');
+        
+        // Store validated data for AJAX submission later
+        dpoData = {
+            dpo_id: dpoId,
+            procurement_id: procurementId,
+            total_value: total,
+            vendor_id: vendorId,
+            discount: discount,
+            quoatationparticularid:quotationParticularIds,
+            gst_percentage: gstPercent,
+            gst_value: gstValue,
+            grand_total: grandTotal,
+            payment_terms: payment,
+            delivery_weeks: delivery,
+            warranty_period: warranty,
+            remarks:remarks,
+            termcond: termsConditionsHTML,
+            gentermcond: generalTermsHTML,
+            billing_address_1: vendorAddress1,
+            delivery_address_2: vendorAddress2,
+            particulars: JSON.stringify(particularsData)
+        };
+        console.log(dpoData,'ramyadpo')
+    
+        // Show modal only if all validations passed
+        $('#recommendModal').modal('show');
+        $('#remarks').val('');
+
+    }); {% endcomment %}
+    
+    
+    $(document).on('click', '#submitdraft', function () {
+        debugger;
+        // When the "submitdraft" button is clicked:
+        // Clear the value of the #remarks textarea and enable it for user input
+        $('#remarks').val('').prop('disabled', false);
+        $('#approveWithRemarksBtn').show();
+        $('#submitdraft').show();
+        $('#discountInput').attr('readonly', false);
+        $('#gstInput').attr('readonly', false);
+        
+       
+    
+        // Begin validations here
+        const selectedPR = document.querySelector('.view-pr-id.selected-pr');
+        const procurementId = selectedPR?.dataset.id || '';
+        const dpoId = `DPO-${procurementId}`;
+        const total = parseFloat(document.getElementById('totalValue').innerText) || 0;
+        const discount = parseFloat(document.getElementById('discountInput').value) || 0;
+        const gstInputElem = document.getElementById('gstInput');
+        let gstPercent = 0;
+        let gstValue = 0;
+        const grandTotal = parseFloat(document.getElementById('grandTotalValue').innerText) || 0;
+        
+        const payment = document.getElementById('autoPayment')?.innerText.replace('₹', '') || '';
+        
+        // Extract delivery text and match
+        // Extract and sanitize delivery text
+        // Extract and sanitize delivery text
+        const deliveryArray = [...document.querySelectorAll('ol li')]
+        .filter(li => li.innerText.toLowerCase().startsWith('delivery'))
+        .map(li => li.innerText.trim());
+      
+      // Step 2: Extract ALL durations (e.g., "1 week", "3 months") from each line
+      const deliveryValues = deliveryArray.flatMap(text => {
+        const matches = [...text.matchAll(/(\d+)\s*(weeks?|months?|days?|years?)/gi)];
+        return matches.map(m => `${m[1]} ${m[2]}`);
+      });
+      
+      // ✅ Step 3: Join without removing duplicates
+      const delivery = deliveryValues.join(', ');
+    
+
+        // Extract and sanitize warranty text
+        const warrantyArray = [...document.querySelectorAll("ol li")]
+        .filter(li => li.innerText.toLowerCase().startsWith("guarantee / warranty"))
+        .map(li => li.innerText.trim());
+      
+      // Step 2: Extract all valid warranty durations from each line
+      const warrantyValues = warrantyArray.flatMap(text => {
+        const matches = [...text.matchAll(/(\d+)\s*(months?)/gi)];
+        return matches.map(m => `${m[1]} months`);
+      });
+      
+      // ✅ Step 3: Join all (with duplicates) to form final string
+      const warranty = warrantyValues.join(', ');
+        const particularsData = [];
+
+        document.querySelectorAll('table tbody tr').forEach((row, index) => {
+            const partNo = row.querySelector('.partno-input')?.value.trim() || '';
+            const itemName = row.querySelector('.itemname-input')?.value.trim() || '';
+            const unitSelect = row.querySelector('.unit-dropdown');
+            const unitId = unitSelect ? unitSelect.value : '';
+            const unitText = unitSelect ? unitSelect.options[unitSelect.selectedIndex].text : '';
+            const quantity = parseFloat(row.querySelector('.qty-input')?.value) || 0;
+            const unitPrice = parseFloat(row.querySelector('.unitprice-input')?.value) || 0;
+            const totalValue = parseFloat(row.querySelector('.totalvalue-input')?.value) || 0;
+            const hasContent = partNo || itemName || unitId || quantity > 0 || unitPrice > 0 || totalValue > 0;
+            if (!hasContent) return;
+            particularsData.push({
+                part_no: partNo,
+                item_name: itemName,
+                unit_id: unitId,
+                unit_text: unitText,
+                quantity: quantity,
+                unit_price: unitPrice,
+                total_value: totalValue
+            });
+        });
+
+        if (particularsData.length === 1) {
+            if (warranty.includes(',')) {
+                showAlert("Only one warranty value is allowed when there is a single item.");
+                return;
+            }
+        
+            if (delivery.includes(',')) {
+                showAlert("Only one delivery value is allowed when there is a single item.");
+                return;
+            }
+        }
+        
+        // Final validations
+       
+        //validations for mandatory fields and non negative fields validations
+   
+        if (grandTotal <= 0) {
+            showAlert("Grand Total cannot be zero.");
+            return;
+        }
+    
+        if (discount < 0 || isNaN(discount)) {
+            showAlert("Discount cannot be negative or empty.");
+            document.getElementById('discountInput').focus();
+            return;
+        }
+    
+        if (gstInputElem) {
+            gstPercent = parseFloat(gstInputElem.value) || 0;
+            gstValue = parseFloat(document.getElementById('gstValue').innerText) || 0;
+    
+            if (gstPercent < 0 || isNaN(gstPercent)) {
+                showAlert("GST percentage must be a non-negative number.");
+                gstInputElem.focus();
+                return;
+            }
+        }                   
+        //validation for Addresses
+        const vendorAddress1 = document.getElementById('vendor_address_1')?.innerHTML || '';
+        const vendorAddress2 = document.getElementById('vendor_address_2')?.innerHTML || '';
+        
+        function isEmptyContent(elementId) {
+            const el = document.getElementById(elementId);
+            if (!el) return true;  // no element found, treat as empty
+        
+            // Get textContent (removes all HTML tags) and trim spaces/newlines
+            const text = el.textContent.trim();
+        
+            // Check if empty string after trimming
+            return text.length === 0;
+        }
+        
+        function highlightEmptyField(elementId) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                // Light red color for highlighting
+                el.style.border = '2px solid red'; // Optional: red border for more emphasis
+            }
+        }
+        
+        function clearHighlight(elementId) {
+            const el = document.getElementById(elementId);
+            if (el) {
+                el.style.backgroundColor = '';  // Reset background
+                el.style.border = '';  // Reset border
+            }
+        }
+        
+        if (isEmptyContent('vendor_address_1')) {
+            highlightEmptyField('vendor_address_1');
+            showAlert('Please enter Billing Address.');
+            return;  // STOP further execution
+        } else {
+            clearHighlight('vendor_address_1');
+        }
+        
+        if (isEmptyContent('vendor_address_2')) {
+            highlightEmptyField('vendor_address_2');
+            showAlert('Please enter Delivery Address.');
+            return;  // STOP further execution
+        } else {
+            clearHighlight('vendor_address_2');
+        }
+        
+        console.log('Both addresses are filled.');
+        
+        // Store validated data for AJAX submission later
+        dpoData = {
+            dpo_id: dpoId,
+            procurement_id: procurementId,
+            total_value: total,
+            vendor_id: vendorId,
+            discount: discount,
+            quoatationparticularid:quotationParticularIds,
+            gst_percentage: gstPercent,
+            gst_value: gstValue,
+            grand_total: grandTotal,
+            payment_terms: payment,
+            delivery_weeks: delivery,
+            warranty_period: warranty,
+            remarks:remarks,
+            termcond: termsConditionsHTML,
+            gentermcond: generalTermsHTML,
+            billing_address_1: vendorAddress1,
+            delivery_address_2: vendorAddress2,
+            particulars: JSON.stringify(particularsData)
+        };
+        console.log(dpoData,'ramyadpo')
+    
+        // Show modal only if all validations passed
+        $('#recommendModal').modal('show');
+        $('#remarks').val('');
+
+    });
+    
+
+    $(document).on('click', '#approveWithRemarksBtn', function () {
+        debugger;
+        showConfirmAlert("Are you sure you want to Submit?")
+        .then((result) => {
+            if (!result.isConfirmed) return;
+        const remarks = $('#remarks').val();
+        const selectedPR = document.querySelector('.view-pr-id.selected-pr');
+        const procurementId = selectedPR?.dataset.id || '';
+        
+    
+        //const grandTotal = parseFloat($('#grandTotalValue').text().replace(',', '').trim());
+
+        // Update the global dpoData with current remarks and installments
+        if (typeof dpoData === 'object') {
+            dpoData.remarks = remarks;
+            dpoData.installments = $('#installments').val();
+            dpoData.stage_action = "saveData"
+        }
+
+        // Installments validation
+      
+            
+            showLoader();
+
+
+
+
+            $.ajax({
+                url: "{% url 'dpo' %}",
+                type: "POST",
+                headers: {
+                    'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                },
+                data: dpoData,
+        
+                success: function (response) {
+                    
+                    showSuccessAlert("Draft Purchase Order saved successfully!");
+                    hideLoader();
+                    updateNotificationCount(procurementId);
+                    $(`.view-pr-id[data-id='${procurementId}']`)
+                                        .closest("li")
+                                        .css("background-color", "#CCE5F0"); // side bar color change immediately after successful submission
+                    isFormSubmitted = true;
+                    $('#downloadBtn').show();
+                    setTimeout(function () {
+                        $('#recommendModal').modal('hide');
+                        $('#remarks').val('');
+                        $('#installments').val('');
+                        $('#installmentDatesContainer').html('');
+                        $('#installmentDatesWrapper').hide();
+        
+                        $('#approveWithRemarksBtn').hide();
+                        
+                        // once submitted the editable fields should be remains only readable
+                        $('#discountInput').attr('readonly', true);
+                        $('#gstInput').attr('readonly', true);  
+                        //document.querySelector('ol[contenteditable="true"]')?.setAttribute('contenteditable', false);
+                        // Disable all editable lists & descendants
+                        if (users.roles && users.roles.includes('Purchase Assistant')) {
+                            $('#submitdraft').hide();
+                        }
+                       
+                    }, 100);
+                },
+                error: function (xhr, status, error) {
+                    let message = '';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        message += ' ' + xhr.responseJSON.error;
+                    } else {
+                        message += ' ' + xhr.statusText;
+                    }
+                    showWarningAlert(message);
+                    hideLoader();
+                },
+                
+          
+            });
+    });
+    
+    });
+    $(document).on('click', '#closeModalBtn', function () {  //Modal close functionality 
+        $('#recommendModal').modal('hide');
+        // Clear installment data
+            $('#installments').val('');  // Reset the installments count field
+            $('#installmentDatesContainer').html('');  // Clear the generated installment fields container
+            $('#installmentDatesWrapper').hide();  // Hide the wrapper again
+
+            // Reset installment data in dpoData
+            dpoData.installments_data = [];  // Clear the installments data array
+            dpoData.installments = null;  // Reset installments count
+            dpoData[`installment_date_*`] = null; // Reset all specific installment date fields
+            dpoData[`percentage_*`] = null;  // Reset all specific installment percentage fields
+
+    });
+    
+    
+    document.addEventListener('input', function (e) {
+        if (e.target.id === 'discountInput' || e.target.id === 'gstInput') {
+            let value = parseFloat(e.target.value);
+            if (value < 0) {
+                showAlert("Value cannot be negative.");
+                e.target.value = '';
+            } else if (value > 100) {                                                // the discount input should not be greater than 100 and also non negative validation
+                showAlert("Value cannot exceed 100%.");
+                e.target.value = '';
+            }
+        }
+    });
+    
+
+    function generateImportFormHTML(vendors, particulars, finalPrices, procurementId, dpoData,formType,downloadButtonStatus,unitsList,dpoparticulars) {
+        debugger
+        
+        //getting vendor details to show in UI from backend
+        const vendorHTML = vendors.map(v => `
+        <strong>${v.company_name || ''}<br></strong>                              
+        ${v.vendor_name || ''}<br>
+        ${v.phone_number || ''}<br>
+        ${v.email || ''}<br>
+        ${[v.address, v.city, v.state, v.country].filter(Boolean).join(', ')}<br>
+        ${v.pincode || ''}<br><br>
+
+        ${v.gst_number ? `<strong>GST No.:</strong> ${v.gst_number}<br>` : ''}
+        ${v.tin_number ? `<strong>TIN No.:</strong> ${v.tin_number}<br>` : ''}
+        
+        `).join('');
+
+        let totalValue = 0;
+        const vendo = (dpoData[0]?.vendor_address ? String(dpoData[0].vendor_address) : "")
+    .replace(/\n/g, "<br>");
+        
+        const sourceParticulars = (Array.isArray(dpoparticulars) && dpoparticulars.length > 0) 
+        ? dpoparticulars 
+        : particulars;
+        console.log(sourceParticulars,'sourceParticulars')
+    // Clone to avoid mutating original
+        var particular_array=particulars
+        const updatedParticulars = sourceParticulars.map(p => ({ ...p }));
+        
+        updatedParticulars.forEach((p, index) => {
+            const rawVal = (p.negotiated_value || '').toString();
+            const parts = rawVal.split(',');
+        
+            if (parts.length === 2 && updatedParticulars[index + 1]) {
+        
+                updatedParticulars[index].negotiated_value = parts[0].trim();
+                
+                updatedParticulars[index + 1].negotiated_value = parts[1].trim();
+            }
+        });
+        
+        
+        const particularsRowsHTML = updatedParticulars.map((p, index) => {
+            debugger;
+            const totalQty = parseFloat(p.total_qty_required || '1') || 1;
+
+            // If present, use negotiated_value, else total_value
+            const totalValueItem = parseFloat((p.negotiated_value || p.total_value || p.cs_value || '0').toString().trim()) || 0;
+            
+            // If present, use unit_price, else derive from total value / qty
+            const unitPrice = parseFloat(p.unit_price || (totalValueItem / totalQty)) || 0;
+            console.log(unitPrice,'unit')
+            totalValue += totalValueItem;
+
+            const unitDisplay = p.unit_display || '';
+
+        
+            const isDpoSaved = dpoData && dpoData.length > 0 && dpoData[0].dpoid;
+
+        
+            const unitOptionsHTML = unitsList.map(u => {
+                const isSelected = p.unitname && (parseInt(p.unitname) === u.id || p.unitname.toString().trim() === u.unit.toString().trim());
+                if (isSelected) {
+                    console.log(`Row ${index + 1} selected unit:`, u.unit, `(ID: ${u.id})`);
+                }
+                return `<option value="${u.id}" ${isSelected ? 'selected' : ''}>${u.unit}</option>`;
+            }).join('');
+        
+            return `
+                <tr>
+                    <td>${index + 1}</td>
+        
+                    <td>
+                       ${p.partno || ''} ${isDpoSaved ? 'readonly' : ''}
+                    </td>
+        
+                    <td>
+                   ${p.item_name || ''}${isDpoSaved ? 'readonly' : ''}
+                    </td>
+        
+                    <td>
+                      ${unitDisplay}
+                        
+                    </td>
+        
+                    <td>
+                    ${p.total_qty_required || ''} ${isDpoSaved ? 'readonly' : ''}
+                    </td>
+        
+                    <td>
+                     ${unitPrice.toFixed(2)}${isDpoSaved ? 'readonly' : ''}
+                    </td>
+        
+                    <td>
+                       ${totalValueItem.toFixed(2)} ${isDpoSaved ? 'readonly' : ''}
+                    </td>
+                </tr>
+            `;
+        }).join('');
+        const quotationReferenceString = particular_array  
+        .map(p => p.quotation_reference)
+        .filter(ref => ref && ref.trim() !== '')
+        .filter((ref, index, self) => self.indexOf(ref) === index)
+        .join(', ') || 'N/A';
+        console.log(quotationReferenceString,'quotationReference')
+        
+        const negotiatedItem = updatedParticulars.find(p => p.negotiated_tax);
+        const gstItem = updatedParticulars.find(p => p.gst);
+        const discountItem = updatedParticulars.find(p => p.discount);
+        
+        // If negotiated tax is available, use it and set discount to empty
+        const gstValue2 = negotiatedItem?.negotiated_tax || gstItem?.gst || '0';
+        //const discount2 = negotiatedItem ? '' : (discountItem?.discount || '0');
+        const discount2 = discountItem?.discount || '0';
+         const quotation_reference = dpoData[0]?.quotation_reference || '';
+          const vendorAddress1 = dpoData[0]?.billing_address_1 || '';
+        const packingcharges=dpoData[0]?.packingcharges || '';
+        console.log(vendorAddress1,'vendorAddress1')
+        const vendorAddress2 = dpoData[0]?.delivery_address_2 || '';
+        const deliveryWeeksFromCsm = updatedParticulars.map(p => p.deliveryTimeline || '...............').join(', ');
+        const deliveryUnitsFromCsm = updatedParticulars.map(p => p.deliveryUnitsFromCsm || '').join(', ');
+
+        isApproved = dpoApproveExists
+
+        const todayFormatted = getFormattedTodayDate();
+        const dpoId = `DPO-${procurementId}`;
+
+        const isDpoSaved = !!(dpoData && dpoData.length > 0 && dpoData[0].dpoid);
+        console.log(isDpoSaved,'isDpoSaved')
+
+        const discount = dpoData && dpoData.length > 0 ? dpoData[0].discount : '0';
+        console.log(discount,'discount');
+
+        const gstPercentage = dpoData && dpoData.length > 0 ? dpoData[0].gst_percentage : '';
+        console.log(gstPercentage,'gstPercentage')
+        const gstValue = dpoData && dpoData.length > 0 ? dpoData[0].gst_value : '0.00';
+        console.log(gstValue,'gstValue')
+        const grandTotal = dpoData && dpoData.length > 0 ? dpoData[0].grand_total : '0.00';
+
+        const deliveryWeeks = dpoData && dpoData.length > 0 ? dpoData[0].delivery_weeks || '...............' : '...............';
+        console.log('🧪 deliveryWeeks:', deliveryWeeks);
+        console.log('🧪 deliveryWeeksFromCsm:', deliveryWeeksFromCsm);
+        console.log('🧪 isDpoSaved:', isDpoSaved);
+
+        const warrantyPeriod = dpoData && dpoData.length > 0 ? dpoData[0].warranty_period || '...............' : '...............';
+        const termcondHTML = dpoData && dpoData.length > 0 ? dpoData[0].termcond : '';
+        console.log(termcondHTML,'termd')
+        
+
+        const gentermcondHTML = dpoData && dpoData.length > 0 ? dpoData[0].gentermcond : '';
+        console.log('Terms HTML:', (termcondHTML + gentermcondHTML));
+        const combinedDeliveryArray = updatedParticulars.map(p => {
+            const timeline = p.deliveryTimeline || '...............';
+            const unit = p.deliveryUnitsFromCsm || '';
+            return `${timeline} ${unit}`.trim();
+        });
+        const combinedDelivery = combinedDeliveryArray.join(', ');
+
+
+        let finalDeliveryText = ' ............... ';
+
+        if (isDpoSaved && deliveryWeeks && deliveryWeeks !== '...............') {
+            finalDeliveryText = ` ........${deliveryWeeks}........ `;
+        } else if (combinedDelivery && combinedDelivery.replace(/[,.\s]/g, '') !== '') {
+            finalDeliveryText = ` ........${combinedDelivery}........ `;
+        }
+
+        // -------------------------------
+        // Billing and Delivery Addresses
+        // -------------------------------
+        const delhiAddress = `
+            <div id="vendor_address_1" ${isApproved ? '' : 'contenteditable="true" title="Edit the address" style="cursor: text;"'}>
+                <strong>M/s Meslova Systems Pvt. Ltd.</strong><br/>
+                Unit No. 301 A<br/>
+                World Trade Tower, Barakhamba Lane<br/>
+                Cannaught Place<br/>
+                New Delhi - 110001.<br/>
+                011 - 42003345.<br/>
+            </div>
+        `;
+
+        const hyderabadAddress = `
+            <div id="vendor_address_21" ${isApproved ? '' : 'contenteditable="true" title="Edit the address" style="cursor: text;"'}>
+                <strong>M/s Meslova Systems Pvt. Ltd.</strong><br/>
+                604, 6<sup>th</sup> Floor, Gowra Palladium,<br/>
+                Plot Nos.8A & 8B1, Raidurg,<br/>
+                Telangana, Hyderabad, 500081.<br/>
+                <b>GSTIN:</b> 36AAKCM9462D1Z7
+            </div>
+        `;
+
+        // -------------------------------
+        // Billing Address Section
+        // -------------------------------
+        let billingAddressHTML = '';
+
+        if (isApproved) {
+            // 🧱 If approved — show static address, no dropdown, not editable
+            billingAddressHTML = `
+                <div id="vendor_address_1">
+                    ${vendorAddress1 || delhiAddress}
+                </div>
+            `;
+        } else {
+            // ✏️ If not approved — show dropdown and editable address
+            billingAddressHTML = `
+                <label for="billingAddressSelect"><strong>Select Billing Address:</strong></label>
+                <select id="billingAddressSelect" class="form-select" style="width: 300px; margin-bottom: 10px;">
+                    <option value="delhi">Delhi</option>
+                    <option value="hyderabad">Hyderabad</option>
+                </select>
+
+                <div id="vendor_address_1" contenteditable="true" title="Edit the address" style="cursor: text;">
+                    ${vendorAddress1 || delhiAddress}
+                </div>
+            `;
+        }
+
+        // -------------------------------
+        // Delivery Address Section
+        // -------------------------------
+        const deliveryAddressHTML = `
+            <div id="vendor_address_2" ${isApproved ? '' : 'contenteditable="true" title="Edit the address" style="cursor: text;"'}>
+                ${vendorAddress2 || `
+                    <strong>M/s Meslova Systems Pvt. Ltd.</strong><br/>
+                    604, 6<sup>th</sup> Floor, Gowra Palladium,<br/>
+                    Plot Nos.8A & 8B1, Raidurg,<br/>
+                    Telangana, Hyderabad, 500081.<br/>
+                    <b>GSTIN:</b> 36AAKCM9462D1Z7
+                `}
+            </div>
+        `;       
+
+        console.log('dpoData:', dpoData);  // For debugging purposes
+        const termsSection = formType === 'import' ? `
+    
+                            <ol >
+                             <p><strong>Terms & Conditions:</strong></p>
+                                <li>Please send two copies of invoice. Prices are FOB Destination / Ex Works.</li>
+                                <li>Payment:<strong id="autoPayment">${grandTotal}</strong></li>
+                                <li>Manufacturer CoC shall be sent along with material.</li>
+                             <li>
+                                Delivery: On or Before 
+                            <span style="color: red;"> 
+                            ${finalDeliveryText}
+                            </span>
+
+                                 from the date of receipt of order / Advance payment.
+                                </li>
+
+                                <li>
+                                Guarantee / Warranty: The stores supplied shall be Guaranteed / Warranty for a period of 
+                                 <span style="color: red;">${warrantyPeriod}</span>
+                                 from the date of acceptance of material.
+                            </li>
+
+                               
+                                {% comment %} <li>Date:<strong id="autoDate">${todayFormatted}</strong></li> {% endcomment %}
+                                
+                            </ol>
+                           <div style="text-align:right;"><b>For M/s Meslova Systems Pvt. Ltd.</b></div>
+                             <ol >
+
+                            <p><strong>GENERAL TERMS AND CONDITIONS </strong></p>
+                              
+                                <div><strong>I. Acknowledgement:</strong><br></div>
+
+                                    a. An acknowledgement of the Purchase Order (PO) should be sent to Meslova by the Vendor
+                                    / Supplier confirming their agreement regarding specifications, Qualification Test (QT) 
+                                    or Periodic Test (PT) /Acceptance Test (AT), quantity, prices, terms of payment and Delivery
+                                    schedule within 3 working days of its receipt by the vendor.<br>
+
+                                    b.The Purchase Order number and date should always be quoted in all correspondence,
+                                    delivery challans, packing notes, invoices etc., all communications should be addressed to 
+                                    the designate officer of Meslova who signed the Purchase Order or a nominee as indicated in the purchase order.<br>
+
+
+                                <div><strong> II. Prices:</strong><br></div>
+
+
+                                    The prices indicated in PO are firm and not subject to alternation/variation on 
+                                    any account unless specified otherwise in the purchase order. All terms and conditions of 
+                                    subject enquiry will be a part of this PO and vendor shall abide with it.<br>
+                            
+                                <div><strong> III. Payment:</strong><br></div>
+
+
+                                    Payments will be processed after receipt of Invoice, acceptance of goods / 
+                                    services report, applicable test reports if any, & other conditions complying to PO terms.<br>
+
+
+                                <div><strong>IV. Inspection & Acceptance:</strong><br></div>
+
+                                    All goods / services are subject to inspection by Meslova.<br>
+
+
+                                <div><strong>V. Packing:</strong><br></div>
+
+
+                                    Materials should be securely packed by the supplier and a copy of packing note 
+                                    should be sent along with Invoice.<br>
+
+                                <div><strong> VI. Dispatch of Goods:</strong><br></div>
+
+
+                                    Wherever terms of dispatch are Ex-works / FOB destination. The stores shall be 
+                                    booked through recognized transporter on freight to pay basis. The dispatch documents shall be clean and clearly legible.<br>
+
+
+                                <div><strong>VII Cancellation of Purchase Order:</strong><br></div>
+
+                                   Non-compliance with any of the conditions may compel Meslova to cancel the Purchase Order in part 
+                                   or in full at any time of its execution as deemed fit without legal repercussion on both sides.<br>
+
+
+                                <div><strong>VIII. Repeat Order:</strong><br></div>
+
+                                    Meslova reserves the right to place repeat order with the same prices, terms & 
+                                    conditions on the supplier for an additional quantity upto 100% of the ordered quantity.<br>
+
+
+                                <div><strong>X. Test Certificate / Shelf Life Certificate:</strong><br></div>
+
+                                    All certificates called for in the specification or Purchase Order must be sent to Meslova, along with, supplies or as
+                                     requested for pre-dispatch inspection. Certificate of Conformance (CoC), Country of Origin (wherever applicable) shall be 
+                                     submitted along with consignment.<br>
+
+                                <div><strong>XIII. Warranty:</strong><br></div>
+
+                                    Any stores supplied or service provided should be free from any defects arising from
+                                    faulty material, design or workmanship & should be guaranteed for quality / satisfactory 
+                                    performance for a period of ….. calendar months from the date of commissioning or 18months 
+                                    from the date of supply whichever is later. During the guarantee period, if any defects develop 
+                                    arising from faulty material, design or workmanship, the supplier should replace any defective 
+                                    portion of the goods or replace the material /equipment as a whole.<br>
+                                <div><strong>XIV. Performance Bank Guarantee (Pbg) / Security Deposit (Sd) / Corporate Guarantee (CG):</strong><br></div>
+
+                                    Bank Guarantee wherever called for, shall be in the Meslova prescribed format.
+                                    In case the order is to be placed in foreign currency, the BG must normally be in 
+                                    Indian Currency from the Nationalized Banks .Wherever the contract is for supply of Goods
+                                    processed on sub-contract basis from Meslova supplied materials, the materials shall be issued 
+                                    against a suitable security, preferably Bank guarantee.<br>
+
+
+                                <div><strong>XV. Arbitration:</strong><br></div>
+
+                                    All the disputes regarding this Purchase Order shall be referred to
+                                    Meslova CEO or his nominee, who shall have the powers conferred. The language
+                                    of the arbitration shall be in English.<br>
+
+
+                                <div><strong>XVI. Jurisdiction:</strong><br></div>
+
+                                    The Purchase Order shall be governed by the Laws of Indian
+                                    Union in Force. The courts of Hyderabad, Telangana only shall have
+                                    jurisdiction to deal with and decide any legal matter or dispute whatsoever
+                                    arising out of this Purchase Order.<br>
+
+
+                            <div><strong>XVII.Force Majeure:</strong><br></div>
+
+                                    Force Majeure means an event beyond the control of the supplier and 
+                                    not involving the supplier’s fault or negligence and which is not foreseeable. 
+                                    Such events may include , but are not restricted to , acts of the purchaser either
+                                    in its sovereign or contractual capacity , hostility, acts of public enemy , civil commotion ,
+                                    sabotage, fires, floods, explosions, epidemics, quarantine restrictions, strikes, lockouts, and freight embargoes.<br>
+
+                         
+
+                              
+                        </ol> 
+                        <div style="text-align:center;margin-top:3%;"> --- End---</div>
+
+        ` : `
+                           
+                        <ol >
+                            <p><strong> Special Terms & Conditions:</strong></p>
+                            <li>Please send two copies of invoice along with material.</li>
+                            <li>Prices are For Destination.</li>
+                             <li>hi ramya.</li>
+                            <li>Payment terms: Payment shall be made within 15 days after receipt & acceptance of material.</li>
+                            <li>Manufacturer CoC shall be sent along with material.</li>
+                            <li>
+                                The Purchase Order number and date should always be quoted in all correspondence, delivery challans, packing notes, invoices etc. All communications should be addressed to the designate officer of Meslova who signed the Purchase Order or a nominee as indicated in the purchase order if any.
+                            </li>
+                            <li>
+                            Delivery: On or Before  
+                            <span style="color: red;"> 
+                            ${finalDeliveryText}
+                            </span>
+                                from the date of receipt of order / Advance payment.
+                            </li>
+
+                            <li>
+                            Guarantee / Warranty: The stores supplied shall be Guaranteed / Warranty for a period of 
+                                <span style="color: red;">${warrantyPeriod}</span>
+                            from the date of acceptance of material.
+                            </li>
+                            <li>LD Clause: Time is the essence of the P.O and delivery should be strictly insisted upon 
+                                                            according to the delivery schedule given in the SOs/POs. In the event the supplier fails to deliver the goods / service, within the stipulated delivery period, Meslova reserves the right to recover from the supplier, LD and not by way of penalty a sum of 0.5% of the price only of the stores (Including duties, taxes) which the supplier has failed to deliver as aforesaid for each week of delay or part thereof, subject to a maximum of 10%. In case of
+                            extension of delivery period, increase in taxes shall not be borne by Meslova, if delay is attributable to vendor.</li>
+                        </ol>
+                            <div style="text-align:right;"><b>For M/s Meslova Systems Pvt. Ltd.</b></div>
+   
+                        <ol >
+                         <p><strong>GENERAL TERMS AND CONDITIONS</strong></p>
+                            <div><strong>I. Acknowledgement:</strong><br></div>
+
+                            a. An acknowledgement of the Purchase Order (PO) should be sent to Meslova by the vendor / Supplier confirming their agreement regarding specifications, Qualification Test (QT) or Periodic Test (PT) /Acceptance Test (AT),
+                            quantity, prices, terms of payment and Delivery schedule within 3 working days of its receipt by the vendor.<br>
+
+                            b.The Purchase Order number and date should always be quoted in all correspondence, delivery challans, packing notes, invoices etc., all communications should be addressed to the designate officer of Meslova who signed the 
+                            Purchase Order or a nominee as indicated in the purchase order if any.<br>
+
+
+                            <div><strong>II. Prices:</strong><br></div>
+
+                            The prices indicated in PO are firm and not subject to alternation/variation on any account unless
+                            specified otherwise in the purchase order. All terms and conditions of subject enquiry will be a part of this PO and vendor shall abide with it.<br>
+
+
+                            <div><strong>III. Payment:</strong><br></div>
+
+                            Payments will be processed after receipt of taxable Invoice, acceptance of goods / services report, applicable test reports if any, & other conditions complying to PO terms.<br>
+
+
+                            <div><strong>IV. Inspection & Acceptance:</strong><br></div>
+
+                            All goods / services are subject to inspection by Meslova or were stipulated by Meslova client or as nominated either at supplier’s works or in our company after delivery.<br>
+
+
+                            <div><strong>V. PACKING:</strong><br></div>
+
+                            Materials should be securely packed by the supplier and a copy of packing note should be sent along with Invoice.<br>
+
+
+                            <div><strong>VI. Dispatch of Goods:</strong><br></div>
+
+                            Wherever terms of dispatch are ex-works / For dispatch station. The stores shall be booked through recognized transporter on freight to pay basis. The dispatch documents shall be clean and clearly legible.<br>
+
+
+                            <div><strong>VII. Consequence of Breach & Recovery of L.D:</strong><br></div>
+
+                            LD Clause: Time is the essence of the P.O./S.O. and the delivery should be strictly insisted upon according to the delivery 
+                            schedule given in the SOs/POs. In the event the supplier fails to deliver the goods / service, within the stipulated delivery period,
+                            MESLOVA reserves the right to recover the same from the supplier in the form of LD. A sum of 0.5% of the basic price of the stores, which 
+                            the supplier has failed to deliver as aforesaid for each week of delay or part thereof, subject to a maximum of 10%. In case of extension 
+                            of delivery period, increase in taxes shall not be borne by MESLOVA, if delay is attributable to vendor.<br>
+
+
+                            <div><strong>VIII Cancellation of Purchase Order:</strong><br></div>
+
+                            Non-compliance with any of the conditions may compel Meslova to cancel the Purchase Order in part or in full 
+                            at any time of its execution as deemed fit without legal repercussion on both sides.<br>
+
+
+                            <div><strong>IX. Repeat Order:</strong><br></div>
+
+                            Meslova reserves the right to place repeat order with the same prices, terms & conditions on the supplier
+                            for an additional quantity upto 100% of the ordered quantity.<br>
+
+                            <div><strong>X. Test Certificate / Shelf Life Certificate:</strong><br></div>
+
+                            All certificates called for in the specification or Purchase Order must be sent to Meslova, along
+
+                            with, supplies or as requested for pre-dispatch inspection . Meslova may test any goods supplied & its 
+                            decision shall be final irrespective of the certificate furnished by the vendor. Necessary test / inspection certificates, 
+                            Certificate of Conformance (CoC), Country of Origin (wherever applicable) shall be submitted along with consignment.<br>
+
+
+                            <div><strong>XI. Intellectual Property:</strong><br></div>
+
+                            The items which are specifically developed / manufactured as per requirement of Meslova, where Tooling charges / 
+                            Engineering Charges / Development Charges are paid by Meslova, intellectual property lies with Meslova. The vendor /
+                            service provider can supply these items to other, only after obtaining consent of Meslova.<br>
+
+
+                            <div><strong>XII. Demurrage and Wharfage:</strong><br></div>
+
+                            The vendor shall be responsible for all demurrage and wharfage charges due to late receipt of dispatch documents
+                            or non-receipt of dispatch documents or non-receipt of prior intimation or non-compliance of any other terms of Purchase Order.<br>
+
+
+                            <div><strong>XIII. Warranty:</strong><br></div>
+
+                            Any stores supplied or service provided should be free from any defects arising from faulty material, design or
+                            workmanship & should be guaranteed for quality / satisfactory performance for a period of 12 calendar months from the 
+                            date of commissioning or 18 months from the date of supply whichever is later. During the guarantee period, if any defects 
+                            develop arising from faulty material, design or workmanship, the supplier should replace any defective portion of the goods or 
+                            replace the material /equipment as a whole.<br>
+
+
+                            <div><strong>XIV. Performance Bank Guarantee (PBG) / Security Deposit (SD) / Corporate Guarantee (CG):</strong><br></div>
+
+                            Performance Bank Guarantee wherever called for, shall be in the Meslova prescribed format. In case the order is 
+                            to be placed in foreign currency, the BG must normally be in Indian Currency from the Nationalized Banks. Wherever the
+                            contract is for supply of Goods processed on sub-contract basis from Meslova supplied materials, the materials shall be issued 
+                            against a suitable security, preferably Bank guarantee.<br>
+
+
+                            <div><strong>XV. Arbitration:</strong><br></div>
+
+                            All the disputes regarding this Purchase Order shall be referred to Meslova CEO or his nominee, who shall have the 
+                            powers conferred. The language of the arbitration shall be in English.<br>
+
+
+                            <div><strong>XVI. Jurisdiction:</strong><br></div>
+
+                            The Purchase Order shall be governed by the Laws of Indian Union in Force. The courts of Hyderabad, Telangana 
+                            only shall have jurisdiction to deal with and decide any legal matter or dispute whatsoever arising out of this Purchase Order.<br>
+
+
+                            <div><strong>XVII. Force Majeure:</strong><br></div>
+
+                            Force Majeure means an event beyond the control of the supplier and not involving the supplier’s fault or 
+                            negligence and which is not foreseeable. Such events may include, but are not restricted to, acts of the purchaser either 
+                            in its sovereign or contractual capacity, hostility, acts of public enemy, civil commotion, sabotage, fires, floods, explosions, 
+                            epidemics, quarantine restrictions, strikes, lockouts, and freight embargoes.<br>
+
+                       
+                        </ol>
+                            <div style="text-align:center;margin-top:3%;"> --- End---</div>
+
+            `;
+    
+
+        return `
+        
+        <div class="card p-4 with-bg" id="hi" >
+                            <div style="display: flex; justify-content: space-between; align-items: center;">
+                              <h4 style="margin: 0;flex: 1;" >
+                                <strong>DRAFT PURCHASE ORDER </strong>
+                                <input type="text" placeholder="" id="editableField" 
+                                  readonly  style="font-weight: bold; border: none;" />
+                               </h4>
+
+                                
+
+                                <p style="margin: 0; text-align:right;flex-shrink: 0;">
+                                   <strong id="dpoIdDisplay">${dpoId}</strong><br><b>Dated:</b> <span>${todayFormatted}</span>
+                                </p>
+                            </div>
+
+
+                            <table class="table table-bordered mt-3" style="table-layout: fixed; width: 100%;">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 33.33%;">To</th>
+                                        <th style="width: 33.33%;">Billing Address</th>
+                                        <th style="width: 33.33%;">Delivery Address</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                
+                                    <tr>
+                                        <td ><strong>M/s </strong>${vendo ?vendo :vendorHTML} </td>
+                                      
+                                        <td>${billingAddressHTML}</td>
+                                        <td>${deliveryAddressHTML}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+
+                            <div>
+                                Dear Sir,<br>
+
+                                We are pleased to place the purchase order for the items below.
+                            </div>
+                            <div>
+                                <strong>Quotation Reference:</strong>
+                              </div>
+                                <p style="margin-top: 10px; padding: 10px; border: 1px solid #000; display: block; width: 100%; box-sizing: border-box;height:38px;">
+                                   ${quotation_reference ? quotation_reference : quotationReferenceString}
+                                </p>
+                          
+
+                            <table class="table table-bordered mt-2 ">
+                            <thead>
+                                <tr>
+                                    <th>S. No</th>
+                                    <th>Part No / Model No.</th>
+                                    <th>Description</th>
+                                    <th>Unit</th>
+                                    <th>Qty</th>
+                                    <th>Unit Price (${formType === 'import' ? 'FE' : 'INR'})</th>
+                                    <th>Total (${formType === 'import' ? 'FE' : 'INR'})</th>      
+                                </tr>
+                            </thead>
+                            <tbody >
+                                ${particularsRowsHTML}
+                                <!-- Additional rows for total, discount, GST, and grand total -->
+                                <tr>
+                                    <td colspan="6" style="text-align: right;"><strong>Sub Total:</strong></td>
+                                    <td><span id="totalValue">${totalValue.toFixed(2)}</span></td>
+                                </tr>
+                                <tr>
+                                    <td colspan="6" style="text-align: right;">
+                                        <strong>Discount (%) :</strong>
+                                    </td>
+                                  <td id="discount">
+                                  ${discount}
+                                </td>
+
+                                </tr>
+                                <tr>
+                                    <td colspan="6" style="text-align: right;">
+                                        <strong>Packing Charges (%) :</strong>
+                                    </td>
+                                    <td>
+                                        ${packingcharges ? packingcharges : discount2}
+                                        
+                                    </td>
+                                </tr>
+
+
+                                                              ${formType !== 'import' ? `
+    <tr>
+        <td colspan="6" style="text-align: right;">
+            <strong>GST (%):</strong> ${ gstPercentage ? gstPercentage : gstValue2 }
+        </td>
+        <td><span id="gstValue10" data-val=${gstValue}>${gstValue}</span></td> 
+    </tr>
+` : ''}
+                                <tr>
+                                    <td colspan="6" style="text-align: right;"><strong>Grand Total:</strong></td>
+                                    <td><span id="grandTotalValue1">${grandTotal}</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                     
+                        <div id="termsContainer">
+                            ${(termcondHTML && termcondHTML.trim() !== '' ? (termcondHTML + gentermcondHTML) : termsSection)}
+                        </div>
+
+                   
+
+        </div>
+        <div class="text-end mt-4 view-pr-id" data-id="${procurementId}">
+   
+
+    ${isDpoSaved && downloadButtonStatus ? `
+        <button class="btn btn-primary" id="downloadBtn"
+        style="margin-top:-1%; margin-right: 78%; background-color:#007080; border-color:#007080;"
+        onclick="downloadPDF()">
+        Download
+        </button>
+    ` : `
+        <button class="btn btn-primary" id="downloadBtn"
+        style="display:none; margin-top:-1%; margin-right: 78%; background-color:#007080; border-color:#007080;"
+        onclick="downloadPDF()">
+        Download
+        </button>
+    `}
+
+    ${!isDpoSaved && showbutton ? `
+    <button type="button" class="btn btn-success openApproveModal" id="approve"
+        data-procurement-id="${procurementId}"
+        style="margin-left: 10px; background-color: #007080;border-color:#28a745;">
+        Recommend
+    </button>
+
+    <button type="button" class="btn btn-danger openRejectModal" id="reject"
+        data-procurement-id="${procurementId}"
+        style="margin-left: 10px; background-color:#dc3545; border-color:#dc3545;">
+        Return
+    </button>
+` : ''}
+
+</div>
+`;
+       
+    }
+   
+     //installment data (dates, Percentage)
+    {% comment %} document.getElementById('installments').addEventListener('input', function () {
+        const count = parseInt(this.value);
+        const wrapper = document.getElementById('installmentDatesWrapper');
+        const container = document.getElementById('installmentDatesContainer');
+    
+        // Clear previous fields
+        container.innerHTML = '';
+    
+        if (!isNaN(count) && count > 0) {
+            wrapper.style.display = 'block'; // Show the scrollable wrapper
+    
+            for (let i = 1; i <= count; i++) {
+                const div = document.createElement('div');
+                div.className = 'form-group row';
+                div.innerHTML = `
+                    <div class="col-md-6">
+                        <label for="installment_date_${i}"><b>Installment Date ${i}:</b></label>
+                        <input type="date" name="installment_date_${i}" id="installment_date_${i}" class="form-control" required />
+                    </div>
+                    <div class="col-md-6">
+                        <label for="percentage_${i}"><b>Payment Percentage ${i} (%):</b></label>
+                        <input type="number" name="percentage_${i}" id="percentage_${i}" class="form-control" required min="0.01" max="100" step="0.01" />
+                    </div>
+                `;
+                container.appendChild(div);
+            }
+        } else {
+            wrapper.style.display = 'none';
+        }
+    }); {% endcomment %}
+    
+    // Prevent invalid characters and reset for non-positive values
+    {% comment %} const installmentInput = document.getElementById('installments');
+    
+    installmentInput.addEventListener('input', function () {
+        if (this.value < 1) this.value = '';
+    });
+    
+    installmentInput.addEventListener('keydown', function (e) {
+        if (e.key === '-' || e.key === 'e' || e.key === '+') {
+            e.preventDefault();
+        }
+    }); {% endcomment %}
+
+
+
+    $(document).on("click", ".openApproveModal", function (e) {
+        e.preventDefault();
+        var procurementId = $(this).data('procurement-id');
+        console.log("Procurement ID:", procurementId); // <-- Debug here
+        $('#approveProcurementId').val(procurementId);
+        $('#approveModal').modal('show');
+    });
+
+    $('#approveenquiry').click(function() {
+        debugger;
+        const remarks = $('#approveremarks').val();
+        const procurementId = $('#approveProcurementId').val();
+        const stage_action = 'recommend';
+        const role = $('#Approving').val();
+
+       // const role = $("#purchaseassistant").val(); // Get selected role
+       
+    
+        // Check if role is empty
+        if (!remarks) {
+            showAlert("Remarks cannot be empty.")
+            hideLoader();
+        }
+        if (!role) {
+            showAlert("Please select a user.");
+            hideLoader();
+            return;
+        }
+    
+       
+    
+       
+        showConfirmAlert('Are you sure,want to submit?').then((result) => {
+            if (result.isConfirmed) {
+
+                showLoader();
+                let formData = new FormData();
+          
+                formData.append('id', procurementId);
+                formData.append('remarks', remarks);
+                formData.append('stage_action', stage_action);
+                formData.append('role', role); 
+                formData.append('vendor_id',vendorId)
+                
+                //formData.append('role', role);
+              
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+                if (remarks) {
+                    $.ajax({
+                        url: '', 
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            debugger;
+                            console.log('Response:', response);
+                            if (response && response.status === 'success') {
+    
+                                $('#purchaseassistant').val('');
+                                 $("#approve").hide();
+                                $("#reject").hide();
+                                $(".openApproveModal").hide();
+                                $(".openRejectModal").hide();
+                                $('.download').css("display","block");
+                                $(`#procurement-${response.stage_list[0].procurement_id}`).css("background-color", "#CCE5F0");
+                                hideLoader();
+                               
+                                
+                                const stageDatetime = response.stage_list[0].datetime;
+                                let formattedDate = '';
+                                if (stageDatetime) {
+                                    const dateObj = new Date(stageDatetime);
+                                    const options = {
+                                        timeZone: 'Asia/Kolkata',  // Timezone set to IST
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: false
+                                    };
+                                    formattedDate = dateObj.toLocaleString('en-IN', options);
+                                } else {
+                                    formattedDate = 'Not Provided';
+                                }
+    
+                                
+                                showSuccessAlert('Procurement successfully recommended to Approving Authority.')
+                                $('#purchaseassistant').val(''); // Clear role selection
+                                $('#remarks').val('');
+                                
+                                $('#approveModal').modal('hide'); 
+                                updateNotificationCount(procurementId);
+                                var recommendremarks = `
+                                    <div class="note-header">
+                                        <h4 class="card-title" style="text-align:center;color:#800000;"><strong>NOTE ${response.stagecount}</strong></h4>
+                                    </div>
+                                    <div class="stage-note">
+                                        <p>
+                                            <span class="status-user" style="text-align:center; margin-top: 10px;">
+                                                <strong>Status:</strong> ${rstatus}
+                                            </span>
+                                        </p>
+                                        <p><strong>Remarks:</strong> ${response.stage_list[0].remarks || '_________________________'}</p>
+    
+                                        
+                                        <p><strong>Date and Time:</strong> ${formattedDate}</p>
+                        
+                                        ${response.stage_list[0].forwarded_to__username ? `
+                                            <p><strong>Forwarded To:</strong> 
+                                                ${response.stage_list[0].forwarded_to__first_name || 'Unknown'} 
+                                                (${response.stage_list[0].forwarded_to__username})
+                                                ${response.stage_list[0].forwarded_to__userreg__role__role ? 
+                                                    `[${response.stage_list[0].forwarded_to__userreg__role__role}]` : ''}
+                                            </p>
+                                        ` : ''}
+    
+                                        <span class="status-user" style="text-align:right; margin-bottom: 10px;">
+                                           <div>
+                                                <strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Name:</strong>
+                                                ${(() => {
+                                                    const first = response.stage_list[0].user__first_name || '';
+                                                    const last = response.stage_list[0].user__last_name || '';
+                                                    const fullName = `${first} ${last}`.trim();
+                                                    return fullName || 'Not Provided';
+                                                })()}
+                                            </div>
+
+                                            <div><strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Emp id:</strong> ${response.stage_list[0].user__username || 'Not Provided'}</div>
+                                            <div><strong>Department:</strong> ${response.stage_list[0].user__userreg__user_dept__dept_name || 'Not Provided'}</div>
+                                        </span>
+                                    </div>
+                                `;
+                                
+                                $("#tracking-list").append(recommendremarks);
+    
+                            } else {
+                    
+                                showWarningAlert(response.message || "Something went wrong!")
+                                hideLoader();
+                            }
+                        },
+                        error: function() {
+                            showWarningAlert('Something went wrong')
+                            hideLoader();
+                        }
+                    });
+                } else {
+                    showAlert('Remarks cannot be empty');
+                    hideLoader();
+                }
+            }
+        });
+    });
+    
+    $('#closeModalBtnapprove').click(function() {
+        $('#approveModal').modal('hide');
+        $("#remarks").val('');
+    });
+
+    $('#closeModalBtnreject').click(function() {
+        $('#rejectModal').modal('hide');
+        $("#remarks").val('');
+    });
+    $(document).on("click", ".openRejectModal", function (e) {
+        e.preventDefault();
+    
+        // Get procurement ID from the button
+        var procurementId = $(this).data('procurement-id');
+    
+        // Set procurement ID in the hidden input inside the modal form
+        $('#rejectProcurementId').val(procurementId);
+    
+        // Open the modal
+        $('#rejectModal').modal('show');
+    });
+    
+
+    $('#rejectenquiry').click(function() {
+        debugger;
+        const remarks = $('#rejectremarks').val();
+        const procurementId = $('#rejectProcurementId').val();
+        const stage_action = 'Reject';
+        const rejectStage = $('#rejectstage').val();  
+       // const role = $("#purchaseassistant").val(); // Get selected role
+       
+    
+        // Check if role is empty
+        if (!remarks) {
+            showAlert("Remarks cannot be empty.")
+            hideLoader();
+        }
+    
+       
+    
+       
+        showConfirmAlert('Are you sure,want to submit?').then((result) => {
+            if (result.isConfirmed) {
+
+                showLoader();
+                let formData = new FormData();
+          
+                formData.append('id', procurementId);
+                formData.append('remarks', remarks);
+                formData.append('stage_action', stage_action);
+                formData.append('rejectstage', rejectStage);
+                formData.append('vendor_id',vendorId)
+                //formData.append('role', role);
+              
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+                if (remarks) {
+                    $.ajax({
+                        url: '', 
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            debugger;
+                            console.log('Response:', response);
+                            if (response && response.status === 'success') {
+    
+                                $('#purchaseassistant').val('');
+                                $("#approve").hide();
+                                $("#reject").hide();
+                                $(`#procurement-${response.stage_list[0].procurement_id}`).css("background-color", "#CCE5F0");
+                                hideLoader();
+                               
+                                
+                                const stageDatetime = response.stage_list[0].datetime;
+                                let formattedDate = '';
+                                if (stageDatetime) {
+                                    const dateObj = new Date(stageDatetime);
+                                    const options = {
+                                        timeZone: 'Asia/Kolkata',  // Timezone set to IST
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: false
+                                    };
+                                    formattedDate = dateObj.toLocaleString('en-IN', options);
+                                } else {
+                                    formattedDate = 'Not Provided';
+                                }
+    
+                                
+                                showSuccessAlert('Procurement successfully returned to IMM.')
+                                $('#purchaseassistant').val(''); // Clear role selection
+                                $('#remarks').val('');
+                                $('#rejectModal').modal('hide'); 
+                                updateNotificationCount(procurementId);
+                                var recommendremarks = `
+                                    <div class="note-header">
+                                        <h4 class="card-title" style="text-align:center;color:#800000;"><strong>NOTE ${response.stagecount}</strong></h4>
+                                    </div>
+                                    <div class="stage-note">
+                                        <p>
+                                            <span class="status-user" style="text-align:center; margin-top: 10px;">
+                                                <strong>Status:</strong> ${rstatus}
+                                            </span>
+                                        </p>
+                                        <p><strong>Remarks:</strong> ${response.stage_list[0].remarks || '_________________________'}</p>
+    
+                                        
+                                        <p><strong>Date and Time:</strong> ${formattedDate}</p>
+                        
+    
+                                        <span class="status-user" style="text-align:right; margin-bottom: 10px;">
+                                           <div>
+                                                <strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Name:</strong>
+                                                ${(() => {
+                                                    const first = response.stage_list[0].user__first_name || '';
+                                                    const last = response.stage_list[0].user__last_name || '';
+                                                    const fullName = `${first} ${last}`.trim();
+                                                    return fullName || 'Not Provided';
+                                                })()}
+                                            </div>
+
+                                            <div><strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Emp id:</strong> ${response.stage_list[0].user__username || 'Not Provided'}</div>
+                                            <div><strong>Department:</strong> ${response.stage_list[0].user__userreg__user_dept__dept_name || 'Not Provided'}</div>
+                                        </span>
+                                    </div>
+                                `;
+                                
+                                $("#tracking-list").append(recommendremarks);
+    
+                            } else {
+                    
+                                showWarningAlert(response.message || "Something went wrong!")
+                                hideLoader();
+                            }
+                        },
+                        error: function() {
+                            showWarningAlert('Something went wrong')
+                            hideLoader();
+                        }
+                    });
+                } else {
+                    showAlert('Remarks cannot be empty');
+                    hideLoader();
+                }
+            }
+        });
+    });
+
+ // Download pdf
+    function downloadPDF() {
+        console.log('Download PDF triggered');
+
+        const element = document.getElementById('purchaseOrderFormContainer');
+        const hiElement = document.getElementById('hi'); // background element
+        const submitButton = document.getElementById('submitdraft');
+        const downloadButton = document.querySelector('button[onclick="downloadPDF()"]');
+        const spinner = document.getElementById('spinner');
+
+        showLoader();
+
+        // Backup styles
+        const originalHeight = element.style.height;
+        const originalOverflow = document.body.style.overflow;
+
+        // Hide UI elements
+        if (submitButton) submitButton.style.visibility = 'hidden';
+        if (downloadButton) downloadButton.style.visibility = 'hidden';
+        if (spinner) spinner.style.display = 'none';
+
+        // Remove background class if any
+        if (hiElement) hiElement.classList.remove('with-bg');
+
+        // Force full height to render all content
+        element.style.height = 'auto';
+        element.style.maxHeight = 'none';
+        document.body.style.overflow = 'hidden';
+        window.scrollTo(0, 0);
+
+        // Inject PDF-specific table styling
+        const style = document.createElement('style');
+        style.id = 'pdf-temp-style';
+        style.innerHTML = `
+            table, th, td {
+                border: 1px solid black !important;
+                border-collapse: collapse !important;
+            }
+            th, td {
+                padding: 6px !important;
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Load watermark
+        const imgUrl = '{% static "images/messylog.png" %}';
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.src = imgUrl;
+
+        img.onload = function () {
+            const dpoIdText = document.getElementById('dpoIdDisplay')?.innerText || 'purchase-order';
+
+            const opt = {
+                margin: 0.2,
+                filename: `${dpoIdText}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: {
+                    scale: 3,
+                    useCORS: true,
+                    scrollY: 0,
+                    windowWidth: document.body.scrollWidth,
+                    windowHeight: document.body.scrollHeight
+                },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+            };
+
+            html2pdf()
+                .set(opt)
+                .from(element)
+                .toPdf()
+                .get('pdf')
+                .then(function (pdf) {
+                    const totalPages = pdf.internal.getNumberOfPages();
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+
+                    const imageWidth = pageWidth * 0.7;
+                    const imageHeight = (imageWidth / img.width) * img.height;
+                    const xPos = (pageWidth - imageWidth) / 2;
+                    const yPos = (pageHeight - imageHeight) / 2;
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        pdf.setPage(i);
+                        pdf.setDrawColor(0);
+                        pdf.setLineWidth(0.02);
+                        pdf.rect(0.2, 0.2, pageWidth - 0.4, pageHeight - 0.4);
+                        // pdf.addImage(imgUrl, 'PNG', xPos, yPos, imageWidth, imageHeight);
+                    }
+                })
+                .save()
+                .finally(() => {
+                    // Restore UI elements
+                    if (submitButton) submitButton.style.visibility = 'visible';
+                    if (downloadButton) downloadButton.style.visibility = 'visible';
+                    if (spinner) spinner.style.display = 'none';
+
+                    // Restore temporary styles
+                    const tempStyle = document.getElementById('pdf-temp-style');
+                    if (tempStyle) tempStyle.remove();
+
+                    // Restore background image class
+                    if (hiElement) hiElement.classList.add('with-bg');
+
+                    // Restore scroll and height settings
+                    element.style.height = '';
+                    element.style.maxHeight = '';
+                    element.style.overflow = ''; // Clear any overflow setting
+                    document.body.style.overflow = ''; // Restore scroll on page
+
+                    hideLoader();
+                });
+
+        };
+
+        img.onerror = function () {
+            showAlert("Failed to load the image for the PDF.");
+
+            // Restore on failure
+            if (submitButton) submitButton.style.visibility = 'visible';
+            if (downloadButton) downloadButton.style.visibility = 'visible';
+            if (spinner) spinner.style.display = 'none';
+
+            const tempStyle = document.getElementById('pdf-temp-style');
+            if (tempStyle) tempStyle.remove();
+
+            if (hiElement) hiElement.classList.add('with-bg');
+
+            element.style.height = originalHeight;
+            document.body.style.overflow = originalOverflow;
+
+            hideLoader();
+        };
+    }
+    
+
+    // websocket for side bar update
+        
+    (function() {
+        const role = "imm";  // IMM role
+        const pageKey = "dpo";  // Default to 'imm', but can be dynamic based on remark type
+        
+        const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const ws_url = `${ws_scheme}://${window.location.host}/ws/sidebar/${role}/${pageKey}/`;
+        const dpo_socket = new WebSocket(ws_url);
+        
+        dpo_socket.onopen = function() {
+            console.log("dpo sidebar WebSocket opened.");
+
+        }
+        dpo_socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log("dpo data", data)
+
+            if (data.update_type === "refresh_sidebar_dpo") {
+                // Only update if message is for IMM role and corresponding page
+            
+
+                const procurementId = data.procurement_id;
+                const dateObj = new Date(data.timestamp);
+                let formattedDatetime = '';
+
+                if (!isNaN(dateObj)) {
+                    const pad = num => String(num).padStart(2, '0');
+                    const day = pad(dateObj.getDate());
+                    const month = pad(dateObj.getMonth() + 1);
+                    const year = dateObj.getFullYear();
+                    const hours = pad(dateObj.getHours());
+                    const minutes = pad(dateObj.getMinutes());
+                    const seconds = pad(dateObj.getSeconds());
+                    formattedDatetime = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                }
+
+                const listItem = $(`#procurementSidebar .list-group-item a.view-pr-id[data-id="${procurementId}"]`).closest('.list-group-item');
+                if (data.role !== "imm" || data.page !== pageKey) {
+                    console.log("Ignoring update for role/page:", data.role, data.page);
+                    if (data.page=="rejectedimm"){
+                        listItem.css('background-color', '#CCE5F0');
+                    }
+                
+                    return;
+                }
+                if (listItem.length) {
+                    listItem.find('div').eq(1).text(formattedDatetime);
+                    console.log('hi',data.forwarded_to_imm_user);
+                    // Apply background logic based on conditions
+                    if (data.forwarded_to_imm_user && pagekey) {
+                        listItem.css('background-color', '#f8f9fa'); // Reset background if forwarded
+                    } else {
+                        // Assuming procurement was recommended, update the background color
+                        listItem.css('background-color', '#CCE5F0'); // Highlight the item when recommended
+                    }
+                    $('#procurementSidebar').on('click', '.list-group-item', function() {
+                        // Remove the active class from all items
+                        $('#procurementSidebar .list-group-item').removeClass('active-procurement');
+                    
+                        // Add active class to the clicked item
+                        $(this).addClass('active-procurement');
+                    });
+                    
+                } else {
+                    // New procurement item
+                    const statusesString = (data.statuses || []).join(',');
+                    let backgroundColor = '#f8f9fa'; // Default background color
+
+                    // Apply background color for forwarded or recommended stage
+                    if (data.forwarded_to_imm_user) {
+                        backgroundColor = '#f8f9fa'; // Reset if forwarded
+                    } else {
+                        backgroundColor = '#CCE5F0'; // Highlight if recommended
+                    }
+
+                    const newListItem = `
+                        <li id="procurement-${procurementId}" class="list-group-item" data-statuses="${statusesString}"
+                            style="background-color: ${backgroundColor}; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top:7px; padding:9px;">
+                            <a href="#" class="view-pr-id" data-id="${procurementId}" style="text-decoration: none; color: inherit; display: block;">
+                                <div style="font-weight: 500; font-size: 14px; color: black;">
+                                    ${procurementId}
+                                </div>
+                                <div style="font-size: 11px; color: black;">
+                                    ${formattedDatetime}
+                                </div>
+                            </a>
+                        </li>
+                    `;
+
+                    $('#procurementSidebar').prepend(newListItem);
+                    $('#procurementSidebar').on('click', '.list-group-item', function() {
+                        // Remove the active class from all items
+                        $('#procurementSidebar .list-group-item').removeClass('active-procurement');
+                    
+                        // Add active class to the clicked item
+                        $(this).addClass('active-procurement');
+                    });
+                    
+                }
+                
+
+                // Reapply any filter you have
+                $('#statusFilter').trigger('change');
+            }
+        };
+
+        dpo_socket.onclose = function() {
+            console.warn("dpo sidebar WebSocket closed.");
+        };
+    })();
+
+</script>
+
+{%endblock scripts%}

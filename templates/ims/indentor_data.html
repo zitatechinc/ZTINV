@@ -1,0 +1,1310 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+{% load custom_tags %}
+
+{% block styleblock %}
+<style>
+
+
+  .view-btn {
+    border: 1px solid #007080;
+    color: #007080;
+    background-color: transparent;
+    transition: background-color 0.3s, color 0.3s;
+  }
+
+    .view-btn:hover {
+      background-color: #007080;
+      color: white;
+      border: 1px solid #007080;
+    }
+
+    .view-btn:hover .fa-eye {
+      color: white;
+    }
+
+    .view-btn .fa-eye {
+      color: #007080;
+      transition: color 0.3s;
+    }
+
+    /* Padding between filters */
+    .filter-select {
+      margin-bottom: 12px;
+    }
+
+    .row.mb-3 > .col-md-3 {
+      padding-right: 10px;
+      padding-left: 10px;
+    }
+
+    /* Table styling */
+    #procurementTable, #modalParticularsTable {
+      width: 100% !important;
+      border-collapse: collapse;
+    }
+
+
+    table.dataTable tbody tr:hover {
+      background-color: #f2f9ff;
+    }
+
+      .modal-body table tbody tr:hover {
+      background-color: #f2f9ff;
+    }
+
+      .dataTables_wrapper .dataTables_length,
+  .dataTables_wrapper .dataTables_filter{
+        margin: 12px 0;
+  }
+
+    /* Responsive Modal Table */
+    /* .modal-body table {
+      font-size: 0.85rem;
+    } */
+  /* PR Raised / PR Modified – Teal Blue */
+  .stage-pr {
+    background-color: rgb(39, 187, 255);
+    color: #ffffff;
+  }
+
+  /* Modified – Deep Cyan */
+  .stage-modified {
+    background-color: rgb(162, 4, 160);
+    color: #ffffff;
+  }
+
+  /* Recommended – Emerald Green */
+  .stage-recommended {
+    background-color: rgb(21, 198, 21);
+    color: white;
+  }
+
+  /* Approved – Vivid Green */
+  .stage-approved {
+    background-color: rgb(21, 198, 21);
+    color: #ffffff;
+  }
+
+  /* Returned – Rich Red */
+  .stage-returned {
+    background-color: red;
+    color: #ffffff;
+  }
+
+  /* Negotiation – Amber Orange */
+  .stage-negotiation {
+    background-color: #ff8307;
+    color: white;
+  }
+
+  /* DPO – Slate Gray */
+  .stage-dpo {
+    background-color: #6c757d;
+    color: #ffffff;
+  }
+
+  /* PO – Royal Purple */
+  .stage-po {
+    background-color: #007080;
+    color: #ffffff;
+  }
+
+  /* Enquiry Generated – Bright Blue */
+  .stage-enquiry {
+    background-color: #0dcaf0;
+    color: #ffffff;
+  }
+
+  /* Default – Neutral Gray */
+  .stage-default {
+    background-color: #6f42c1;
+    color: #ffffff;
+  }
+
+  /* Consistent badge shape and spacing */
+  .stage-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border-radius: 999px;
+    text-transform: capitalize;
+    white-space: nowrap;
+  }
+
+  .filter-select-sm:hover:not(:disabled) {
+    border-color: #007080;
+    background-color: #f0fafa;
+    cursor: pointer;
+  }
+
+  .filter-select-sm:disabled {
+    cursor: not-allowed;
+    background-color: #e9ecef;
+    color: #6c757d;
+  }
+
+    /* Common base style for all dashboard cards */
+  .dashboard-card,
+  .table-dashboard-card {
+      background: #ffffff;
+      border: 2px solid #e5e7eb;
+      border-radius: 0.75rem;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      text-align: center;
+  }
+
+  /* Limit height of the card and enable scroll for the table */
+
+  /* Hover effect */
+  .dashboard-card:hover,
+  .table-dashboard-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+  }
+
+  /* Optional enhancement for inner spacing */
+  .dashboard-card .card-body,
+  .table-dashboard-card .card-body {
+      padding: 1rem;
+  }
+
+  /* Optional darker border for better visibility */
+  .dashboard-card,
+  .table-dashboard-card {
+      border-color: #d1d5db;
+  }
+
+  /* Optional text style */
+  .table-dashboard-card h6 {
+      font-size: 0.9rem;
+      color: #6b7280;
+  }
+
+  .table-dashboard-card p {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0;
+  }
+
+  /* ======= Icon Styling ======= */
+      .card-icon {
+          width: 38px;
+          height: 38px;
+          margin: 0 auto 0.75rem;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.25rem;
+          border-radius: 0.5rem;
+          color: white;
+      }
+
+      /* ======= Metric Font ======= */
+      .card-metric {
+          font-size: 1.4rem;
+          font-weight: 600;
+      }
+
+ .dashboard-card {
+          flex: 0 0 160px;
+          flex-grow: 1;
+          /* min-width: 130px; */
+          max-width: 100%;
+          height: 135px;
+          min-height: 135px;
+          max-height: fit-content;
+          border: 2px solid #e5e7eb;
+          border-radius: 0.75rem;
+          box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          background: #fff;
+          text-align: center;
+          /* white-space: nowrap; */
+          overflow: hidden;
+          text-overflow: ellipsis;
+          flex-shrink: 1;
+      }
+  /* Make table header sticky */
+.custom-scroll table thead th {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background: #007080 !important; /* keep your header style */
+}
+
+/* Ensure table scroll area works */
+.custom-scroll {
+    max-height: 500%;
+    overflow-y: auto;
+}
+
+</style>
+{% endblock %}
+
+{% block mainblock %}
+<div class="container py-3 px-3" id="procurementdata" style="max-width: 100%;">
+
+ <!-- Filters Row -->
+  <div class="row g-2 mb-3">
+    <!-- Project Filter -->
+    <div class="col-md-3 d-flex align-items-center gap-2">
+      <i class="bi bi-kanban text-primary fs-5"></i>
+      <label for="projectFilter" class="mb-0 fw-semibold small text-nowrap">Project</label>
+      <select class="form-select form-select-sm w-100 filter-select-sm" id="projectFilter">
+        <option value="">All</option>
+        {% for p in projects %}
+          <option value="{{ p.name }}">{{ p.name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  
+    <!-- FY Filter -->
+    <div class="col-md-3 d-flex align-items-center gap-2">
+      <i class="bi bi-calendar-week text-success fs-5"></i>
+      <label for="financialYearFilter" class="mb-0 fw-semibold small text-nowrap">Financial Year</label>
+      <select class="form-select form-select-sm w-100 filter-select-sm" id="financialYearFilter">
+        <option value="">All</option>
+        {% for fy in financial_years %}
+        <option value="{{ fy }}">{{ fy }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  
+    <!-- Quarter Filter -->
+    <div class="col-md-3 d-flex align-items-center gap-2">
+      <i class="bi bi-calendar3-range text-warning fs-5" data-bs-toggle="tooltip" title="PR raised quarter"></i>
+      <label for="quarterFilter" class="mb-0 fw-semibold small text-nowrap">Quarter</label>
+      <select class="form-select form-select-sm w-100 filter-select-sm" id="quarterFilter" disabled>
+        <option value="">All</option>
+        <option value="Q1">Q1 (Apr-Jun)</option>
+        <option value="Q2">Q2 (Jul-Sep)</option>
+        <option value="Q3">Q3 (Oct-Dec)</option>
+        <option value="Q4">Q4 (Jan-Mar)</option>
+      </select>
+    </div>
+  
+    <!-- Source of Make Filter -->
+    <div class="col-md-3 d-flex align-items-center gap-2">
+      <i class="bi bi-globe2 text-info fs-5"></i>
+      <label for="sourceOfMakeFilter" class="mb-0 fw-semibold small text-nowrap">Source of Make</label>
+      <select class="form-select form-select-sm w-100 filter-select-sm" id="sourceOfMakeFilter">
+        <option value="">All</option>
+        {% for s in sources_of_make %}
+        <option value="{{ s.source_type }}">{{ s.source_type }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  
+    <!-- Tender Type Filter -->
+    <div class="col-md-3 d-flex align-items-center gap-2">
+      <i class="bi bi-file-earmark-text text-danger fs-5"></i>
+      <label for="tenderTypeFilter" class="mb-0 fw-semibold small text-nowrap">Tender Type</label>
+      <select class="form-select form-select-sm w-100 filter-select-sm" id="tenderTypeFilter">
+        <option value="">All</option>
+        {% for t in tender_types %}
+        <option value="{{ t.tender_type }}">{{ t.tender_type }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  
+    <!-- Procurement Type Filter -->
+    <div class="col-md-3 d-flex align-items-center gap-2">
+      <i class="bi bi-box-seam text-dark fs-5"></i>
+      <label for="procurementTypeFilter" class="mb-0 fw-semibold small text-nowrap">Procurement Type</label>
+      <select class="form-select form-select-sm w-100 filter-select-sm" id="procurementTypeFilter">
+        <option value="">All</option>
+        {% for pt in procurement_types %}
+        <option value="{{ pt.Procurement_name }}">{{ pt.Procurement_name }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  
+    <!-- Location Filter -->
+    <div class="col-md-3 d-flex align-items-center gap-2">
+      <i class="bi bi-geo-alt-fill text-secondary fs-5"></i>
+      <label for="locationFilter" class="mb-0 fw-semibold small text-nowrap">Location</label>
+      <select class="form-select form-select-sm w-100 filter-select-sm" id="locationFilter">
+        <option value="">All</option>
+        {% for loc in locations %}
+        <option value="{{ loc.location }}">{{ loc.location }}</option>
+        {% endfor %}
+      </select>
+    </div>
+  
+    <!-- Supplier Filter -->
+    <div class="col-md-3 d-flex align-items-center gap-2">
+      <i class="bi bi-truck text-primary fs-5"></i>
+      <label for="supplierFilter" class="mb-0 fw-semibold small text-nowrap">Source of Supplies</label>
+      <select class="form-select form-select-sm w-100 filter-select-sm" id="supplierFilter">
+        <option value="">All</option>
+        {% for s in suppliers %}
+        <option value="{{ s.company_name1 }}">{{ s.company_name1|default:s.code }}</option>
+        {% endfor %}
+      </select>
+    </div>
+      <div class="col-md-3 d-flex align-items-center gap-2">
+  <i class="bi bi-check2-square text-primary fs-5"></i>
+  <label for="stageFilter" class="mb-0 fw-semibold small text-nowrap">Stage</label>
+  <select class="form-select form-select-sm w-100 filter-select-sm" id="stageFilter">
+    <option value="">All</option>
+   
+    <option value="Approved" selected>Approved</option>
+  </select>
+</div>
+  </div>
+
+    
+  <!-- Table Section in Centered 10-column Box -->
+  <div class="row g-3">
+     <!-- Cards Section -->
+    <div class="col-md-2 d-flex flex-column gap-3">
+      <div class="d-flex flex-wrap gap-2 justify-content-start"
+        style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">
+        <div class="dashboard-card p-3">
+          <div class="card-icon bg-success"><i class="bi bi-bag-check"></i></div>
+          <h6 class="text-muted mb-1">Procurements</h6>
+          <div class="card-metric text-success" id="card-procurement"></div>
+        </div>
+        <div class="dashboard-card p-3">
+          <div class="card-icon bg-primary" data-bs-toggle="tooltip" 
+        title="Total estimated value of all the Prs raised."><i class="bi bi-cash-stack"></i></div>
+          <h6 class="text-muted mb-1">Planned</h6>
+          <div class="card-metric text-primary" id="card-planned"></div>
+        </div>
+        <div class="dashboard-card p-3">
+          <div class="card-icon bg-warning" data-bs-toggle="tooltip" 
+        title="Sum of Total committed amount in all the approved POs"><i class="bi bi-wallet-fill"></i></div>
+          <h6 class="text-muted mb-1">Committed</h6>
+          <div class="card-metric text-warning" id="card-committed"></div>
+        </div>
+         <div class="dashboard-card p-3">
+          <div class="card-icon bg-info"><i class="bi bi-wallet2"></i></div>
+          <h6 class="text-muted mb-1">Expenditure</h6>
+          <div class="card-metric text-info" id="card-expenditure">₹ 0.00</div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-10">
+      <div class="table-dashboard-card shadow-sm bg-light">
+        <div class="card-body">
+          <div class="table-responsive" id="tableContainer">
+            <!-- Table will be injected here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="particularsModal" tabindex="-1" aria-labelledby="particularsModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog modal-xl modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="particularsModalLabel">Item Details</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body text-center" id="particularsBody">
+                    <!-- JS injected content -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+
+// Utility functions
+function indianNotation(value, disableDecimalForSmall = false) {
+    value = parseFloat(value);
+    if (isNaN(value)) return value;
+
+    if (value >= 10000000) return (value / 10000000).toFixed(2) + ' Cr';
+    if (value >= 100000) return (value / 100000).toFixed(2) + ' L';
+    if (value >= 1000) return (value / 1000).toFixed(2) + ' K';
+
+    return disableDecimalForSmall ? Math.round(value).toString() : value.toFixed(2);
+}
+
+function updateTextContent(id, value, prefix = '₹ ') {
+    const el = document.getElementById(id);
+    if (!el) return;
+
+    const showDecimals = id !== 'card-procurement';
+    const formattedValue = indianNotation(value, !showDecimals);
+    el.textContent = (showDecimals ? prefix : '') + formattedValue;
+}
+  let fullFilteredData = [];
+
+     // Fetch data based on the filters
+ function fetchFilteredData() {
+  const DEBUG = true; // set false to silence debug logs
+  // Show loader
+  showLoader();
+
+  const filters = {
+    project: $('#projectFilter').val(),
+    financial_year: $('#financialYearFilter').val(),
+    quarter: $('#quarterFilter').val(),
+    source_of_make: $('#sourceOfMakeFilter').val(),
+    tender_type: $('#tenderTypeFilter').val(),
+    procurement_type: $('#procurementTypeFilter').val(),
+    location: $('#locationFilter').val(),
+    supplier: $('#supplierFilter').val()
+  };
+
+  // small helpers (same as earlier)
+  function updateAmountWithTooltip(id, amountText) {
+    const elem = document.getElementById(id);
+    if (!elem) return;
+    elem.textContent = amountText;
+    elem.setAttribute('title', `Amount: ₹ ${amountText}`);
+    let tooltipInstance = bootstrap.Tooltip.getInstance(elem);
+    if (tooltipInstance) tooltipInstance.dispose();
+    new bootstrap.Tooltip(elem);
+  }
+  function safeNumber(v) {
+    if (v === null || v === undefined || v === "") return 0;
+    if (typeof v === "number" && !isNaN(v)) return v;
+    try {
+      const cleaned = String(v).replace(/[^\d.-]+/g, '');
+      const n = Number(cleaned);
+      return isNaN(n) ? 0 : n;
+    } catch (e) {
+      return 0;
+    }
+  }
+  function formatMoneyForDisplay(v) {
+    if (v === null || v === undefined || v === "") return '-';
+    const n = safeNumber(v);
+    return '₹ ' + n.toFixed(2);
+  }
+  function findCommittedForPONumber(poNumber, poCommittedMap) {
+    if (!poCommittedMap || typeof poCommittedMap !== 'object') return null;
+    const intKey = parseInt(String(poNumber).replace(/[^\d]+/g, ''), 10);
+    if (!isNaN(intKey) && poCommittedMap.hasOwnProperty(intKey)) return poCommittedMap[intKey];
+    const strKey = String(poNumber);
+    if (poCommittedMap.hasOwnProperty(strKey)) return poCommittedMap[strKey];
+    for (const k in poCommittedMap) {
+      if (!poCommittedMap.hasOwnProperty(k)) continue;
+      if (String(k).trim() === strKey.trim()) return poCommittedMap[k];
+      const kInt = parseInt(String(k).replace(/[^\d]+/g, ''), 10);
+      if (!isNaN(kInt) && kInt === intKey) return poCommittedMap[k];
+    }
+    return null;
+  }
+
+  // Ajax call
+  $.ajax({
+    url: '/ims/indentor_data/',
+    method: 'GET',
+    data: filters,
+    success: function (response) {
+      hideLoader();
+
+      let data = (response && response.data && response.data.data) ? response.data.data : [];
+
+      // initially load all data
+      fullFilteredData = data;
+
+      // Apply stage filter if selected
+      const stageFilter = $('#stageFilter').val();
+     
+if (stageFilter) {
+    data = fullFilteredData.filter(pr => {
+        const stage = (pr.phase === "Phase 2" || pr.phase === "Approved") 
+                        ? "Approved" 
+                        : null; // removed PR_Raised
+        return stage === stageFilter;
+    });
+}
+      // ✅ ALWAYS update fullFilteredData so Excel exports filtered rows only
+      fullFilteredData = data;
+
+      if (DEBUG) console.log("IMM_DATA_RESPONSE:", response);
+      if (DEBUG && data && data.length) console.log("SAMPLE_PR:", data[0]);
+
+      // Recompute summary based on filtered data
+      const summaryFiltered = {
+        total_procurements: data.length,
+        total_planned_value: data.reduce((sum, pr) => sum + safeNumber(pr.planned_value), 0),
+        total_committed_value: data.reduce((sum, pr) => sum + safeNumber(pr.committed_value), 0)
+      };
+
+      // Update summary cards with filtered values
+      updateTextContent("card-procurement", summaryFiltered.total_procurements);
+      updateTextContent("card-planned", summaryFiltered.total_planned_value);
+      updateTextContent("card-committed", summaryFiltered.total_committed_value);
+      updateAmountWithTooltip("card-planned", summaryFiltered.total_planned_value);
+      updateAmountWithTooltip("card-committed", summaryFiltered.total_committed_value);
+
+
+      // Build table header (9 columns)
+      let html = `
+      <div class="custom-scroll">
+        <table id="procurementTable" class="table table-bordered table-hover table-sm small align-middle">
+          <thead class="table-light">
+            <tr class="text-center">
+              <th>Procurement ID</th>
+              <th>Indentor</th>
+              
+              <th>Item Details</th>
+              <th>Vendors</th>
+              <th>Po Number</th>
+              <th>Planned</th>
+              <th>Committed</th>
+              <th>Expenditure</th>
+              <th>Stage</th>
+            </tr>
+          </thead>
+          <tbody class="text-center custom-scroll">
+      `;
+
+      // iterate procurements
+   data.forEach((pr, index) => {
+    const textareaId = `particulars-data-${index}`;
+    let safeJSON = "[]";
+
+    try { safeJSON = JSON.stringify(JSON.parse(pr.particulars || "[]")); }
+    catch (e) { safeJSON = "[]"; }
+
+    let poList = [];
+
+    if (Array.isArray(pr.po_details) && pr.po_details.length) {
+        poList = pr.po_details.map(p => ({
+            po_number: p.po_number ? String(p.po_number) : "Not Yet",
+            committed_value: p.committed_value ?? null,
+            supplier_name: p.supplier_name ?? null
+        }));
+    } else {
+        poList = [{
+            po_number: "Not Yet",
+            committed_value: pr.committed_value ?? null,
+            supplier_name: pr.supplier_names.join(", ") // fallback
+        }];
+    }
+
+    const supplierNames = Array.isArray(pr.supplier_names) ? pr.supplier_names.join(", ") : "-";
+
+
+    // -------------------- CASE 1: Only 1 PO --------------------
+    if (poList.length < 2) {
+        const plannedNum = safeNumber(pr.planned_value);
+        const committedNum = safeNumber(pr.committed_value);
+
+        html += `
+            <tr id=${pr.procurement_id || '-'}>
+              <td>${pr.procurement_id || '-'}</td>
+              <td>${pr.user || '-'}</td>
+              
+              <td>
+                ${pr.particulars_count || 0}
+                <textarea id="${textareaId}" hidden>${safeJSON}</textarea>
+                <button class="btn btn-sm view-btn ms-2" data-particulars-id="${textareaId}" data-bs-toggle="modal" data-bs-target="#particularsModal">
+                  <i class="fa fa-eye"></i>
+                </button>
+              </td>
+              <td>${poList[0].supplier_name || supplierNames}</td>
+
+              <td>${poList[0].po_number}</td>
+              <td data-order="${plannedNum}">${formatMoneyForDisplay(plannedNum)}</td>
+              <td data-order="${committedNum}">${formatMoneyForDisplay(committedNum)}</td>
+              <td data-order="0">₹ 0.00</td>
+              <td><span class="stage-badge ${pr.phase === "Phase 2" ? "stage-approved" : "stage-pr"}">${pr.phase}</span></td>
+            </tr>
+        `;
+    }
+
+    // -------------------- CASE 2: MULTIPLE POs --------------------
+    else {
+        const rowCount = poList.length;
+
+        poList.forEach((po, poIndex) => {
+            let committedNum = po.committed_value ? safeNumber(po.committed_value) : 0;
+            const committedDisplay = po.committed_value == null ? "-" : formatMoneyForDisplay(committedNum);
+
+            const supplierForThisPO = po.supplier_name || supplierNames;
+
+            if (poIndex === 0) {
+                // -------- FIRST ROW --------
+                html += `
+                    <tr id="${pr.procurement_id}">
+                        <td rowspan="${rowCount}">${pr.procurement_id}</td>
+                        <td rowspan="${rowCount}">${pr.user}</td>
+
+                        
+
+                        <td rowspan="${rowCount}">
+                            ${pr.particulars_count}
+                            <textarea id="${textareaId}" hidden>${safeJSON}</textarea>
+                            <button class="btn btn-sm view-btn ms-2"
+                                data-particulars-id="${textareaId}"
+                                data-bs-toggle="modal"
+                                data-bs-target="#particularsModal">
+                                <i class="fa fa-eye"></i>
+                            </button>
+                        </td>
+                        <td>${supplierForThisPO}</td>
+
+                        <td>${po.po_number}</td>
+
+                        <td rowspan="${rowCount}" data-order="${safeNumber(pr.planned_value)}">
+                            ${formatMoneyForDisplay(safeNumber(pr.planned_value))}
+                        </td>
+
+                        <td data-order="${committedNum}">${committedDisplay}</td>
+
+                        <td rowspan="${rowCount}" data-order="0">₹ 0.00</td>
+
+                        <td rowspan="${rowCount}">
+                            <span class="stage-badge ${pr.phase === "Phase 2" ? "stage-approved" : "stage-pr"}">
+                                ${pr.phase}
+                            </span>
+                        </td>
+                    </tr>
+                `;
+            } else {
+                // -------- CHILD ROWS --------
+                html += `
+                    <tr id="${pr.procurement_id}">
+                        <td style="display:none"></td>
+                        <td style="display:none"></td>
+
+                       
+
+                        <td style="display:none"></td>
+ <td>${supplierForThisPO}</td>
+                        <td>${po.po_number}</td>
+
+                        <td style="display:none"></td>
+
+                        <td data-order="${committedNum}">${committedDisplay}</td>
+
+                        <td style="display:none"></td>
+                        <td style="display:none"></td>
+                    </tr>
+                `;
+            }
+        });
+    }
+});
+
+      html += `
+          </tbody></table>
+          <div class="text-end mt-2">
+            <button id="downloadExcel" class="btn btn-success btn-sm">Export to Excel</button>
+          </div>
+          <div class="text-end mt-2">
+            <button id="specialExcel" class="btn btn-success btn-sm">Specific Excel</button>
+          </div>
+      `;
+
+      // Inject HTML
+      $('#tableContainer').html(html);
+
+      // Destroy existing datatable safely
+      if ($.fn.DataTable.isDataTable('#procurementTable')) {
+        try { $('#procurementTable').DataTable().clear().destroy(); } catch (e) { if (DEBUG) console.warn("DT destroy error:", e); }
+      }
+
+      // Init DataTable
+      $('#procurementTable').DataTable({
+        ordering: false,     // ✅ REQUIRED
+        searching: true,    // ✅ REQUIRED
+        paging: false,       // ✅ REQUIRED
+        info: false,
+        lengthMenu: [5, 10, 25, 50],
+        pageLength: 5,
+        scrollY: 400, 
+      });
+
+      // Style header
+      $('#procurementTable thead th').css({
+        'background-color': '#007080',
+        'color': 'white',
+        'border': '1px solid white',
+        'text-align': 'center'
+      });
+
+    },
+    error: function (xhr, status, err) {
+      hideLoader();
+      showWarningAlert('Error loading data');
+      console.error("IMM_DATA_AJAX_ERROR:", status, err, xhr.responseText);
+    }
+  });
+}
+
+  const safeText = (val) => {
+  if (val == null) return "";
+  return typeof val === "string" ? `'${val}` : val;
+};
+
+function safeNumber(val) {
+    const num = parseFloat(val);
+    return isNaN(num) ? 0 : num;
+}
+
+  // Fetch data on filter change
+  $('.filter-select-sm').on('change', fetchFilteredData);
+  const getFilterValue = (selector, actualValue) => {
+  const selected = $(selector).val();
+  return selected && selected !== "All" ? selected : (actualValue || "N/A");
+  };
+
+  $(document).on("click", "#specialExcel", function () {
+    if (!fullFilteredData.length) {
+        showAlert("No data to export!");
+        return;
+    }
+
+    const tableData = [];
+    const headers = [
+        "Project",
+        "Financial Year",
+        "Supplier",
+        "Procurement ID",
+        "Po Number",
+        "Indentor",
+        "Planned",
+        "Committed",
+        "Expenditure",
+        "Procurement Type",
+        "Import/Indegnious"
+    ];
+    tableData.push(headers);
+
+    let totalPlanned = 0;
+    let totalCommitted = 0;
+    let totalExpenditure = 0;
+
+    fullFilteredData.forEach(pr => {
+
+        // -------------------- PO LIST BUILD --------------------
+        let poList = [];
+
+        if (Array.isArray(pr.po_details) && pr.po_details.length) {
+            poList = pr.po_details.map(p => ({
+                po_number: p.po_number || "Not Yet",
+                committed_value: safeNumber(p.committed_value),
+                supplier_name: p.supplier_name || null
+            }));
+        } else {
+            const noPOSupplier = Array.isArray(pr.supplier_names)
+                ? pr.supplier_names.join(", ")
+                : pr.supplier_names;
+
+            poList = [{
+                po_number: "Not Yet",
+                committed_value: safeNumber(pr.committed_value),
+                supplier_name: noPOSupplier
+            }];
+        }
+
+        // Filter values (Supplier filled in later for PO case)
+        const filterValues = [
+            getFilterValue('#projectFilter', pr.project_name),
+            getFilterValue('#financialYearFilter', pr.financial_year),
+            poList.length === 1 && poList[0].supplier_name        // NO PO → display PR suppliers
+                ? poList[0].supplier_name
+                : ""                                               // PO present → filled per PO row
+        ];
+
+        totalPlanned += parseFloat(pr.planned_value) || 0;
+
+        // -------------------- EXPORT ROWS --------------------
+        if (poList.length === 1 && poList[0].po_number === "Not Yet") {
+
+            // No PO - single row
+            const plannedNum = safeNumber(pr.planned_value);
+            const committedNum = safeNumber(pr.committed_value);
+
+            totalCommitted += committedNum;
+
+            tableData.push([
+                ...filterValues,
+                pr.procurement_id,
+                "Not Yet",
+                pr.user,
+                `₹ ${plannedNum.toFixed(2)}`,
+                `₹ ${committedNum.toFixed(2)}`,
+                "₹ 0.00",
+                pr.procurement_type,
+                pr.import_indigenous
+            ]);
+
+        } else {
+
+            // Multiple POs
+            poList.forEach(po => {
+                const plannedNum = safeNumber(pr.planned_value);
+                const committedNum = po.committed_value;
+
+                totalCommitted += committedNum;
+
+                const supplierForThisPO =
+                    po.supplier_name ||
+                    (Array.isArray(pr.supplier_names) ? pr.supplier_names.join(", ") : pr.supplier_names);
+
+                tableData.push([
+                    filterValues[0],                  // Project
+                    filterValues[1],                  // Financial Year
+                    supplierForThisPO,                // Supplier (PO specific)
+                    pr.procurement_id,               // Procurement ID
+                    po.po_number,                     // PO Number
+                    pr.user,                          // Indentor
+                    `₹ ${plannedNum.toFixed(2)}`,     // Planned
+                    `₹ ${committedNum.toFixed(2)}`,   // Committed
+                    "₹ 0.00",                         // Expenditure
+                    pr.procurement_type,
+                    pr.import_indigenous
+                ]);
+            });
+        }
+
+    });
+
+    // -------------------- TOTAL ROW --------------------
+    tableData.push([
+        "TOTAL", "", "",
+        "", "",
+        "",
+        `₹ ${totalPlanned.toFixed(2)}`,
+        `₹ ${totalCommitted.toFixed(2)}`,
+        `₹ ${totalExpenditure.toFixed(2)}`,
+
+    ]);
+
+    // -------------------- EXCEL FORMATTING --------------------
+    const ws = XLSX.utils.aoa_to_sheet([]);
+    const merges = [];
+    let currentRow = 0;
+
+    tableData.forEach((row, index) => {
+        XLSX.utils.sheet_add_aoa(ws, [row], { origin: { r: currentRow, c: 0 } });
+
+        if (index > 0 && index < tableData.length - 1) {
+            const prev = tableData[index - 1];
+            const curr = row;
+
+            const mergeCols = [0, 1, 3, 5, 6]; // Supplier NOT merged now!
+            const isSame = mergeCols.every(c => prev[c] === curr[c]);
+
+            if (isSame) {
+                mergeCols.forEach(c => {
+                    const lastMerge = merges.find(m => m.s.c === c && m.e.r === currentRow - 1);
+                    if (lastMerge) lastMerge.e.r = currentRow;
+                    else merges.push({ s: { r: currentRow - 1, c }, e: { r: currentRow, c } });
+                });
+            }
+        }
+        currentRow++;
+    });
+
+    ws['!merges'] = merges;
+
+    // Styling
+    const range = XLSX.utils.decode_range(ws['!ref']);
+
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        const headerCell = XLSX.utils.encode_cell({ r: 0, c: C });
+        if (ws[headerCell])
+            ws[headerCell].s = { font: { bold: true }, alignment: { horizontal: "center", vertical: "center", wrapText: true } };
+
+        const totalCell = XLSX.utils.encode_cell({ r: tableData.length - 1, c: C });
+        if (ws[totalCell])
+            ws[totalCell].s = { font: { bold: true }, alignment: { horizontal: "center", vertical: "center", wrapText: true } };
+    }
+
+    // Center other cells
+    for (let R = range.s.r; R <= range.e.r; ++R) {
+        for (let C = range.s.c; C <= range.e.c; ++C) {
+            const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+            if (cell && !cell.s)
+                cell.s = { alignment: { horizontal: "center", vertical: "center" } };
+        }
+    }
+
+    // Auto column width
+    const colWidths = [];
+    for (let C = range.s.c; C <= range.e.c; ++C) {
+        let maxLen = 10;
+        for (let R = range.s.r; R <= range.e.r; ++R) {
+            const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+            if (cell && cell.v != null) {
+                const len = String(cell.v).length;
+                if (len > maxLen) maxLen = len;
+            }
+        }
+        colWidths.push({ wch: maxLen + 2 });
+    }
+
+    ws['!cols'] = colWidths;
+
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Procurements");
+    XLSX.writeFile(wb, "procurement_data.xlsx");
+});
+  
+   $(document).on("click", "#downloadExcel", function () {
+    if (!fullFilteredData.length) {
+        showAlert("No data to export!");
+        return;
+    }
+
+    const tableData = [];
+    const headers = [
+        "Project",
+        "Financial Year",
+        "Quarter",
+        "Source of Make",
+        "Tender Type",
+        "Procurement Type",
+        "Location",
+        "Supplier",
+        "Procurement ID",
+        "PO Number",
+        "Indentor",
+        "Recommending Authority",
+        "Planned",
+        "Committed",
+        "Expenditure",
+        "Stage",
+        "Particulars - Description",
+        "Particulars - Delivery",
+        "Particulars - Part No.",
+        "Particulars - Unit",
+        "Particulars - Make",
+        "Particulars - Qty Required",
+        "Particulars - Estimated Value",
+        "Particulars - Reasons For Procurement",
+        "Particulars - Required By",
+        "Particulars - Specification"
+    ];
+
+    tableData.push(headers);
+
+    let totalPlanned = 0;
+    let totalCommitted = 0;
+    let totalExpenditure = 0;
+
+
+fullFilteredData.forEach(pr => {
+    let particulars = [];
+    try { particulars = JSON.parse(pr.particulars || "[]"); } 
+    catch (e) { console.warn("Invalid particulars JSON", e); }
+
+    const filterValues = [
+        getFilterValue('#projectFilter', pr.project_name),
+        getFilterValue('#financialYearFilter', pr.financial_year),
+        getFilterValue('#quarterFilter', pr.quarter),
+        getFilterValue('#sourceOfMakeFilter', pr.source_of_make),
+        getFilterValue('#tenderTypeFilter', pr.tender_type),
+        getFilterValue('#procurementTypeFilter', pr.procurement_type),
+        getFilterValue('#locationFilter', pr.location),
+        getFilterValue('#supplierFilter', Array.isArray(pr.supplier_names) ? pr.supplier_names.join(", ") : pr.supplier_names)
+    ];
+
+    totalPlanned += parseFloat(pr.planned_value) || 0;
+
+    // Build PO list with committed value per PO
+    let poList = [];
+    if (Array.isArray(pr.po_details) && pr.po_details.length) {
+        poList = pr.po_details.map(p => ({
+            po_number: p.po_number || 'Not Yet',
+            committed_value: safeNumber(p.committed_value)
+        }));
+    } else {
+        const poNums = Array.isArray(pr.po_numbers) ? pr.po_numbers : [];
+        const poCommittedMap = pr.po_committed_map || {};
+        poList = poNums.map(n => ({
+            po_number: n || 'Not Yet',
+            committed_value: safeNumber(poCommittedMap[n] || 0)
+        }));
+    }
+
+    // Concatenate all particulars into strings
+    const ptRow = {
+        item_name: particulars.map(p => p.item_name || "").join("\n"),
+        delivery: particulars.map(p => p.delivery || "").join("\n"),
+        partno: particulars.map(p => p.partno || "").join("\n"),
+        unitname: particulars.map(p => p.unitname || "").join("\n"),
+        make: particulars.map(p => p.make || "").join("\n"),
+        total_qty_required: particulars.map(p => p.total_qty_required || "").join("\n"),
+        estimatedvalue: particulars.map(p => `₹ ${safeNumber(p.estimatedvalue).toFixed(2)}`).join("\n"),
+        reasons_for_procurement: particulars.map(p => p.reasons_for_procurement || "").join("\n"),
+        required_by: particulars.map(p => (p.datequantity || []).map(dq => dq.expected_date).join(", ")).join("\n"),
+        item_specification: particulars.map(p => p.item_specification || "").join("\n")
+    };
+
+    // If no PO → single row
+    if (poList.length === 0) {
+        tableData.push([
+            ...filterValues,
+            pr.procurement_id,
+            "Not Yet",
+            pr.user,
+            pr.ra_user || "-",
+            `₹ ${safeNumber(pr.planned_value).toFixed(2)}`,
+            `₹ 0.00`,
+            `₹ 0.00`,
+            pr.phase,
+            ptRow.item_name,
+            ptRow.delivery,
+            ptRow.partno,
+            ptRow.unitname,
+            ptRow.make,
+            ptRow.total_qty_required,
+            ptRow.estimatedvalue,
+            ptRow.reasons_for_procurement,
+            ptRow.required_by,
+            ptRow.item_specification
+        ]);
+    } else {
+        // Multiple PO rows — show all particulars per PO
+        poList.forEach((po, idx) => {
+            totalCommitted += po.committed_value;
+
+            tableData.push([
+                ...filterValues,
+                pr.procurement_id,
+                po.po_number,
+                pr.user,
+                pr.ra_user || "-",
+                idx === 0 ? `₹ ${safeNumber(pr.planned_value).toFixed(2)}` : "",
+                `₹ ${po.committed_value.toFixed(2)}`,
+                `₹ 0.00`,
+                pr.phase,
+                ptRow.item_name,
+                ptRow.delivery,
+                ptRow.partno,
+                ptRow.unitname,
+                ptRow.make,
+                ptRow.total_qty_required,
+                ptRow.estimatedvalue,
+                ptRow.reasons_for_procurement,
+                ptRow.required_by,
+                ptRow.item_specification
+            ]);
+        });
+    }
+
+});
+
+
+    // Add total row
+
+    // Add total row
+    tableData.push([
+        "TOTAL", "", "", "", "", "", "", "", "", "", "", "",
+        `₹ ${totalPlanned.toFixed(2)}`,
+        `₹ ${totalCommitted.toFixed(2)}`,
+        `₹ ${totalExpenditure.toFixed(2)}`,
+        "", "", "", "", "", "", "", "", "", ""
+    ]);
+
+const ws = XLSX.utils.aoa_to_sheet([]);
+const merges = [];
+
+// Write all rows
+tableData.forEach((row, r) => {
+  XLSX.utils.sheet_add_aoa(ws, [row], { origin: { r, c: 0 } });
+});
+
+// Define which columns to merge vertically
+
+// Procurement-level columns — merge all except PO Number(9) and Committed(13)
+const procurementCols = [0,1,2,3,4,5,6,7,8,10,11,12,14,15];
+
+// Particulars columns — merge all particulars columns (indices 16 to 25 inclusive)
+const particularsCols = [];
+for(let c = 16; c <= 25; c++) particularsCols.push(c);
+
+let start = 1; // Start after header row
+while (start < tableData.length - 1) { // Exclude last total row
+  const pid = tableData[start][8]; // Procurement ID column
+  let end = start;
+
+  // Find all rows with the same procurement ID consecutively
+  while (end + 1 < tableData.length - 1 && tableData[end + 1][8] === pid) {
+    end++;
+  }
+
+  if (end > start) {
+    // Merge procurement-level columns vertically (except PO Number & Committed)
+    procurementCols.forEach(col => {
+      merges.push({
+        s: { r: start, c: col },
+        e: { r: end, c: col }
+      });
+    });
+
+    // Merge particulars columns vertically
+    particularsCols.forEach(col => {
+      merges.push({
+        s: { r: start, c: col },
+        e: { r: end, c: col }
+      });
+    });
+  }
+
+  start = end + 1;
+}
+
+ws['!merges'] = merges;
+
+// Style header & total row (bold, centered, wrapText)
+const range = XLSX.utils.decode_range(ws['!ref']);
+for (let C = range.s.c; C <= range.e.c; ++C) {
+  const headerCell = XLSX.utils.encode_cell({ r: 0, c: C });
+  if (ws[headerCell]) {
+    ws[headerCell].s = {
+      font: { bold: true },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true }
+    };
+  }
+
+  const totalCell = XLSX.utils.encode_cell({ r: tableData.length - 1, c: C });
+  if (ws[totalCell]) {
+    ws[totalCell].s = {
+      font: { bold: true },
+      alignment: { horizontal: "center", vertical: "center", wrapText: true }
+    };
+  }
+}
+
+// Center all other cells and enable wrapText for multiline particulars
+for (let R = range.s.r; R <= range.e.r; ++R) {
+  for (let C = range.s.c; C <= range.e.c; ++C) {
+    const cellAddr = XLSX.utils.encode_cell({ r: R, c: C });
+    const cell = ws[cellAddr];
+    if (cell) {
+      if (!cell.s) cell.s = {};
+      // Wrap text on particulars columns (16-25) and all other columns center alignment
+      if (C >= 16 && C <= 25) {
+        cell.s.alignment = { wrapText: true, horizontal: "center", vertical: "center" };
+      } else {
+        cell.s.alignment = { horizontal: "center", vertical: "center" };
+      }
+    }
+  }
+}
+
+// Auto-adjust column widths based on content
+const colWidths = [];
+for (let C = range.s.c; C <= range.e.c; ++C) {
+  let maxLen = 10; // default minimum width
+  for (let R = range.s.r; R <= range.e.r; ++R) {
+    const cell = ws[XLSX.utils.encode_cell({ r: R, c: C })];
+    if (cell && cell.v != null) {
+      const len = String(cell.v).split('\n').reduce((a,b) => Math.max(a,b.length), 0);
+      if (len > maxLen) maxLen = len;
+    }
+  }
+  colWidths.push({ wch: maxLen + 2 });
+}
+ws['!cols'] = colWidths;
+
+// Then create workbook and save file as you already do:
+const wb = XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb, ws, "Procurements");
+XLSX.writeFile(wb, "procurement_data.xlsx");
+
+                  });
+
+        // Fetch all data on initial page load
+        document.addEventListener('DOMContentLoaded', function () {
+          fetchFilteredData(); // initial load
+          //tooltip
+          var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+          tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+            new bootstrap.Tooltip(tooltipTriggerEl);
+          });
+
+          // Enable/disable quarter dropdown based on financial year
+          $('#financialYearFilter').on('change', function () {
+              if ($(this).val()) {
+              $('#quarterFilter').prop('disabled', false);
+              } else {
+              $('#quarterFilter').val('').prop('disabled', true).trigger('change'); // clear quarter if FY not selected
+              }
+          });
+  });
+  // Modal rendering logic
+  $(document).on('click', '.view-btn', function () {
+    const textarea = document.getElementById(this.dataset.particularsId);
+    if (!textarea) return;
+    try {
+      const data = JSON.parse(textarea.value);
+      let html = `
+      <div class="table-responsive">
+        <table id="modalParticularsTable" class="table table-bordered table-sm small">
+          <thead class="text-center">
+            <tr>
+              <th>Description</th>
+              <th>Delivery</th>
+              <th>Part No. / Model No.</th>
+              <th>Unit</th>
+              <th>Make</th>
+              <th>Total Qty Required</th>
+              <th>Estimated Value</th>
+              <th>Reasons for Procurement</th>
+              <th>Items Required by</th>
+              <th>Specification</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+
+      data.forEach(pt => {
+        const qtyList = (pt.datequantity || [])
+          .map(q => pt.delivery === "Staggered"
+            ? `${q.quantity} - ${q.expected_date}`
+            : `${q.expected_date}`)
+          .join("<br>");
+
+        html += `
+          <tr>
+            <td>${pt.item_name}</td>
+            <td>${pt.delivery}</td>
+            <td>${pt.partno}</td>
+            <td>${pt.unitname}</td>
+            <td>${pt.make}</td>
+            <td>${pt.total_qty_required}</td>
+            <td data-order="${parseFloat(pt.estimatedvalue)}">₹ ${parseFloat(pt.estimatedvalue).toFixed(2)}</td>
+            <td>${pt.reasons_for_procurement}</td>
+            <td>${qtyList}</td>
+            <td>${pt.item_specification}</td>
+          </tr>
+        `;
+      });
+
+      html += "</tbody></table></div>";
+      $('#particularsBody').html(html);
+
+      $('#modalParticularsTable').DataTable({
+         lengthMenu: [5, 10, 25, 50],
+          pageLength: 5,
+          destroy: true
+      });
+
+      $('#modalParticularsTable thead th').css({
+        'background-color': '#007080',
+        'color': 'white',
+        'border': '1px solid white',
+        'text-align': 'center'
+      });
+
+    } catch (err) {
+      console.error("Modal render failed:", err);
+      $('#particularsBody').html("<p>Unable to load particulars.</p>");
+    }
+  });
+</script>
+{% endblock %}

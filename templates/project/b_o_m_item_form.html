@@ -1,0 +1,169 @@
+
+{% load static %}
+{% block content %}
+
+<form method="post" action="{{ form_action_url }}" novalidate>
+    {% csrf_token %}
+    <!-- Card -->
+    <div class="row">
+        <div class="col-12">
+            <div class="">
+                <div class="">
+
+                    <!-- Row 1: BOM & Code -->
+                    <div class="row">
+                
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.product }}
+                                <label class="form-label">
+                                    {{ form.product.label_tag }}
+                                </label>
+                                {% if form.product.errors %}
+                                <ul class="errorlist list-unstyled text-danger">
+                                    {% for error in form.product.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                         <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input type="number"
+                                    name="{{ form.bom_quantity.html_name }}"
+                                    id="{{ form.bom_quantity.id_for_label }}"
+                                    value="{{ form.bom_quantity.value|default_if_none:'' }}"
+                                    class="form-control"
+                                    placeholder="Component Quantity">
+                                <label for="{{ form.bom_quantity.id_for_label }}">
+                                    {{ form.bom_quantity.label }}
+                                </label>
+
+                                {% if form.bom_quantity.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.bom_quantity.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.bom_uom }}
+                                <label class="form-label">
+                                    {{ form.bom_uom.label_tag }}
+                                </label>
+                                {% if form.bom_uom.errors %}
+                                <ul class="errorlist list-unstyled text-danger">
+                                    {% for error in form.bom_uom.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Row 2: Product & BOM Quantity-->
+                    <div class="row">
+                    
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input type="number"
+                                    name="{{ form.scrap_percentage.html_name }}"
+                                    id="{{ form.scrap_percentage.id_for_label }}"
+                                    value="{{ form.scrap_percentage.value|default_if_none:'' }}"
+                                    class="form-control"
+                                    placeholder="Scrap Percentage">
+                                <label for="{{ form.scrap_percentage.id_for_label }}">
+                                    {{ form.scrap_percentage.label }}
+                                </label>
+
+                                {% if form.scrap_percentage.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.scrap_percentage.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+
+                         <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.status }}
+                                <label class="form-label">{{ form.status.label_tag }}</label>
+                                {% if form.status.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.status.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+
+                         
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.description }}
+                                <label for="floatingDescription" class="form-label">{{ form.description.label_tag }}</label>
+                                {% if form.description.errors %}
+                                    <ul class="errorlist" style="list-style: none !important;">
+                                        {% for error in form.description.errors %}
+                                            <li class="text-danger">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Row:UOM & Scrap Percentage (Project ID style) -->
+                    <div class="row">
+                        
+                       
+
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.search_keywords }}
+                                <label for="floatingMetaKeyword" class="form-label">{{ form.search_keywords.label_tag }}</label>
+                                {% if form.search_keywords.errors %}
+                                    <ul class="errorlist" style="list-style: none !important;">
+                                        {% for error in form.search_keywords.errors %}
+                                            <li class="text-danger">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+        
+            <button type="button" id="openSaveModal" class="btn btn-sm app-btn-primary mt-2" ><i class="fa fa-save"></i> Save Item</button>
+        
+    </div>
+                        
+
+
+                    </div>
+
+               
+                    
+
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock content %}
+
+

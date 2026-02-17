@@ -1,0 +1,1189 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+
+{% block styleblock%}
+
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+
+    <!-- Other head elements -->
+</head>
+<style>
+    .list-group-item.active {
+        color:rgb(204, 60, 60);
+        background-color:rgb(223, 234, 64);
+    }
+    .search-box {
+        position: relative;
+        width: 100%;
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 10px; /* Space from the left edge */
+        top: 50%;
+        transform: translateY(-50%); /* Vertically center the icon */
+        color: #888; /* Optional: Change color of the icon */
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 8px 10px 8px 35px; /* Extra padding on the left for the icon */
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    /* For input fields */
+    input[readonly] {
+        pointer-events: none;
+    
+    }
+
+    /* For contenteditable fields */
+    [contenteditable="true"][readonly] {
+        pointer-events: none;
+    
+    }
+
+    /* To prevent text selection inside contenteditable */
+    [contenteditable="true"][readonly] {
+        user-select: none;
+    }
+
+    /* Optionally, change cursor to indicate it's not editable */
+    input[readonly], [contenteditable="true"][readonly] {
+        cursor: not-allowed;
+    }
+    .list-group-item.active {
+        
+        background-color: #00B2CC !important; /* Light blue for highlighting */
+        border: 3px solid white;
+        position: relative;
+        overflow: hidden;
+        animation: glow-shadow 2s linear infinite;
+    }
+    
+    @keyframes glow-shadow {
+        0% {
+        box-shadow: 0 0 5px 2px white;
+        }
+        50% {
+        box-shadow: 0 0 15px 5px white;
+        }
+        100% {
+        box-shadow: 0 0 5px 2px white;
+        }
+    }
+
+    table, th, td {
+        background-color: transparent !important;
+        border: 1px solid  rgba(17, 17, 17, 0.5);/* Border to make table edges visible if needed */
+    }
+    th, td {
+        background-color: transparent !important; /* Make table headers and cells transparent */
+        color: #fff; /* Text color for better readability if needed */
+    }
+    /* Optional: To make borders less intrusive */
+    tr, th {
+        border: 1px solid rgba(17, 17, 17, 0.5); /* Semi-transparent border */
+    }
+    #quoteInput {
+        background-color: transparent !important;
+        border: 1px solid rgba(17, 17, 17, 0.5);
+    }
+    {% comment %} .list-group-item.active {
+        border-left: 3px solid #0066c0 !important;
+        background-color: #e6f2ff !important;
+        box-shadow: 0 2px 8px rgba(0, 102, 192, 0.2);
+    } {% endcomment %}
+    .list-group-item:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .with-bg {
+        position: relative;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #fff;
+        overflow: hidden; /* ensures rounded corners apply to background image */
+      }
+      
+      .with-bg::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('{% static "images/priya.png" %}');
+        background-size: 60%;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0.6; /* same as your other container */
+        pointer-events: none; /* let clicks pass through */
+        z-index: 0;
+      }
+      
+      .with-bg > * {
+        position: relative;
+        z-index: 1; /* keep content above the background image */
+      }
+     
+     body{
+        overflow-y: hidden; 
+      }
+
+      #vendor_address_1 {
+        user-select: none;
+        pointer-events: none;
+        cursor: not-allowed;
+        }
+		
+		.modal-content {
+    position: relative;
+    display: flex;
+
+    flex-direction: column;
+    width: 500px;
+	height: 300px;
+    color: var(--bs-modal-color);
+    pointer-events: auto;
+    background-color: var(--bs-modal-bg);
+    background-clip: padding-box;
+    border: var(--bs-modal-border-width) solid var(--bs-modal-border-color);
+    border-radius: var(--bs-modal-border-radius);
+    outline: 0;
+
+
+</style>
+{% endblock %}
+
+{% block previewcontent %}
+    <!-- Main Content -->
+    
+    {% comment %}   <div id="purchaseOrderFormContainer" >
+        
+      </div>
+
+      <!-- Approvals Section -->
+      <div id="approvalsContainer" class="mt-4" style="display:none;">
+        <h6>Approval Signatures</h6>
+        <div id="approvalBoxes" class="d-flex flex-wrap gap-3"></div>
+      </div>
+    
+  
+
+<!-- Modal for remarks before signing -->
+<div class="modal fade" id="signRemarksModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add Remarks for Signature</h5></div>
+      <div class="modal-body">
+        <textarea id="signRemarks" class="form-control" rows="3" placeholder="Enter remarks (optional)"></textarea>
+      </div>
+      <div class="modal-footer">
+        <button id="confirmSignBtn" class="btn btn-primary">Confirm</button>
+        <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div> {% endcomment %}
+
+<!-- PO Content (takes full width) -->
+{% comment %} <div id="purchaseOrderFormContainer"></div>
+
+<!-- Download button below PO -->
+<div class="text-end mt-3">
+  <button class="btn btn-primary"  
+          id="downloadBtn"  
+          style="background-color:#007080; border-color:#007080; display:none;" 
+          onclick="downloadPDF()">
+    Download
+  </button>
+</div>
+
+<!-- Signatures section (below PO, aligned right) -->
+<div id="approvalsContainer" class="mt-4" style="display:none; text-align: right;">
+  <h6 style="text-align:right;">Approval Signatures</h6>
+  <div id="approvalBoxes" 
+       class="d-inline-flex flex-wrap gap-3 justify-content-end">
+  </div>
+</div> {% endcomment %}
+
+<!-- Main Content -->
+<div id="purchaseOrderFormContainer">
+  <!-- PO content will be injected here -->
+</div>
+
+
+
+
+
+<!-- Modal for remarks before signing -->
+<div class="modal fade" id="signRemarksModal" tabindex="-1" role="dialog" aria-hidden="true">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Add Remarks for Signature</h5></div>
+      <div class="modal-body">
+        <textarea id="signRemarks" class="form-control" rows="3" placeholder="Enter remarks">Approved</textarea>
+      </div>
+      <div class="modal-footer">
+        <button id="confirmSignBtn" class="btn btn-primary">Confirm</button>
+        <button class="btn btn-secondary" id="closeModalBtn" data-dismiss="modal">Cancel</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="{% static "js/html2pdf.bundle.js" %}"></script>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+/* =========  Utilities & Globals ========= */
+const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+const currentUserId = {{ request.user.id|default:"null" }}; // integer or null
+let lastProcurementId = null;
+let lastVendorId = null;
+let lastApprovalsResponse = [];
+let previousSelected = null;
+
+// Defensive: ensure jQuery exists
+if (typeof $ === 'undefined') {
+  console.warn("jQuery not found. PO Approval page requires jQuery.");
+}
+
+ document.addEventListener("DOMContentLoaded", function () {
+    const sidebarItems = document.querySelectorAll(".view-pr-id");
+     sidebarItems.forEach(item => {
+             // Add a click event listener to each sidebar item
+            item.addEventListener("click", function (e) {
+                e.preventDefault();
+
+                // Remove highlight from all items
+                sidebarItems.forEach(i => i.closest("li").classList.remove("active-procurement"));
+
+                // Add highlight to the clicked item
+                this.closest("li").classList.add("active-procurement");
+            
+            });
+        });
+    });
+
+/* ========= small helpers ========= */
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+           .replace(/&/g, '&amp;')
+           .replace(/</g, '&lt;')
+           .replace(/>/g, '&gt;')
+           .replace(/"/g, '&quot;')
+           .replace(/'/g, '&#039;');
+}
+
+//function showLoader() { if (typeof window.showLoader === "function") window.showLoader(); else console.log("LOADER show"); }
+//function hideLoader() { if (typeof window.hideLoader === "function") window.hideLoader(); else console.log("LOADER hide"); }
+
+/* ========= generateImportFormHTML =========
+   Using your earlier function (keeps styling + logic).
+   Signature:
+   (procurementId, formType, poid, vendors, particulars, finalPrices, totalValue3,
+    discount, gstPercentage, gstValue, grandTotal, paymentTerms, deliveryWeeks, warrantyPeriod,
+    termcond, gentermcond, remarks, billingAddress1, deliveryAddress2)
+*/
+function getFormattedTodayDate() {
+    const today = new Date();
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const year = today.getFullYear();
+    return `${day}-${month}-${year}`;
+}
+
+{% comment %} function generateImportFormHTML (procurementId, formType, poid,
+                                      vendors, particulars, finalPrices, totalValue3, 
+                                      discount, gstPercentage, gstValue, grandTotal, paymentTerms,
+                                       deliveryWeeks, warrantyPeriod, termcond, gentermcond,remarks,billingAddress1,deliveryAddress2
+                                       ) {
+    // Build vendor block
+    const vendorHTML = (vendors || []).map(v => `
+       <strong>${v.company_name || ''}<br></strong>
+    ${v.vendor_name || ''}<br>
+    ${v.phone_number || ''}<br>
+    ${v.email || ''}<br>
+    ${[v.address, v.city, v.state, v.country].filter(Boolean).join(', ')}<br>
+    ${v.pincode || ''}<br><br>
+
+    ${v.gst_number ? `<strong>GST No.:</strong> ${v.gst_number}<br>` : ''}
+    ${v.tin_number ? `<strong>TIN No.:</strong> ${v.tin_number}<br>` : ''}
+     
+    `).join('');
+
+    const todayFormatted = getFormattedTodayDate();
+    let totalValue = 0;
+
+    const updatedParticulars = (particulars || []).map(p => ({ ...p }));
+    
+    // split negotiation pairing if present (keeps your earlier logic)
+    updatedParticulars.forEach((p, index) => {
+        const rawVal = (p.negotiated_value || '').toString();
+        const parts = rawVal.split(',');
+        if (parts.length === 2 && updatedParticulars[index + 1]) {
+            updatedParticulars[index].negotiated_value = parts[0].trim();
+            updatedParticulars[index + 1].negotiated_value = parts[1].trim();
+        }
+    });
+
+    const particularsRowsHTML = updatedParticulars.map((p, index) => {
+        const totalQty = parseFloat(p.total_qty_required || '1') || 1;
+        const totalValueItem = parseFloat((p.negotiated_value || p.cs_value || '0').toString().trim()) || 0;
+        const unitPrice = totalQty ? (totalValueItem / totalQty) : 0;
+        totalValue += totalValueItem;
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${escapeHtml(p.partno || '')}</td>
+                <td>${escapeHtml(p.item_name || '')}</td>
+                <td>${escapeHtml(p.unitname || '')}</td>
+                <td>${escapeHtml(p.total_qty_required || '')}</td>
+                <td>${unitPrice.toFixed(2)}</td>
+                <td>${totalValueItem.toFixed(2)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    const quotationReference = updatedParticulars.length > 0 ? (updatedParticulars[0].quotation_reference || 'N/A') : 'N/A';
+
+    // Build final HTML
+    return `
+            <div class="card p-4 with-bg" id="poCard-${procurementId}-${poid}">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h4 style="margin: 0;">
+                        <strong> PURCHASE ORDER </strong>
+                        <input type="text" placeholder="" id="editableField" readonly style="font-weight: bold; border: none;" />
+                    </h4>
+                    <p style="margin: 0;">
+                        <b>PO No :</b> <strong id="dpoIdDisplay">${escapeHtml(poid || '')}</strong>
+                        <input type="hidden" id="poNumber" value="${escapeHtml(poid || '')}" />
+                        <br>
+                        <b>Dated:</b> <span id="poDateDisplay">${todayFormatted}</span>
+                    </p>
+                </div>
+
+                <table class="table table-bordered mt-3" style="table-layout: fixed; width: 100%;">
+                    <thead>
+                        <tr>
+                            <th style="width: 33.33%;">To</th>
+                            <th style="width: 33.33%;">Billing Address</th>
+                            <th style="width: 33.33%;">Delivery Address</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><b>M/s</b> ${vendorHTML}</td>
+                            <td>${escapeHtml(billingAddress1 || '')}</td>
+                            <td>${escapeHtml(deliveryAddress2 || '')}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div>
+                    Dear Sir,<br>
+                    We are pleased to place the purchase order for the items below.
+                </div>
+
+                <div style="margin-top:12px;">
+                    <strong>Quotation Reference:</strong>
+                    <p style="margin-top: 10px; padding: 10px; border: 1px solid #000; display: block; width: 100%; box-sizing: border-box;height:38px;">
+                        ${escapeHtml(quotationReference)}
+                    </p>
+                </div>
+
+                <table class="table table-bordered mt-2">
+                    <thead>
+                        <tr>
+                            <th>S. No</th>
+                            <th>Part No / Model No.</th>
+                            <th>Description</th>
+                            <th>Unit</th>
+                            <th>Qty</th>
+                            <th>Unit Price (${formType === 'import' ? 'FE' : 'INR'})</th>
+                            <th>Total (${formType === 'import' ? 'FE' : 'INR'})</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${particularsRowsHTML}
+                        <tr>
+                            <td colspan="6" style="text-align: right;"><strong>Sub Total:</strong></td>
+                            <td>${escapeHtml(totalValue3 || totalValue || '')}</td>
+                        </tr>
+                        <tr>
+                            <td colspan="6" style="text-align: right;"><strong>Discount (%) :</strong></td>
+                            <td>${escapeHtml(discount || '')}</td>
+                        </tr>
+                        ${formType !== 'import' ? `
+                        <tr>
+                            <td colspan="6" style="text-align: right;">
+                                <label for="gstInput"><strong>GST (%):</strong></label>
+                                ${escapeHtml(gstPercentage || '')}
+                            </td>
+                            <td>${escapeHtml(gstValue || '')}</td>
+                        </tr>
+                        ` : ''}
+                        <tr>
+                            <td colspan="6" style="text-align: right;"><strong>Grand Total:</strong></td>
+                            <td>${escapeHtml(grandTotal || '')}</td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div style="border: 1px solid #ccc; padding: 10px; ">
+                    ${(termcond || '') + (gentermcond || '')}
+                </div>
+
+                <div class="text-end mt-4">
+                    <button class="btn btn-primary" id="submitdraft" style="background-color:#007080; border-color:#007080; display: none;">Submit</button>
+                    <button class="btn btn-primary" id="downloadBtn" style="background-color:#007080; border-color:#007080; display: none;">Download</button>
+                </div>
+            </div>
+    `;
+} {% endcomment %}
+
+  function getFormattedTodayDate() {
+        const today = new Date();
+        const day = String(today.getDate()).padStart(2, '0');
+        const month = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+        const year = today.getFullYear();
+        return `${day}-${month}-${year}`;
+    }
+
+/* ========== Generate PO Form ========== */
+function generateImportFormHTML(procurementId, formType, poid,
+                                vendors, particulars, totalValue3,
+                                discount,packingcharges, gstPercentage, gstValue, grandTotal, 
+                                paymentTerms, deliveryWeeks, warrantyPeriod,
+                                termcond, gentermcond, quotationReference,
+                                billingAddress1, deliveryAddress2) {
+    let totalValue = 0;
+
+    // Vendor HTML (plain display)
+    const vendorHTML = (vendors || []).map(v => `
+       <strong>${v.company_name || ''}</strong><br>
+       ${v.vendor_name || ''}<br>
+       ${v.phone_number || ''}<br>
+       ${v.email || ''}<br>
+       ${[v.address, v.city, v.state, v.country].filter(Boolean).join(', ')}<br>
+       ${v.pincode ? 'PIN: ' + v.pincode + '<br>' : ''}
+       ${v.gst_number ? 'GST: ' + v.gst_number + '<br>' : ''}
+       ${v.tin_number ? 'TIN: ' + v.tin_number + '<br>' : ''}
+    `).join('');
+
+    // Particulars rows
+     const todayFormatted = getFormattedTodayDate();
+    const particularsRowsHTML = (particulars || []).map((p, index) => {
+        const qty = parseFloat(p.total_qty_required || '1') || 1;
+        const totalValueItem = parseFloat((p.total_value || '0')) || 0;
+        const unitPrice = qty ? totalValueItem / qty : 0;
+        totalValue += totalValueItem;
+        return `
+            <tr>
+                <td>${index + 1}</td>
+                <td>${p.partno || ''}</td>
+                <td>${p.item_name || ''}</td>
+                <td>${p.unitname || ''}</td>
+                <td>${p.total_qty_required || ''}</td>
+                <td>${unitPrice.toFixed(2)}</td>
+                <td>${totalValueItem.toFixed(2)}</td>
+            </tr>
+        `;
+    }).join('');
+
+    // Final HTML
+    return `
+        <div class="card p-4 with-bg">
+          {% comment %} <h4><strong>PURCHASE ORDER</strong></h4>
+          <p style="margin: 0; text-align: end;">
+                        <b>PO No :</b> <strong id="dpoIdDisplay">${escapeHtml(poid || '')}</strong>
+                        <input type="hidden" id="poNumber" value="${escapeHtml(poid || '')}" />
+                        <br>
+                        <b>Dated:</b> <span id="poDateDisplay">${todayFormatted}</span>
+                    </p> {% endcomment %}
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                        <h4 style="margin: 0;"><strong>PURCHASE ORDER</strong></h4>
+                        <div style="text-align: right;">
+                            <b>PO No :</b>
+                            <strong id="dpoIdDisplay">${escapeHtml(poid || '')}</strong><br>
+                            <b>Dated:</b>
+                            <span id="poDateDisplay">${todayFormatted}</span>
+                            <input type="hidden" id="poNumber" value="${escapeHtml(poid || '')}" />
+                        </div>
+                    </div>
+
+          <!-- Three equal columns table -->
+          <table class="table table-bordered mt-3 text-left">
+            <thead>
+              <tr>
+                <th style="width: 33%;">To</th>
+                <th style="width: 33%;">Billing Address</th>
+                <th style="width: 33%;">Delivery Address</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>${vendorHTML}</td>
+                <td class="no-edit">${(billingAddress1 || '').replace(/contenteditable\s*=\s*["']?true["']?/gi, 'contenteditable="false"')}</td>
+                <td>${deliveryAddress2 || ''}</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div>Dear Sir,<br>We are pleased to place the purchase order for the items below.</div>
+          <p><strong>Quotation Reference:</strong> ${quotationReference || 'N/A'}</p>
+
+          <table class="table table-bordered mt-2">
+            <thead>
+              <tr>
+                <th>S. No</th>
+                <th>Part No / Model No.</th>
+                <th>Description</th>
+                <th>Unit</th>
+                <th>Qty</th>
+                <th>Unit Price (${formType === 'import' ? 'FE' : 'INR'})</th>
+                <th>Total (${formType === 'import' ? 'FE' : 'INR'})</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${particularsRowsHTML}
+              <tr><td colspan="6" class="text-end"><strong>Sub Total:</strong></td><td>${totalValue3 || totalValue.toFixed(2)}</td></tr>
+              <tr><td colspan="6" class="text-end"><strong>Discount (%):</strong></td><td>${discount || ''}</td></tr>
+              <tr><td colspan="6" class="text-end"><strong>Packing Charges:</strong></td><td>${packingcharges || ''}</td></tr>
+              ${formType !== 'import' ? `<tr><td colspan="6" class="text-end"><strong>GST (%):</strong> ${gstPercentage || ''}</td><td>${gstValue || ''}</td></tr>` : ''}
+              <tr><td colspan="6" class="text-end"><strong>Grand Total:</strong></td><td>${grandTotal || ''}</td></tr>
+            </tbody>
+          </table>
+
+          <div style="border:1px solid #ccc; padding:10px;">
+            ${(termcond + gentermcond).replace(/contenteditable\s*=\s*["']?true["']?/gi, 'contenteditable="false"')}
+          </div>
+
+        <!-- Approvals Section -->
+        <div id="approvalsContainer" class="mt-4" style="display:none; text-align:right;">
+        
+        <div id="approvalBoxes" class="d-flex flex-column align-items-end"></div>
+        </div>
+
+    <!-- Download Button (hidden by default) -->
+    <div class=" mt-3">
+    <button class="btn btn-primary" id="downloadBtn" 
+            style="display: none; background-color:#007080; border-color:#007080;"
+            onclick="downloadPDF()">
+        Download
+    </button>
+    </div>
+
+        </div>
+    `;
+}
+
+
+
+/* ========= renderApprovalBoxes (your version) ========= */
+{% comment %} function renderApprovalBoxes(approvals) {
+    const container = document.getElementById("approvalBoxes");
+    if (!container) {
+        console.warn("⚠️ approvalsContainer not found in DOM");
+        return;
+    }
+    container.innerHTML = "";
+
+    if (!approvals || approvals.length === 0) {
+        container.innerHTML = '<div class="text-muted">No approvals configured for this PO.</div>';
+        document.getElementById("approvalsContainer").style.display = "block";
+        return;
+    }
+
+    approvals.forEach(appr => {
+        const box = document.createElement("div");
+        box.className = "border p-2 text-center";
+        box.style.width = "160px";
+        box.style.marginRight = "8px";
+
+        // basic header
+        const fullName = appr.full_name || appr.username || "Unknown";
+        const roleText = (appr.roles && appr.roles.length) ? appr.roles.join(", ") : "";
+
+        // If signed, show signature image (if provided), or a 'Signed' label
+      
+
+        let signatureHtml = `<div id="sign-placeholder-${appr.approval_id}" class="border mt-2" style="height:50px; display:flex; align-items:center; justify-content:center;">`;
+
+        if (appr.done_sign) {
+            if (appr.sign_url) {
+                signatureHtml += `<img src="${appr.sign_url}" alt="Signature" style="max-height:50px;">`;
+            } else {
+                signatureHtml += `Signed`;
+            }
+        } else {
+            signatureHtml += `Pending`;
+        }
+
+        signatureHtml += `</div>`;
+
+
+        // sign button only for current user and not signed yet
+        let actionHtml = '';
+        if (!appr.done_sign && (currentUserId && appr.user_id && parseInt(currentUserId) === parseInt(appr.user_id))) {
+            actionHtml = `<div class="mt-2">
+                              <button class="btn btn-sm btn-primary signBtn" data-approval-id="${appr.approval_id}">Sign</button>
+                          </div>`;
+        }
+
+        box.innerHTML = `
+            <div><strong>${escapeHtml(fullName)}</strong></div>
+            <div><small>${escapeHtml(roleText)}</small></div>
+            ${signatureHtml}
+            ${actionHtml}
+        `;
+
+        container.appendChild(box);
+    });
+
+    document.getElementById("approvalsContainer").style.display = "block";
+    console.log("DEBUG: Approval boxes rendered", approvals);
+} {% endcomment %}
+
+function renderApprovalBoxes(approvals) {
+    let allSigned = true;
+    $("#approvalBoxes").empty();
+
+    approvals.forEach(appr => {
+        // Signature or pending badge
+        let signHtml = appr.done_sign && appr.sign_url
+            ? `<img src="${appr.sign_url}" alt="Signature" 
+                     style="max-height:60px; max-width:200px;  object-fit:contain;">`
+            : `<div class="border mt-2 d-flex justify-content-center align-items-center" 
+                           style="height:60px; width:180px;">
+                           <span class="text-muted">Pending</span>
+                       </div>`;
+
+        if (!appr.done_sign) {
+            allSigned = false;
+        }
+
+        // Show sign button only for current user if not signed
+        let actionHtml = '';
+        if (!appr.done_sign && currentUserId && parseInt(currentUserId) === parseInt(appr.user_id)) {
+            actionHtml = `
+                <button class="btn btn-sm btn-primary mt-1 signBtn" 
+                        data-approval-id="${appr.approval_id}">
+                    Sign
+                </button>`;
+        }
+
+        $("#approvalBoxes").append(`
+            <div class="approval-row d-flex flex-column align-items-end">
+                <strong>${appr.full_name}</strong>
+                <div id="sign-placeholder-${appr.approval_id}" class="mt-1">
+                    ${signHtml}
+                </div>
+                ${actionHtml}
+            </div>
+        `);
+    });
+
+    // Show approvals container
+    $("#approvalsContainer").show();
+
+    // Show download button only if all signed
+    if (allSigned) {
+        $("#downloadBtn").show();
+    } else {
+        $("#downloadBtn").hide();
+    }
+}
+
+
+
+
+
+ function downloadPDF() {
+    debugger;
+    showLoader();
+    // Clone the PO card only (which already contains approvals)
+    const poContent = document.getElementById("purchaseOrderFormContainer").cloneNode(true);
+
+    // Remove the download button from the clone to avoid it appearing in the PDF
+    const downloadBtn = poContent.querySelector("#downloadBtn");
+    if (downloadBtn) downloadBtn.remove();
+
+    // Prepare PDF options
+    const poId = document.getElementById("poNumber")?.value || 'PO';
+    const filename = `PO-${poId}.pdf`;
+
+    const opt = {
+        margin: 0.5,
+        filename: filename,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Generate and download PDF
+    html2pdf().set(opt).from(poContent).save();
+    hideLoader();
+}
+
+
+{% comment %} function downloadPDF() {
+    console.log('Download PDF triggered');
+
+    const element = document.getElementById('purchaseOrderFormContainer');
+    if (!element) {
+        showAlert('Content not found!');
+        return;
+    }
+    showLoader();
+    const hiElement = document.getElementById('hi'); // element with background image
+    const submitButton = document.getElementById('submitdraft');
+    const downloadButton = document.querySelector('button[onclick="downloadPDF()"]');
+    const spinner = document.getElementById('spinner');
+
+    // Hide UI elements before rendering (use visibility to keep layout)
+    if (submitButton) submitButton.style.visibility = 'hidden';
+    if (downloadButton) downloadButton.style.visibility = 'hidden';
+    if (spinner) spinner.style.display = 'none';
+
+    // Temporarily remove background image class
+    if (hiElement) hiElement.classList.remove('with-bg');
+
+    // Save original styles to restore after PDF generation
+    const originalHeight = element.style.height;
+    const originalMaxHeight = element.style.maxHeight;
+    const originalOverflow = element.style.overflow;
+
+    // Expand container to full height to capture everything
+    element.style.height = 'auto';
+    element.style.maxHeight = 'none';
+    element.style.overflow = 'visible';
+
+    window.scrollTo(0, 0);
+
+    // Add temp style for table borders inside PDF
+    const style = document.createElement('style');
+    style.id = 'pdf-temp-style';
+    style.innerHTML = `
+        table, th, td {
+            border: 1px solid black !important;
+            border-collapse: collapse !important;
+        }
+        th, td {
+            padding: 6px !important;
+        }
+    `;
+    document.head.appendChild(style);
+
+    const imgUrl = '{% static "images/messylog.png" %}';
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = imgUrl;
+
+    img.onload = function () {
+        setTimeout(() => {
+            const poid = document.getElementById('poNumber')?.value || 'unknown';
+            const opt = {
+                margin: 0.2,
+                filename: `PO-${poid}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 3, useCORS: true, scrollY: -window.scrollY },
+                jsPDF: { unit: 'in', format: 'a4', orientation: 'portrait' },
+            };
+
+            html2pdf()
+                .set(opt)
+                .from(element)
+                .toPdf()
+                .get('pdf')
+                .then(function (pdf) {
+                    const totalPages = pdf.internal.getNumberOfPages();
+                    const pageWidth = pdf.internal.pageSize.getWidth();
+                    const pageHeight = pdf.internal.pageSize.getHeight();
+                    const imageWidth = pageWidth * 0.7;
+                    const imageHeight = (imageWidth / img.width) * img.height;
+                    const xPos = (pageWidth - imageWidth) / 2;
+                    const yPos = (pageHeight - imageHeight) / 2;
+
+                    for (let i = 1; i <= totalPages; i++) {
+                        pdf.setPage(i);
+                        // pdf.addImage(imgUrl, 'PNG', xPos, yPos, imageWidth, imageHeight);
+                        pdf.setDrawColor(0);
+                        pdf.setLineWidth(0.02);
+                        pdf.rect(0.2, 0.2, pageWidth - 0.4, pageHeight - 0.4);
+                    }
+                })
+                .save()
+                .finally(() => {
+                    // Restore UI elements visibility
+                    if (submitButton) submitButton.style.visibility = 'visible';
+                    if (downloadButton) downloadButton.style.visibility = 'visible';
+                    if (spinner) spinner.style.display = 'none';
+
+                    // Remove temporary style
+                    const tempStyle = document.getElementById('pdf-temp-style');
+                    if (tempStyle) tempStyle.remove();
+
+                    // Restore background image class
+                    if (hiElement) hiElement.classList.add('with-bg');
+
+                    // Restore original container styles
+                    element.style.height = originalHeight;
+                    element.style.maxHeight = originalMaxHeight;
+                    element.style.overflow = originalOverflow;
+
+                    hideLoader();
+                });
+        }, 100); // small delay to ensure layout update
+    };
+
+    img.onerror = function () {
+        showaAlert("Failed to load the image for the PDF.");
+
+        // Restore UI elements visibility
+        if (submitButton) submitButton.style.visibility = 'visible';
+        if (downloadButton) downloadButton.style.visibility = 'visible';
+        if (spinner) spinner.style.display = 'none';
+
+        // Remove temporary style
+        const tempStyle = document.getElementById('pdf-temp-style');
+        if (tempStyle) tempStyle.remove();
+
+        // Restore background image class
+        if (hiElement) hiElement.classList.add('with-bg');
+
+        // Restore original container styles
+        element.style.height = originalHeight;
+        element.style.maxHeight = originalMaxHeight;
+        element.style.overflow = originalOverflow;
+
+        hideLoader();
+    };
+} {% endcomment %}
+
+
+/* ========= AJAX: Fetch PO (view mode) ========= */
+{% comment %} $(document).on("click", ".view-pr-id", function(e) {
+    debugger
+    console.log("🔥 Card clicked");
+    e.preventDefault();
+    const procurementId = $(this).data("id");
+    const vendorId = $(this).data("vendor");
+    //astProcurementId = procurementId;
+    //lastVendorId = vendorId;
+
+    console.log("▶️ Fetching PO details for:", procurementId, vendorId);
+    //showLoader();
+
+    $.ajax({
+        url: "{% url 'po_approval' %}",
+        type: "POST",
+        data: {
+            procurement_id: procurementId,
+            vendor_id: vendorId,
+            mode: "view",
+            csrfmiddlewaretoken: csrfToken
+        },
+        success: function(response) {
+            hideLoader();
+            console.log("✅ POApproval response:", response);
+
+            // Save approvals for later use
+            lastApprovalsResponse = response.approvals || [];
+
+            const poHTML = generateImportFormHTML(
+              procurementId,
+              response.form_type,
+              response.poid,
+              response.vendors || [],
+              response.particulars || [],
+              response.final_prices || [],
+              response.total_value || '',
+              response.discount || '',
+              response.gst_percentage || '',
+              response.gst_value || '',
+              response.grand_total || '',
+              response.payment_terms || '',
+              response.delivery_weeks || '',
+              response.warranty_period || '',
+              response.termcond || '',
+              response.gentermcond || '',
+              response.remarks || '',
+              billingAddress1 = response.billing_address_1 || '';
+              response.delivery_address_2 || ''
+            );
+
+            $("#purchaseOrderFormContainer").html(poHTML);
+
+            // Render approvals
+            renderApprovalBoxes(lastApprovalsResponse);
+
+            // extra debug: show stages in console
+            console.log("DEBUG: stages:", response.stages || []);
+        },
+        error: function(xhr) {
+            hideLoader();
+            console.error("❌ Error fetching PO details:", xhr.responseText || xhr.statusText);
+            alert("Error loading PO details. Check console/server logs.");
+        }
+    });
+}); {% endcomment %}
+
+/* ========== Sidebar click → fetch PO details ========== */
+$(document).on("click", ".view-pr-id", function(e) {
+    e.preventDefault();
+     if (previousSelected) {
+                previousSelected.className = "list-group-item"; 
+            }
+        
+            this.parentElement.className = "list-group-item active";
+            
+        
+            previousSelected = this.parentElement;
+                    showLoader();
+    const procurementId = $(this).data("id");
+    const vendorId = $(this).data("vendor");
+
+    lastProcurementId = procurementId;
+    lastVendorId = vendorId;
+
+    $.ajax({
+        url: "{% url 'po_approval' %}",
+        type: "POST",
+        data: {
+            procurement_id: procurementId,
+            vendor_id: vendorId,
+            mode: "view",
+            csrfmiddlewaretoken: csrfToken
+        },
+        success: function(resp) {
+            console.log("✅ POApproval response:", resp);
+            const poHTML = generateImportFormHTML(
+                procurementId,
+                resp.form_type,
+                resp.poid,
+                resp.vendors,
+                resp.particulars,
+                resp.total_value,
+                resp.discount,
+                resp.packingcharges,
+                resp.gst_percentage,
+                resp.gst_value,
+                resp.grand_total,
+                resp.payment_terms,
+                resp.delivery_weeks,
+                resp.warranty_period,
+                resp.termcond,
+                resp.gentermcond,
+                resp.particulars[0]?.quotation_reference,
+                resp.billing_address_1,
+                resp.delivery_address_2
+            );
+            
+            $("#purchaseOrderFormContainer").html(poHTML);
+            renderApprovalBoxes(resp.approvals);
+            hideLoader();
+        },
+        error: function(xhr) {
+            alert("Error loading PO details: " + xhr.responseText);
+            hideLoader();
+        }
+    });
+});
+
+
+
+/* ========= Sign flow (opens modal, posts sign request) ========= */
+{% comment %} $(document).on('click', '.signBtn', function (e) {
+    e.preventDefault();
+    const approvalId = $(this).data('approval-id');
+    console.log("🔒 Sign button clicked for approval id:", approvalId);
+    $('#signRemarks').val('');
+    $('#confirmSignBtn').attr('data-approval-id', approvalId);
+    $('#signRemarksModal').modal('show');
+});
+
+// Confirm sign -> AJAX post mode='sign'
+$('#confirmSignBtn').on('click', function (e) {
+    e.preventDefault();
+    const apId = $(this).data('approval-id');
+    const remarks = $('#signRemarks').val().trim();
+
+    if (!apId) {
+        console.error("No approval id found for signing");
+        return;
+    }
+    if (!lastProcurementId) {
+        console.error("No lastProcurementId known, abort sign");
+        return;
+    }
+
+    console.log("▶️ Sending sign request", { approval_id: apId, procurement: lastProcurementId, vendor: lastVendorId, remarks });
+    $('#signRemarksModal').modal('hide');
+    showLoader();
+    
+    $.ajax({
+        url: "{% url 'po_approval' %}",
+        type: "POST",
+        data: {
+            mode: 'sign',
+            approval_id: apId,
+            procurement_id: lastProcurementId,
+            vendor_id: lastVendorId,
+            remarks: remarks,
+            csrfmiddlewaretoken: csrfToken
+        },
+       
+
+        success: function(resp) {
+            debugger;
+            hideLoader();
+            console.log("✅ Sign response:", resp);
+
+            if (resp.error) {
+                alert(resp.error);  // Show warning (signature missing)
+                return;
+            }
+
+            // Update local approvals if returned
+            if (resp.approvals && Array.isArray(resp.approvals)) {
+                lastApprovalsResponse = resp.approvals;
+                renderApprovalBoxes(lastApprovalsResponse);
+            } else {
+                // Optimistic update: directly update placeholder
+                const ph = document.getElementById(`sign-placeholder-${resp.approval_id}`);
+                if (ph && resp.sign_url) {
+                    ph.innerHTML = `<img src="${resp.sign_url}" alt="Signature" style="max-height:50px;">`;
+                }
+            }
+
+            alert(resp.message || "Signed successfully.");
+            $('.signBtn').remove();
+        },
+        error: function (xhr) {
+            hideLoader();
+            console.error("❌ Error during sign:", xhr.responseText || xhr.statusText);
+            alert("Error: " + (xhr.responseJSON?.error || "Failed to sign. Please try again."));
+        }
+    });
+}); {% endcomment %}
+
+// Click on "Sign" button → open modal
+$(document).on('click', '.signBtn', function (e) {
+    e.preventDefault();
+    const approvalId = $(this).data('approval-id');
+
+    $('#signRemarks').val('');
+    $('#confirmSignBtn').attr('data-approval-id', approvalId);
+    $('#signRemarksModal').modal('show');
+});
+
+$(document).on('click', '#closeModalBtn', function () {
+    $('#signRemarksModal').modal('hide');
+});
+
+// Confirm sign in modal → AJAX call
+$('#confirmSignBtn').on('click', function (e) {
+    e.preventDefault();
+    const apId = $(this).data('approval-id');
+    const remarks = $('#signRemarks').val().trim();
+
+    // Check if remarks are empty
+    if (remarks === '') {
+        showWarningAlert("Remarks cannot be empty. Please enter your remarks.");
+        return;  // Exit the function if remarks are empty
+    }
+
+    if (!apId || !lastProcurementId) {
+        console.error("Approval ID or Procurement ID missing");
+        return;
+    }
+
+    $('#signRemarksModal').modal('hide');
+    showLoader();
+
+    $.ajax({
+        url: "{% url 'po_approval' %}",
+        type: "POST",
+        data: {
+            mode: 'sign',
+            approval_id: apId,
+            procurement_id: lastProcurementId,
+            vendor_id: lastVendorId,
+            remarks: remarks,
+            csrfmiddlewaretoken: csrfToken
+        },
+        success: function(resp) {
+            debugger;
+            hideLoader();
+
+            if (resp.error) {
+                alert(resp.error);
+                return;
+            }
+
+            // Update the signed approval in local array
+            lastApprovalsResponse = lastApprovalsResponse.map(appr => {
+                if (appr.approval_id === apId) {
+                    return {
+                        ...appr,
+                        done_sign: true,
+                        sign_url: resp.sign_url
+                    };
+                }
+                return appr;
+            });
+
+            // Update only the placeholder of the signed user
+            const ph = $(`#sign-placeholder-${resp.approval_id}`);
+            if (ph.length) {
+                ph.html(`<img src="${resp.sign_url}" alt="Signature" 
+                         style="max-height:50px; max-width:150px; object-fit:contain;">`);
+            }
+
+            // Remove the sign button for this user
+            $(`.signBtn[data-approval-id="${apId}"]`).remove();
+
+            // Show approvals container (in case it was hidden)
+            $("#approvalsContainer").show();
+
+            // Check if all users have signed → show download
+          {% comment %}   const allSigned = lastApprovalsResponse.every(a => a.done_sign);
+            if (allSigned) {
+                $("#downloadBtn").show();
+            } {% endcomment %}
+
+            showSuccessAlert(resp.message || "Signed successfully.");
+        },
+       {% comment %}  error: function(xhr) {
+            hideLoader();
+            console.error("Error during sign:", xhr.responseText || xhr.statusText);
+            alert("Failed to sign. Please try again.");
+        } {% endcomment %}
+
+        error: function(xhr) {
+        hideLoader();
+
+        let msg = "Failed to sign. Please try again.";
+        if (xhr.responseJSON && xhr.responseJSON.error) {
+            msg = xhr.responseJSON.error;  // ✅ will show "Please upload your signature..."
+        }
+        showWarningAlert(msg);
+    }
+    });
+});
+
+
+
+
+</script>
+{% endblock %}

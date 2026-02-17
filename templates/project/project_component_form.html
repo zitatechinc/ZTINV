@@ -1,0 +1,201 @@
+
+
+
+{% block content %}
+
+<form method="post" action="{{ form_action_url }}" novalidate>
+    {% csrf_token %}
+    <div class="row">
+        <div class="col-12">
+            <div class="app-card app-card-settings shadow-md">
+                <div class="app-card-body p-4">
+
+                    <!-- Row 1: Project & Component Type -->
+                    <div class="row">
+                                        
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.component_type }}
+                                <label class="form-label">{{ form.component_type.label_tag }}</label>
+                                {% if form.component_type.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.component_type.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                         <div class="col-md-4 component-field" id="BOM-field" style="display:none;">
+                            <div class="form-floating mb-3">
+                                {{ form.bom }}
+                                <label class="form-label">{{ form.bom.label_tag }}</label>
+                                {% if form.bom.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.bom.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 component-field" id="Product-field" style="display:none;">
+                            <div class="form-floating mb-3">
+                                {{ form.product }}
+                                <label class="form-label">{{ form.product.label_tag }}</label>
+                                {% if form.product.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.product.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                          <div class="col-md-4 component-field" id="Service-field" style="display:none;">
+                            <div class="form-floating mb-3">
+                                {{ form.service }}
+                                <label class="form-label">{{ form.service.label_tag }}</label>
+                                {% if form.service.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.service.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4 component-field" id="Miscellaneous-field" style="display:none;">
+                            <div class="form-floating mb-3">
+                                {{ form.miscellaneous_component }}
+                                <label class="form-label">{{ form.miscellaneous_component.label_tag }}</label>
+                                {% if form.miscellaneous_component.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.miscellaneous_component.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input type="number" 
+                                    name="{{ form.component_qty.html_name }}" 
+                                    id="{{ form.component_qty.id_for_label }}" 
+                                    value="{{ form.component_qty.value|default_if_none:'' }}" 
+                                    class="form-control"
+                                    placeholder="Component Quantity">
+                                <label for="{{ form.component_qty.id_for_label }}">{{ form.component_qty.label }}</label>
+                                {% if form.component_qty.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.component_qty.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Dynamic Component Fields -->
+                    <div class="row">
+
+                    <!-- Component Quantity -->
+                        
+
+                    </div>
+
+                    <!-- Row 3: Component Cost & Status -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input type="number" 
+                                    name="{{ form.component_cost.html_name }}" 
+                                    id="{{ form.component_cost.id_for_label }}" 
+                                    value="{{ form.component_cost.value|default_if_none:'' }}" 
+                                    class="form-control"
+                                    placeholder="Component Cost">
+                                <label for="{{ form.component_cost.id_for_label }}">{{ form.component_cost.label }}</label>
+                                {% if form.component_cost.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.component_cost.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.status }}
+                                <label class="form-label">{{ form.status.label_tag }}</label>
+                                {% if form.status.errors %}
+                                    <ul class="errorlist text-danger">
+                                        {% for error in form.status.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                         <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.description }}
+                                <label class="form-label">{{ form.description.label_tag }}</label>
+                                {% if form.description.errors %}
+                                    <ul class="errorlist" style="list-style: none !important;">
+                                        {% for error in form.description.errors %}
+                                            <li class="text-danger">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 4: Description & Search Keywords -->
+                    <div class="row">
+                       
+
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.search_keywords }}
+                                <label class="form-label">{{ form.search_keywords.label_tag }}</label>
+                                {% if form.search_keywords.errors %}
+                                    <ul class="errorlist" style="list-style: none !important;">
+                                        {% for error in form.search_keywords.errors %}
+                                            <li class="text-danger">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                         <div class="col-md-4">
+        
+            <button type="button" id="openSaveModal" class="btn btn-sm app-btn-primary mt-2" ><i class="fa fa-save"></i> Save Item</button>
+        
+    </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</form>
+
+
+{% endblock content %}
+
+
+
+
+
+

@@ -1,0 +1,913 @@
+<!-- Extends all features from the parent template -->
+{% extends 'ims/index.html' %}
+
+<!-- Loads static files -->
+{% load static %}
+
+<!-- Loads custom_tags.py file from template tags folder to apply filters -->
+{% load custom_tags %}
+
+<!-- This block content is inserted into the parent template (index.html) -->
+{% block mainblock %}
+<div class="container py-3 px-2 px-sm-3" id="acc_data" style="max-width: 100%;">
+    <div class="row g-1"
+        style="font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;">
+
+        <!-- Metric Cards Section -->
+        <div class="col-12 col-md-2">
+            <div class="d-flex flex-wrap gap-3 justify-content-start">
+                <div class="dashboard-card p-2">
+                    <div class="card-icon bg-project"><i class="bi bi-kanban"></i></div>
+                    <h6 class="text-muted mb-1">Projects</h6>
+                    <div class="card-metric text-primary" id="card-projects">{{ total_projects }}</div>
+                </div>
+                <div class="dashboard-card p-2">
+                    <div class="card-icon bg-total-budget" data-bs-toggle="tooltip" 
+                        title="Total allocated budget across all projects in the selected financial year"><i class="bi bi-wallet-fill"></i></div>
+                    <h6 class="text-muted mb-1">Allocated Budget</h6>
+                    <div class="card-metric text-warning" id="card-allocated" data-bs-toggle="tooltip" title="₹ {{ total_allocated_budget}}">₹ {{
+                        total_allocated_budget|indian_notation }}</div>
+                </div>
+                <div class="dashboard-card p-2">
+                    <div class="card-icon bg-remaining-budget" data-bs-toggle="tooltip" 
+                        title="Total available budget in selected financial year."><i class="bi bi-wallet2"></i></div>
+                    <h6 class="text-muted mb-1">Available Budget</h6>
+                    <div class="card-metric text-success" id="card-remaining" data-bs-toggle="tooltip" title="₹ {{ total_remaining_budget}}">₹ {{
+                        total_remaining_budget|indian_notation }}</div>
+                </div>
+                <div class="dashboard-card p-2">
+                    <div class="card-icon bg-used-budget" data-bs-toggle="tooltip" 
+        title="Total used budget in the selected financial year. (Allocated - Available)"><i class="bi bi-cash"></i></div>
+                    <h6 class="text-muted mb-1">Spent Budget</h6>
+                    <div class="card-metric text-danger" id="card-spent" data-bs-toggle="tooltip" title="₹ {{ total_used_budget}}">₹ {{ total_used_budget|indian_notation }}</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Budget Table Section -->
+        <div class="col-12 col-md-10 ps-3">
+
+            <!-- Filters (outside the card) -->
+            <div class="d-flex flex-wrap justify-content-start gap-3 mb-3 ms-1">
+                <!-- Financial Year Filter -->
+                <div class="d-flex align-items-center gap-3">
+                    <label for="financialYearSelect" class="form-label small text-muted mb-1" style="width: 220px;">
+                        <i class="bi bi-calendar-week me-1 text-primary fs-6"></i>
+                        <span class="fw-bold fs-7">Financial Year</span>
+                    </label>
+                    <select id="financialYearSelect" class="form-select form-select-sm" onchange="onFilterChange()">
+                        <option value="">Select Year</option>
+                        {% for year in financial_years %}
+                        <option value="{{ year }}">FY {{ year }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Quarter Filter -->
+                <div class="d-flex align-items-center gap-3">
+                    <label for="quarterSelect" class="form-label small text-muted mb-1" style="width: 220px;">
+                        <i class="bi bi-calendar3-range me-1 text-danger fs-6"></i>
+                        <span class="fw-bold fs-7">Quarter</span>
+                    </label>
+                    <select id="quarterSelect" class="form-select form-select-sm" onchange="onFilterChange()">
+                        <option value="">Select Quarter</option>
+                        <option value="Q1">Q1 (Apr-Jun)</option>
+                        <option value="Q2">Q2 (Jul-Sep)</option>
+                        <option value="Q3">Q3 (Oct-Dec)</option>
+                        <option value="Q4">Q4 (Jan-Mar)</option>
+                    </select>
+                </div>
+
+                <!-- Source Filter -->
+                <div class="d-flex align-items-center gap-3">
+                    <label for="sourceFilter" class="form-label small text-muted mb-1" style="width: 220px;">
+                        <i class="bi bi-box-seam me-1 text-success fs-6"></i>
+                        <span class="fw-bold fs-7">Type Of Procurements</span>
+                    </label>
+                    <select id="sourceFilter" class="form-select form-select-sm" onchange="onFilterChange()">
+                        <option value="all">All</option>
+                        <option value="import">Import</option>
+                        <option value="indigenous">Indigenous</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Budget Card -->
+            <div class="table-dashboard-card p-3 shadow-sm" style="width: 100%;">
+
+                <!-- Prompt -->
+                <div id="selectYearMessage" class="text-center mb-3">
+                    <p>Please select a financial year and quarter to view the budget details.</p>
+                </div>
+
+                <!-- Budget Table -->
+                <div class="table-responsive" id="tableContainer" style="display: none;">
+                    <table class="table table-bordered table-sm table-hover text-center align-middle small"
+                        id="budgetTable" style="width: 100%;">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Project ID</th>
+                                <th>Project Name</th>
+                                <th>Allocated Budget</th>
+                                {% for month in months %}
+                                <th colspan="3">{{ month }}</th>
+                                {% endfor %}
+                            </tr>
+                            <tr>
+                                <th></th>
+                                <th></th>
+                                <th></th>
+                                {% for month in months %}
+                                <th>Planned</th>
+                                <th>Committed</th>
+                                <th>Expenditure</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody id="budgetTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Procurement Table Section -->
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="table-dashboard-card p-3 shadow-sm rounded" id="procurementDetailsContainer"
+                style="display: none;">
+                <h5 class="text-center mb-3" id="procurementDetailsHeading"></h5>
+                <div class="table-responsive">
+                    <table id="procurementDetailsTable"
+                        class="table table-bordered table-sm table-hover text-center align-middle small w-100">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="text-center">Procurement ID</th>
+                                <th class="text-center">Amount</th>
+                                <th class="text-center">Indentor</th>
+                                <th class="text-center">Source of Make</th>
+                            </tr>
+                        </thead>
+                        <!-- Procurement Table Body -->
+                        <tbody id="procurementDetailsBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block styleblock %}
+<style>
+    /* Generic card for dashboard widgets (e.g., small metric cards) */
+    .dashboard-card {
+        flex: 0 0 160px;
+        flex-grow: 1;
+        /* min-width: 130px; */
+        max-width: 100%;
+        /* height: 140px; */
+        min-height: 138px;
+        max-height: fit-content;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background: #fff;
+        text-align: center;
+        /* white-space: nowrap; */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        flex-shrink: 1;
+    }
+
+    #loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(6px);
+        display: none;
+        /* Hide by default */
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+
+    /* Full-width variant of dashboard card for tabular content */
+    .table-dashboard-card {
+        width: 100%;
+        border: 2px solid #e5e7eb;
+        border-radius: 0.75rem;
+        box-shadow: 0 3px 8px rgba(0, 0, 0, 0.04);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+        background: #fff;
+        text-align: center;
+    }
+
+    .dataTables_wrapper .dataTables_length {
+        font-size: small;
+    }
+
+    .dataTables_wrapper .dataTables_filter {
+        font-size: small;
+    }
+
+    .dataTables_wrapper .dataTables_info {
+        font-size: 0.85rem;
+    }
+
+    .dataTables_wrapper .dataTables_paginate {
+        font-size: 0.85rem;
+    }
+
+    :root,
+    [data-bs-theme=light] {
+        --bs-body-font-size: 0.95rem;
+    }
+
+    .dataTables_wrapper .dataTables_scrollHead {
+        position: relative;
+        margin-left: 0px;
+        width: 100%;
+        padding-left: 0px;
+    }
+
+    .dataTables_wrapper .dataTables_scrollBody {
+        position: relative;
+        margin-left: 0px;
+        width: 100%;
+        padding-left: 0px;
+    }
+
+    .dataTables_wrapper .dataTables_scrollFooter {
+        position: relative;
+        margin-left: 0px;
+        width: 100%;
+        padding-left: 0px;
+    }
+
+
+
+    /* #budgetTable th, #budgetTable td {
+  word-wrap: break-word;
+  vertical-align: middle;
+} */
+
+    #budgetTable td:empty::after {
+        content: '\00a0';
+        /* non-breaking space */
+    }
+
+
+
+    /* Hover effect for all dashboard cards: slight upward movement and stronger shadow */
+    .dashboard-card:hover {
+        transform: translateY(-3px);
+        /* Lift the card slightly */
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        /* Enhance shadow for hover */
+    }
+
+    .card {
+        --bs-card-height: 600px;
+    }
+
+    /* Icon container inside a card */
+    .card-icon {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 0.5rem;
+        /* Slightly rounded square */
+        margin: 0 auto 0.75rem;
+        /* Center with bottom margin */
+        font-size: 1.3rem;
+        /* Icon size */
+        color: white;
+        /* Icon/text color */
+    }
+
+    /* Font styling for key metric in cards */
+    .card-metric {
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    /* Background color for different types of cards (Bootstrap colors) */
+    .bg-project {
+        background-color: #0d6efd;
+    }
+
+    /* Blue */
+    .bg-total-budget {
+        background-color: #ffc107;
+    }
+
+    /* yellow */
+    .bg-remaining-budget {
+        background-color: darkgreen;
+    }
+
+    .bg-used-budget {
+        background-color: red;
+    }
+
+    .planned-cell,
+    .committed-cell,
+    .expenditure-cell {
+        cursor: pointer;
+    }
+
+    /* Your existing styles remain unchanged above... */
+
+    /* Responsive layout tweaks for small screens */
+    @media (max-width: 768px) {
+        .dashboard-card {
+            width: 100% !important;
+            height: auto;
+            margin-bottom: 1rem;
+        }
+
+        .card-icon {
+            margin-bottom: 0.5rem;
+        }
+
+        .card-metric {
+            font-size: 1.3rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .card {
+            --bs-card-height: auto;
+        }
+    }
+
+    /* Optional: for extra-small screens */
+    @media (max-width: 480px) {
+        .dashboard-card {
+            padding: 1rem;
+        }
+
+        .card-metric {
+            font-size: 1.2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+    let accdashboardsocket = null;
+    let isWebSocketConnected = false;
+    let isDOMReady = false;
+    let budgetResponse = null;
+    let dataTableBudgetInstance = null;
+    let dataTableProcInstance = null;
+
+    // Wait flags
+    let shouldTriggerInitialLoad = false;
+
+    // Converting large numbers to Indian Notation with 2 digit decimals
+    function indianNotation(value) {
+        value = parseFloat(value);
+        if (isNaN(value)) return value;
+        if (value >= 10000000) return (value / 10000000).toFixed(2) + ' Cr';
+        if (value >= 100000) return (value / 100000).toFixed(2) + ' L';
+        if (value >= 1000) return (value / 1000).toFixed(2) + ' K';
+        return Math.round(value).toString();
+    }
+
+    // Fetch current FY label in the format YYYY-YYYY
+    function getCurrentFinancialYearLabel() {
+        const today = new Date();
+        const month = today.getMonth() + 1;
+        const year = today.getFullYear();
+        const startYear = (month >= 4) ? year : year - 1;
+        return `${startYear}-${startYear + 1}`;
+    }
+
+    // Fetch current quarter (Apr-Mar)
+    function getCurrentQuarter() {
+        const month = new Date().getMonth() + 1;
+        if (month >= 4 && month <= 6) return "Q1";
+        if (month >= 7 && month <= 9) return "Q2";
+        if (month >= 10 && month <= 12) return "Q3";
+        return "Q4";
+    }
+
+    // Initial data setup after DOM is ready
+    document.addEventListener('DOMContentLoaded', () => {
+        //tooltip
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.forEach(function (tooltipTriggerEl) {
+      new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+        isDOMReady = true;
+                
+        // Show loader when DOM is ready
+        showLoader();
+
+
+
+        const fySelect = document.getElementById("financialYearSelect");
+        const qSelect = document.getElementById("quarterSelect");
+        const selectYearMsg = document.getElementById("selectYearMessage");
+
+        const currentFY = getCurrentFinancialYearLabel();
+        const currentQ = getCurrentQuarter();
+        let fyFound = false;
+        let qFound = false;
+
+        // Check if the financial year element exists
+        if (fySelect) {
+                        
+            // Convert the elements to an array and sort them by starting year
+            const options = Array.from(fySelect.options);
+            options.sort((a, b) => Number(a.value.split('-')[0]) - Number(b.value.split('-')[0]));
+            
+            // Clear the current options
+            fySelect.innerHTML = '';
+
+            // Re-add the sorted options
+            options.forEach(option => fySelect.appendChild(option));
+        }
+
+        // If the financial year still exists
+        if (fySelect) {
+            
+            // Loop through its options to find and select the one matching the currentFY value
+            for (let i = 0; i < fySelect.options.length; i++) {
+                if (fySelect.options[i].value === currentFY) {
+                    fySelect.selectedIndex = i; // Set it as the selected option
+                    fyFound = true; // Mark that a match was found
+                    break;
+                }
+            }
+        }
+
+        // If the quarter exists
+        if (qSelect) {
+            
+            // Loop through its options to find and select the one matching the currentQ value
+            for (let i = 0; i < qSelect.options.length; i++) {
+                if (qSelect.options[i].value === currentQ) {
+                    qSelect.selectedIndex = i; // Set it as the selected option
+                    qFound = true;   // Mark that a match was found
+                    break;
+                }
+            }
+        }
+
+        // Set Select Year Message based on FY and Quarter selection
+        if (selectYearMsg) {
+            selectYearMsg.textContent = (fyFound && qFound)
+                ? "Please select a financial year and quarter to view the budget details."
+                : "No data available";
+        }
+
+        // If FY and quarter are selected, check if the socket is connected
+        if (fyFound && qFound) {
+            if (isWebSocketConnected) {
+                
+                // Call Filter Change action only if the socket is connected
+                onFilterChange();
+            } else {
+
+                // Trigger initial DOM load
+                shouldTriggerInitialLoad = true;
+            }
+        } else {
+                    
+            // If not found, hide loader
+            hideLoader();
+        }
+    });
+
+    // Set up the WebSocket connection
+    function setupAccDashboardSocket() {
+
+        // Routing URL 
+        const wsScheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const socketUrl = `${wsScheme}://${window.location.host}/ws/acc-dashboard/`;
+
+        // Connect socket function which handles socket events
+        function connectSocket() {
+            accdashboardsocket = new WebSocket(socketUrl);
+            
+            // Perform the actions after the socket is open
+            accdashboardsocket.onopen = () => {
+                isWebSocketConnected = true;
+                console.log("Accounts Dashboard WebSocket connected.");
+                
+                // If DOM is ready and Socket is Connected, trigger the function
+                if (shouldTriggerInitialLoad && isDOMReady) {
+                    onFilterChange();
+                    shouldTriggerInitialLoad = false;
+                }
+            };
+
+            // Perform the actions if the socket receives data from the backed
+            accdashboardsocket.onmessage = (event) => {
+                try {
+                    const message = JSON.parse(event.data);
+                    
+                    // Match the message type with the signal handler
+                    if (message.type === 'budget_data' && message.data?.rows) {
+                        budgetResponse = message.data;
+                        const year = document.getElementById('financialYearSelect').value;
+                        const quarter = document.getElementById('quarterSelect').value;
+                        const sourceFilter = $('#sourceFilter').val();
+                        
+                        // Render the budget table based on the data obtained
+                        renderTable(budgetResponse, year, quarter, sourceFilter);
+                    } else if (message.type === 'error') {
+
+                        // If the signal handler message type doesn't match - showWarningAlert 
+                        showWarningAlert('Error loading data: ' + (message.message || 'Unknown error'));
+                        
+                        // hide loader
+                        hideLoader();
+                    }
+                } catch (err) {
+                    
+                    // If the data received is not parsable - error
+                    console.error("WebSocket message parse error", err);
+                    
+                    // hide loader
+                    hideLoader();
+                }
+            };
+
+            // Error handler while connecting to the socket
+            accdashboardsocket.onerror = (err) => {
+                console.error("WebSocket error", err);
+                // close the socket
+                accdashboardsocket.close();
+            };
+
+            // socket close event handler
+            accdashboardsocket.onclose = (e) => {
+                
+                // Trying to reconnect after timeout
+                console.warn("WebSocket closed. Reconnecting in 2s...", e.reason);
+                isWebSocketConnected = false;
+                setTimeout(connectSocket, 2000);
+            };
+
+            window.accdashboardsocket = accdashboardsocket;
+        }
+
+        connectSocket();
+    }
+
+    // Triggered by DOM or WebSocket when both are ready
+    function onFilterChange() {
+        const year = document.getElementById('financialYearSelect').value;
+        const quarter = document.getElementById('quarterSelect').value;
+        const message = document.getElementById('selectYearMessage');
+        const tableContainer = document.getElementById('tableContainer');
+        const procurementContainer = document.getElementById('procurementDetailsContainer');
+
+        if (year && quarter) {
+
+            // Show loader when FY and quarter are selected
+            showLoader();
+            message.style.display = 'none';
+            tableContainer.style.display = 'block';
+            procurementContainer.style.display = 'block';
+
+            // load budget data of that year and quarter
+            loadBudgetData(year, quarter);
+        } else {
+            tableContainer.style.display = 'none';
+            message.style.display = 'block';
+        }
+    }
+
+    // Send WebSocket request to the backend
+    function loadBudgetData(year, quarter, useCached = false, sourceFilter = $('#sourceFilter').val()) {
+        $('#selectYearMessage').hide();
+        $('#tableContainer').show();
+        $('#sourceFilterContainer').show();
+        $('#procurementDetailsContainer').hide();
+
+        // Render the table from cache 
+        if (useCached && budgetResponse) {
+            renderTable(budgetResponse, year, quarter, sourceFilter);
+            return;
+        }
+
+        // Send the request to fetch data only when socket is open and is in ready state
+        if (accdashboardsocket?.readyState === WebSocket.OPEN) {
+            
+            // Sends a backend call to the consumer with FY, Quarter, Source Filter 
+            accdashboardsocket.send(JSON.stringify({
+                action: 'fetch_budget',
+                financial_year: year,
+                quarter: quarter,
+                source_filter: sourceFilter
+            }));
+        } else {
+            showWarningAlert("WebSocket not connected. Please wait and refresh.");
+            // hide loader
+            hideLoader();
+        }
+    }
+
+    // Dropdown source filter - on change event
+    $('#sourceFilter').on('change', () => {
+        const sourceFilter = $('#sourceFilter').val();
+        const year = document.getElementById('financialYearSelect').value;
+        const quarter = document.getElementById('quarterSelect').value;
+        if (year && quarter) {
+        
+            // load budget data of that year and quarter
+            loadBudgetData(year, quarter, true, sourceFilter);
+        }
+    });
+
+    // Initiate socket connection
+    setupAccDashboardSocket();
+
+    // Card text updation with indian notation and prefix
+    function updateTextContent(id, value, prefix = '₹ ') {
+        const el = document.getElementById(id);
+        if (id == "card-projects") {
+            prefix = ''
+        }
+        if (el) el.textContent = prefix + indianNotation(value);
+    }
+
+    // Updated renderTable
+    function renderTable(response, selectedYear, selectedQuarter, sourceFilter = 'all') {
+        // Clear datatables if already initialized
+        if ($.fn.DataTable.isDataTable('#budgetTable')) {
+            dataTableBudgetInstance.clear().destroy();
+        }
+
+        let quarterMonths = [];
+        switch (selectedQuarter) {
+            case "Q1": quarterMonths = ['April', 'May', 'June']; break;
+            case "Q2": quarterMonths = ['July', 'August', 'September']; break;
+            case "Q3": quarterMonths = ['October', 'November', 'December']; break;
+            case "Q4": quarterMonths = ['January', 'February', 'March']; break;
+        }
+
+        const keyMap = {
+            all: {
+                plannedKey: 'monthly_planned_values_combined',
+                committedKey: 'monthly_committed_values_combined',
+                overallPlannedKey: 'overall_planned_totals_combined',
+                overallCommittedKey: 'overall_committed_totals_combined'
+            },
+            import: {
+                plannedKey: 'monthly_planned_values_import',
+                committedKey: 'monthly_committed_values_import',
+                overallPlannedKey: 'overall_planned_totals_import',
+                overallCommittedKey: 'overall_committed_totals_import'
+            },
+            indigenous: {
+                plannedKey: 'monthly_planned_values_indigenous',
+                committedKey: 'monthly_committed_values_indigenous',
+                overallPlannedKey: 'overall_planned_totals_indigenous',
+                overallCommittedKey: 'overall_committed_totals_indigenous'
+            }
+        }[sourceFilter] || keyMap.all;
+
+        // Update the cards text
+        updateTextContent("card-allocated", response.total_allocated_budget);
+        updateTextContent("card-remaining", response.total_remaining_budget);
+        updateTextContent("card-spent", response.total_used_budget);
+        updateTextContent("card-projects", response.total_projects);
+        
+        // Fetch only those months which belong to that quarter
+        let filteredMonths = response.months.filter(month => quarterMonths.includes(month));
+
+        // Header data for the table based on the months
+        $('#budgetTable thead tr:nth-child(1)').html(`
+        <th class="text-center">Project ID</th>
+        <th class="text-center">Project Name</th>
+        <th class="text-center">Allocated Budget</th>
+        ${filteredMonths.map(m => `<th colspan="3" class="text-center">${m}</th>`).join('')}
+    `);
+
+        // Header data for the table based on the months for planned, committed, expenditure
+        $('#budgetTable thead tr:nth-child(2)').html(`
+        <th></th><th></th><th></th>
+        ${filteredMonths.map(() => `
+            <th class="text-center">Planned</th>
+            <th class="text-center">Committed</th>
+            <th class="text-center">Expenditure</th>
+        `).join('')}
+    `);
+
+        // Set CSS for the budget table
+        $('#budgetTable thead th').css({
+            'background-color': '#007080',
+            'color': 'white',
+            'border': '1px solid white'
+        });
+
+        $('#budgetTable tbody').empty();
+        $('#budgetTable tfoot').remove();
+
+        // Append the corresponding data to the tables
+        response.rows.forEach(row => {
+            let tr = `<tr>
+            <td>${row.project_id}</td>
+            <td>${row.project_name}</td>
+            <td>₹ ${indianNotation(row.allocated_budget)}</td>`;
+            
+            // Planned, Committed, Expenditure related cells
+            filteredMonths.forEach(month => {
+                const idx = response.months.indexOf(month);
+                tr += `
+                <td class="planned-cell" 
+    data-project="${row.project_id}" 
+    data-project-name="${row.project_name}" 
+    data-month="${month}" 
+    data-order="${row[keyMap.plannedKey][idx] || 0}">
+    ₹ ${indianNotation(row[keyMap.plannedKey][idx] || 0)}
+</td>
+
+<td class="committed-cell" 
+    data-project="${row.project_id}" 
+    data-project-name="${row.project_name}" 
+    data-month="${month}" 
+    data-order="${row[keyMap.committedKey][idx] || 0}">
+    ₹ ${indianNotation(row[keyMap.committedKey][idx] || 0)}
+</td>
+
+<td class="expenditure-cell" 
+    data-project="${row.project_id}" 
+    data-project-name="${row.project_name}" 
+    data-month="${month}" 
+    data-order="0">
+    ₹ ${indianNotation(0)}
+</td>`;
+            });
+
+            tr += '</tr>';
+            $('#budgetTable tbody').append(tr);
+        });
+
+        // Sum of the allocated budgets - Project wise
+        let totalRow = `<tr>
+        <th colspan="2" class="text-center">Total</th>
+        <th class="text-center">₹ ${indianNotation(response.total_allocated_budget)}</th>`;
+
+        // Sum of the Planned, Committed, Expenditure monthly
+        filteredMonths.forEach(month => {
+            totalRow += `
+            <th class="text-center">₹ ${indianNotation(response[keyMap.overallPlannedKey][month] || 0)}</th>
+            <th class="text-center">₹ ${indianNotation(response[keyMap.overallCommittedKey][month] || 0)}</th>
+            <th class="text-center">₹ ${indianNotation(0)}</th>`;
+        });
+
+        totalRow += '</tr>';
+        $('#budgetTable').append('<tfoot>₹ ' + totalRow + '</tfoot>');
+
+        // Initialize datatable instance 
+        dataTableBudgetInstance = $('#budgetTable').DataTable({
+            responsive: true,
+            scrollX: true
+        });
+
+        // Handler to handle the click event on budget table cells
+        $('#budgetTable tbody').off('click').on('click', '.planned-cell, .committed-cell, .expenditure-cell', function () {
+            
+            // Clear datatable instance for procurement table if any
+            if ($.fn.DataTable.isDataTable('#procurementDetailsTable')) {
+                $('#procurementDetailsTable').DataTable().clear().destroy();
+            }
+
+            const projectId = $(this).data('project');
+            const month = $(this).data('month');
+            const sourceFilter = $('#sourceFilter').val();
+
+            let procurementList = [];
+
+            // Get the procurements list based on the selected cell
+            if ($(this).hasClass('planned-cell')) {
+                procurementList = response.contributing_procurements[projectId]?.planned[month] || [];
+            } else if ($(this).hasClass('committed-cell')) {
+                procurementList = response.contributing_procurements[projectId]?.committed[month] || [];
+            }
+
+            if (sourceFilter !== 'all') {
+                procurementList = procurementList.filter(p => p.source_of_make.toLowerCase() === sourceFilter.toLowerCase());
+            }
+
+            // Update heading text for procurement table
+            const projectName = $(this).data('project-name');
+            let headingText = `Contributing Procurements for Project ${projectName} - ${month}`;
+            headingText += $(this).hasClass('planned-cell') ? " (Planned)" :
+                $(this).hasClass('committed-cell') ? " (Committed)" :
+                    " (Expenditure)";
+            $('#procurementDetailsHeading').html(`<strong>${headingText}</strong>`);
+
+            const tbody = $('#procurementDetailsTable tbody').empty();
+
+            let hasData = true;
+
+            // Procurements Table data
+            if ($(this).hasClass('expenditure-cell')) {
+                tbody.append('<tr><td colspan="4" class="text-center">Expenditure data not available.</td></tr>');
+                hasData = false;
+            } else if (procurementList.length === 0) {
+                tbody.append('<tr><td colspan="4" class="text-center">No procurements found.</td></tr>');
+                hasData = false;
+            } else {
+                procurementList.forEach(proc => {
+                    tbody.append(`<tr>
+                    <td>${proc.procurement_id}</td>
+                    <td>
+                        ₹ ${$(this).hasClass('planned-cell')
+                            ? (proc.estimated_value != null ? Number(proc.estimated_value).toFixed(2) : '-')
+                            : $(this).hasClass('committed-cell')
+                                ? (proc.committed_value != null ? Number(proc.committed_value).toFixed(2) : '-')
+                                : (proc.expenditure_value != null ? Number(proc.expenditure_value).toFixed(2) : '-')
+                        }
+                        </td>
+
+                    <td>${proc.creator}</td>
+                    <td>${proc.source_of_make}</td>
+                </tr>`);
+                });
+            }
+
+            $('#procurementDetailsContainer').show();
+                // Redraw budget table layout
+        $('#budgetTable').DataTable().columns.adjust().draw();
+
+            // CSS for the Procurements Table
+            $('#procurementDetailsTable thead th').css({
+                'background-color': '#007080',
+                'color': 'white',
+                'border': '1px solid white'
+            });
+
+            // Redraw budget table layout
+            $('#budgetTable').DataTable().columns.adjust().draw();
+
+            // Autoscroll to the Procurement Table when Clicked on any cell in the Budget table
+            $('#acc_data').animate({
+                scrollTop: $('#procurementDetailsContainer').offset().top
+            }, 500);
+
+            // Initialize datatable if there is data intially
+            if (hasData) {
+                dataTableProcInstance = $('#procurementDetailsTable').DataTable({
+                    responsive: true,
+                    scrollX: true
+                });
+            }
+        });
+        // hide loader
+        hideLoader();
+    }
+    
+    // Update FY Dropdown if the data is obtained from the socket
+    function updateFinancialYearDropdown(availableYears, selectedYear) {
+        const fySelect = document.getElementById("financialYearSelect");
+        if (!fySelect || !Array.isArray(availableYears)) return;
+
+        // Clear current options
+        fySelect.innerHTML = '';
+
+        // Add default 'Select Year' option
+        const defaultOption = document.createElement("option");
+        defaultOption.value = '';
+        defaultOption.textContent = 'Select Year';
+        fySelect.appendChild(defaultOption);
+
+        // Sort years in ascending order
+        availableYears.sort((a, b) => {
+            const [aStart] = a.split('-').map(Number);
+            const [bStart] = b.split('-').map(Number);
+            return aStart - bStart;
+        });
+
+        // Add year options with 'FY ' prefix
+        availableYears.forEach(year => {
+            const option = document.createElement("option");
+            option.value = year;
+            option.textContent = `FY ${year}`;
+            if (year === selectedYear) option.selected = true;
+            fySelect.appendChild(option);
+        });
+    }
+
+</script>
+{% endblock scripts %}

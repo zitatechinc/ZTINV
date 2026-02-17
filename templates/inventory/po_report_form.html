@@ -1,0 +1,306 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+
+<div class="row">
+  <div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+
+      <div class="app-card-body p-4">
+        <form method="post" action="{{ form_action_url }}" id="poSearchForm" novalidate>
+                    {% csrf_token %}
+                    <div class="row align-items-end g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">From Date</label>
+                            <!-- <input type="date" name="start_date" id="start_date" class="form-control"> -->
+                            <input type="date" name="start_date" id="start_date" class="form-control" value="{{ start_date }}">
+                        </div>
+
+                        <div class="col-md-3">
+                            <label class="form-label">To Date</label>
+                            <!-- <input type="date" name="end_date" id="end_date" class="form-control"> -->
+                            <input type="date" name="end_date" id="end_date" class="form-control" value="{{ end_date }}">
+                        </div>
+
+                        <div class="col-md-1">
+                            <button type="button" class="btn btn-primary text-white" onclick="loadReport()">
+                                Submit
+                            </button>
+                        </div>
+
+                        <!-- <div class="col-md-2">
+                            <button type="button" class="btn btn-success" onclick="exportExcel()">
+                                Export Excel
+                            </button>
+                        </div> -->
+
+                    </div>
+
+                    
+
+        </form>
+
+        {% if po_obj %}
+        <!-- PO Accordion -->
+        <div class="row mt-4">
+          <div class="col-md-12">           
+
+            <!-- PO Report Form -->
+            <form method="post" action="" novalidate>
+              <div class="row mt-1">
+                
+
+                <div class="col-md-12">
+                  <div class="table-responsive">
+                    {% csrf_token %}
+                    <table class="table table-bordered text-center">
+                      <thead>
+                        <tr class="td-3">
+                          
+                          <th width="10%">POLineNumber</th>
+                          <th width="10%">ProductNumber</th>
+                          <th class="col1 sticky-col">Location</th>
+                          <th class="col1 sticky-col">SubLocation</th>
+                          <th width="5%">Quantity</th>
+                          <th>Received<br><small>(Qty)</small></th>
+                          
+                          <!-- <th>Pending<br><small>(Qty)</small></th> -->
+                          
+                          <th width="7%">Passed Inspection<br><small>(Qty)</small></th>
+                          <th width="7%">Rejected Inspection<br><small>(Qty)</small></th>
+                          
+                          <!-- <th width="7%">Pending Inspection<br><small>(Qty)</small></th> -->
+                          
+                          
+                          
+                          <th>Created Time</th>
+                          <th>Created User</th>
+                          <th>Updated Time</th>
+                          <th>Updated User</th>
+                        </tr>
+                      </thead>
+
+                      {% if grouped_items %}
+                      <tbody>
+                        {% for row, po_items in grouped_items.items %}
+                          {% for eachItem in po_items %}
+                            <tr class="{% if eachItem.id in ht_items_list %}border-highlight-row rounded shadow-sm{% endif %}">
+                                                           
+                              
+                              <td>{{ eachItem.code }}</td>
+                              <td>{{ eachItem.item }}</td>
+                              <td>{{ eachItem.po_location.name }}</td>
+                              <td>{{ eachItem.sub_location.name}}</td>
+                              <td>{{ eachItem.quantity|add:"0" }}</td>
+                              <td>{{ eachItem.already_received_qty|add:"0" }}</td>
+                              <!-- <td class="yet_to_be_received">{{ eachItem.yet_to_be_received|add:"0" }}</td> -->
+                              <td>{{ eachItem.good_qty }}</td>
+                              <td>{{ eachItem.rejected_qty }}</td>
+                              <!-- <td class="tot_ins_qty">{{ eachItem.total_qty_inspected }}</td> -->
+
+
+                              <td style="white-space: nowrap;">{{ eachItem.created_at|date:"M.d,Y H:i" }}</td>
+                              <td>{{ eachItem.created_user }}</td>
+                              <td style="white-space: nowrap;">{{ eachItem.updated_at|date:"M.d,Y H:i" }}</td>
+                              <td>{{ eachItem.updated_user }}</td>
+
+                            </tr>
+                          {% endfor %}
+                        {% endfor %}
+                      </tbody>
+
+                      {% else %}
+                      <tfoot>
+                        <tr>
+                          <th colspan="2">No Records Found</th>
+                        </tr>
+                      </tfoot>
+                      {% endif %}
+                    </table>
+                  </div>
+                </div>
+
+              </div>
+            </form>
+
+          </div>
+        </div>
+        {% endif %}
+
+        {% if post_po_obj == 'No Records' %}
+        <div class="mt-2" style="border: 1px dashed #ccc; padding: 20px; text-align: center; color: #888; border-radius: 8px;">
+          <h4>{{ message }}</h4>
+          <p>No records found for selected date range.</p>
+        </div>
+        {% endif %}
+
+      </div>
+    </div>
+  </div>
+</div>
+
+
+{% endblock %}
+
+{% block pagecss %}
+<link href="{% static 'default/css/select2.min.css' %}" rel="stylesheet" />
+
+<style>
+  .select2-container .select2-selection--single {
+    height: 38px;
+    padding: 5px 10px;
+  }
+  .select2-selection__rendered {
+    line-height: 26px !important;
+  }
+  .select2-selection__arrow {
+    height: 36px !important;
+  }
+</style>
+
+<style type="text/css">
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+  }
+
+  .sticky-col + .sticky-col {
+    left: 6px;
+  }
+
+  .table tbody tr.highlight-row {
+    background-color: #fff3cd !important;
+  }
+
+  .border-highlight-row {
+    border: 2px solid #e0e0e0 !important;
+  }
+
+  .border-highlight-row:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .input-error {
+    border: 2px solid red !important;
+    border-radius: 4px;
+    background-color: #ffecec;
+  }
+
+  table th,
+  table td {
+    vertical-align: middle;
+  }
+
+  .accordion-body table td.text-left-override {
+    text-align: left !important;
+  }
+
+  .accordion-body table th,
+  .accordion-body table td {
+    text-align: left !important;
+  }
+
+  .table-bordered.text-center th,
+  .table-bordered.text-center td {
+    text-align: center !important;
+  }
+
+  .table td input {
+    height: 32px;
+    padding: 4px 8px;
+    text-align: left;
+  }
+</style>
+
+{% endblock %}
+
+{% block pagejs %}
+
+<script>
+function exportExcel() {
+    const startDate = document.getElementById("start_date").value;
+    const endDate = document.getElementById("end_date").value;
+
+    if (!startDate || !endDate) {
+        alert("Please select date range before exporting");
+        return;
+    }
+
+    const form = document.getElementById("poSearchForm");
+
+    // remove existing export_type if present
+    let existing = document.querySelector("input[name='export_type']");
+    if (existing) {
+        existing.remove();
+    }
+
+    // add export flag
+    let input = document.createElement("input");
+    input.type = "hidden";
+    input.name = "export_type";
+    input.value = "excel";
+
+    form.appendChild(input);
+    form.submit();
+}
+</script>
+
+
+<script>
+function loadReport() {
+    const startDate = document.getElementById("start_date").value;
+    const endDate = document.getElementById("end_date").value;
+
+    if (!startDate || !endDate) {
+        alert("Please select both From and To dates");
+        return;
+    }
+
+    // Convert startDate and endDate to Date objects for comparison
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    // Check if From Date is less than or equal to To Date
+    if (start > end) {
+        alert("The From Date cannot be later than the To Date");
+        return;
+    }
+
+    const form = document.getElementById("poSearchForm");
+
+    // Remove any export_type hidden input before regular submit
+    const exportInputs = form.querySelectorAll("input[name='export_type']");
+    exportInputs.forEach(input => input.remove());
+
+    // Submit the form
+    form.submit();
+}
+
+// Event listener for change in end_date field to validate as well
+document.addEventListener("DOMContentLoaded", function () {
+    const startDateInput = document.getElementById("start_date");
+    const endDateInput = document.getElementById("end_date");
+
+    // Validate on end_date change
+    endDateInput.addEventListener("change", function () {
+        const startDate = startDateInput.value;
+        const endDate = endDateInput.value;
+
+        if (startDate && endDate) {
+            const start = new Date(startDate);
+            const end = new Date(endDate);
+
+            if (start > end) {
+                alert("The From Date cannot be less than the To Date");
+                endDateInput.value = "";  // Reset the end date to fix the issue
+            }
+        }
+    });
+});
+
+</script>
+
+<script src="{% static 'default/js/select2.min.js' %}"></script>
+{% endblock %}

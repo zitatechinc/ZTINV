@@ -1,0 +1,465 @@
+{% extends 'core/base.html' %}
+
+
+{% block content %}
+
+    
+   
+   
+   <div class="row">
+      <div class="col-12 col-md-12">
+         <div class="app-card app-card-settings shadow-md" >
+            
+          <div class="app-card-body p-4">
+              <form method="post" action="{{form_action_url}}" novalidate>
+                    {% csrf_token %}
+                    
+                  <div class="col-md-4 m-2">
+                            {% csrf_token %}
+                {{ form.project.label_tag }}
+                {{ form.code }}
+                {{ form.project }}
+                </div>
+                  <!-- <div class="col-md-4 m-2">
+                    <div class="button-group">
+                    <button type="submit" class="btn btn-sm app-btn-primary" ><i class="fa fa-search fa-lg"></i> Browse Project&nbsp;</button>
+                    
+                </div>
+                
+                  </div> -->
+               
+            
+            </form>
+          
+       
+         {%if po_obj%}   
+             
+        
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                      <div class="accordion" id="accordionPanelsStayOpenExample">
+                        <div class="accordion-item" >
+                          <h2 class="accordion-header" id="panelsStayOpen-headingOne">
+                            <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true" aria-controls="panelsStayOpen-collapseOne">
+                             <div class="w-100 d-flex justify-content-between align-items-center">
+                      <div>
+                      <span><strong style="font-weight: bold !important;">{{form.project.label}}</strong> : <strong> {{po_obj.project_id}} ({{po_obj.name}})</strong></span>
+
+                      </div>
+                      <!-- <div class="text-end">
+                       <span> <small>{{ph_obj.project.project_id}}  ({{ph_obj.project.name}})</small></span>
+                      </div> -->
+                      </div>
+                            </button>
+                          </h2>
+                          <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingOne">
+                            <div class="accordion-body" style="border: 1px solid rgba(0, 0, 0, .125) !important;">
+                               <table class="table table-bordered ">
+                                    <tbody>                                        
+                                        <tr>
+                                            <th class="td-1">Created On </th>
+                                            <th class="td-2">{{vh_obj.created_at | date:"M.d,Y H:i"}}</th>
+                                            <th class="td-1">Created by</th>
+                                            <th class="td-2">{{vh_obj.created_user.first_name}}</th>
+
+                                            <th class="td-1">Last Modified on </th>
+                                            <th class="td-2">{{vh_obj.updated_at| date:"M.d,Y H:i"}}</th>
+                                        </tr>
+                                        <tr>                                            
+                                            <th class="td-1">Last Modified by</th>
+                                            <th class="td-2">{{vh_obj.updated_user.first_name}}</th>
+                                            <th class="td-1">Project Code </th>
+                                            <th class="td-2">{{po_obj.project_id}}</th>
+                                            <th class="td-1">Project Name</th>
+                                            <th class="td-2">{{po_obj.name}}</th>
+                                        </tr>
+                                      
+                                        <tr>
+                                            <th class="td-1">Voucher Code </th>
+                                            <th class="td-2">{{vh_obj.code}}</th>
+                                            <th class="td-1">Status</th>
+                                            <th class="td-2"><span class="badge {{vh_obj.voucher_status|upper }}">{{vh_obj.voucher_status}}</span></th>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                          </div>
+                        </div>
+                        
+                      </div>
+
+                        
+                
+                        
+                   <form method="post" action="{% url 'issue_voucher_edit_receipt' vh_obj.pk %}" novalidate>
+                         <div class="row mt-1">
+                            <div class="col-md-6">
+                                
+                            </div>
+                            <div class="col-md-6">
+                                
+                                 <div class="mb-2 button-group" style="float:right;">
+                                    <button type="submit" id="saveChangesBtn" onclick="return confirmSave()" class="btn btn-success" {% if po_obj.po_status.name == 'CLOSED' %}disabled{% endif %}><i class="fa fa-save"></i> Save Changes</button>
+                                <button type="reset" onclick="return confirmReset()" class="btn btn-sm btn-default" ><i class="fa fa-undo"></i> Reset</button>
+                                <a   class="btn btn-sm btn-default" href="{% url 'home' %}" id="cancel-btn"><i class="fa fa-close"></i> Cancel</a>
+                                 </div>
+                            </div>
+                            <div class="col-md-12">
+                                        
+                                        
+                <div class="table-responsive">
+                                         
+                  {% csrf_token %}
+                  <!-- <table class="table table-bordered align-middle mb-0"> -->
+                  <table class="table table-bordered text-center">
+                    <thead>
+                      <tr class="td-3">
+                        
+                        <!-- <th>Project Code</th>
+                        <th>Project Name</th> -->
+                        <th>Project Component ID</th>
+                        <th>Component Type</th>
+                        <th>Bom ID/Service ID/Product ID/<br>Miscellaneous</th>
+                        <th>Total&nbsp;<small>(Qty)</small></th>
+                        <!-- <th>Component Cost</th> -->
+                        
+                        <th>Issue&nbsp;<small>(Qty)</small></th>
+                        <th>To Be Issued</th>
+                        
+
+                        
+                        <th width="7%">Being Issued&nbsp;<small>(Qty)</small></th>
+
+                        <th>Inventory QTY</th>
+
+                        <!-- <th>Customer</th> -->
+                        <th>Location</th>
+
+                        <th>Created Time</th>                        
+                        <th>Created User</th>
+                        <th>Updated Time</th>                        
+                        <th>Updated User</th>
+                      </tr>
+                    </thead>
+                    {% if grouped_items %}
+                    <tbody>                      
+                          
+                            
+                              {% for eachItem in grouped_items %}                                    
+                                    <!-- shashi kanth -->
+                                    <!-- <td>{{ eachItem.project.project.project_id }}</td>
+                                    <td>{{ eachItem.project.project.name }}</td> -->
+                                     <td>{{ eachItem.projectcomponent.code }}</td> 
+                                    <td>{{ eachItem.projectcomponent.component_type }}</td>
+                                    {% if eachItem.projectcomponent.component_type == 'BOM' %}
+                                        <td>                                          
+                                                {{ eachItem.projectcomponent.bom }}                                   
+                                        </td>
+                                    {% elif eachItem.projectcomponent.component_type == 'SERVICE' %}
+                                        <td>
+                                            {{ eachItem.projectcomponent.service }}
+                                        </td>
+                                    {% elif eachItem.projectcomponent.component_type == 'MISCELLANEOUS' %}
+                                        <td>
+                                            {{ eachItem.projectcomponent.miscellaneous_component }}
+                                        </td>
+                                    {% else %}
+                                        <td>                                            
+                                                {{ eachItem.projectcomponent.product }}                                           
+                                        </td>
+                                    {% endif %}
+                                  
+                                    <!-- <td>{{ eachHisItem.bom}}</td> -->
+                                    <td>{{ eachItem.projectcomponent.component_qty}}</td> 
+                                    <!-- <td>{{ eachItem.projectcomponent.component_cost}}</td> -->
+
+                                    <td>{{ 0 }}</td>
+                                    <td>{{ 0 }}</td>                          
+                                    
+
+
+                                    <td>
+                                      <input type="number" 
+                                             name="qty_being_received_{{ eachItem.id }}" 
+                                             value="{{ eachItem.qty_being_received|default:0 }}" 
+                                             min="0" 
+                                             max="{{ eachItem.inventory.quantity|add:'0' }}" 
+                                             class="form-control" {% if eachItem.status == 'CLOSED'%}disabled readonly{% endif %}>
+                                              {% if item_errors and eachItem.id|stringformat:"s" in item_errors %}
+                                              
+                                                {% for item_id, messages in item_errors.items %}
+                                                    <div>
+                                                      
+                                                        <ul>
+                                                            {% for msg in messages %}
+                                                                <li style="color:red">{{ msg }}</li>
+                                                            {% endfor %}
+                                                        </ul>
+                                                    </div>
+                                                {% endfor %}
+                                            {% endif %}
+
+
+                                    </td>
+
+                                    <td class="yet_to_be_received">{{ eachItem.inventory.quantity|add:"0" }}</td>
+                                    
+                                    <!-- <td>{{ eachItem.project.customer.company_name1 }}</td>  -->
+                                    <td> {% if eachItem.inventory.location.city %} {{ eachItem.inventory.location.city }}({{ eachItem.inventory.sub_location.code }}){%else%}{{ eachItem.inventory.sub_location.code }}{% endif %} </td>
+                                    <td>{{ eachItem.created_at | date:"M d,Y H:i"}}</td> 
+                                    <td>{{ eachItem.created_user }}</td>
+                                    <td style="white-space: nowrap;">{{ eachItem.updated_at|date:"M d,Y H:i" }}</td>
+                                    <td>{{ eachItem.updated_user }}</td>
+                                  </tr>
+
+                            {% endfor %}
+                          
+                            
+                       
+                      
+                    </tbody>
+                    {% else %}
+
+                          
+                    <tfoot>
+                      <tr>
+                        <th colspan="2">No Records Found</th>
+                       
+                      </tr>
+                  </tfoot>
+                  {% endif %} 
+                  </table>
+
+          
+
+
+                </div>
+
+                                        
+              </div>
+
+                                
+                               
+            </div>
+         </form>
+                       
+
+                     
+
+
+
+
+
+                    </div>
+                    
+                </div>
+                
+
+                         
+            
+                 
+          {%endif%}
+          {% if post_po_obj == 'No Records' %}
+
+              <div class="mt-2" style="border: 1px dashed #ccc; padding: 20px; text-align: center; color: #888; border-radius: 8px;">
+    <h4> {{message}} </h4>
+    <p>Please try with existing PO number.</p>
+  </div>
+          {% endif %}
+             </div>
+            </div>
+
+               
+            
+
+
+            </div>
+           
+          
+            </div>
+         </div>
+         
+{% endblock %}
+
+
+
+{% block pagecss %}
+<style type="text/css">
+  .sticky-col {
+    position: sticky;
+    left: 0;
+    z-index: 2;
+    background: #fff;
+  }
+
+  .sticky-col + .sticky-col {
+    left: 6px;
+  }
+
+  .table tbody tr.highlight-row {
+    background-color: #fff3cd !important;
+  }
+
+  .border-highlight-row {
+    border: 2px solid #e0e0e0 !important;
+  }
+
+  .border-highlight-row:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .input-error {
+    border: 2px solid red !important;
+    border-radius: 4px;
+    background-color: #ffecec;
+  }
+
+  table th,
+  table td {
+    vertical-align: middle;
+  }
+
+  .accordion-body table td.text-left-override {
+    text-align: left !important;
+  }
+
+  .accordion-body table th,
+  .accordion-body table td {
+    text-align: left !important;
+  }
+
+  .table-bordered.text-center th,
+  .table-bordered.text-center td {
+    text-align: center !important;
+  }
+
+  .table td input {
+    height: 32px;
+    padding: 4px 8px;
+    text-align: left;
+  }
+</style>
+{% endblock %}
+    
+
+{% block pagejs %}
+<script type="text/javascript">
+    
+    $("#id_code").val('{{po_obj.code}}');
+
+
+</script>
+<script>
+  if (window.location.search.includes('po_id=')) {
+    window.history.replaceState({}, document.title, window.location.pathname);
+  }
+
+$('input[type="number"]').on('input', function() {
+    if (parseFloat($(this).val()) < 0) {
+        $(this).val(''); // or set to 0
+    }
+});
+  $(document).ready(function() {
+    const $saveBtn = $('#saveChangesBtn');
+    $saveBtn.prop('disabled', true);
+
+    // When any Received Qty input changes
+    $('input[name^="qty_being_received"]').on('input', function() {
+        let enable = false;
+        let valid = true;
+
+        $('input[name^="qty_being_received"]').each(function() {
+            const $row = $(this).closest('tr');
+            const qty = parseFloat($row.find('.yet_to_be_received').text()) || 0;
+            const received = parseFloat($(this).val()) || 0;
+
+            // Skip validation if nothing left to receive
+            if (qty === 0 || received === 0) {
+                $(this).removeClass('input-error'); // remove any previous error
+                $row.find('.error-msg').empty();
+                return; // skip to next row
+            }
+
+            // Validation: Received cannot exceed yet_to_be_received
+            if (received > qty) {
+                $(this).addClass('input-error');
+                valid = false;
+            } else {
+                $(this).removeClass('input-error');
+            }
+
+            // Enable Save if any field has non-zero valid value
+            if (received > 0) enable = true;
+        });
+
+        // Disable Save if invalid or all zero
+        $saveBtn.prop('disabled', !(enable && valid));
+    });
+});
+</script>
+
+<script>
+document.getElementById("cancel-btn").addEventListener("click", function (event) {
+    event.preventDefault(); // Prevent default link behavior
+
+    if (confirm("Do you want to cancel?")) {
+        // If confirmed, submit the form
+        // const form = this.closest("form");
+        // if (form) {
+        //     form.submit();
+        // }
+      window.location.href = "{% url 'voucher-search-create' %}";
+    } 
+    // else {
+    //     // Otherwise, go to home page
+    //     window.location.href = "{% url 'home' %}";
+    // }
+});
+</script>
+<script>
+  function confirmSave() {
+    return confirm("Are you sure you want to save these changes?");
+  }
+
+  function confirmReset() {
+    return confirm("Are you sure you want to reset the form? All entered data will be lost.");
+  }
+
+ 
+</script>
+
+<script>
+fetch("/project/projects_list")
+  .then(response => response.json())
+  .then(result => {
+    const select = document.getElementById("id_project");
+
+    select.innerHTML = '<option value="">Select Project</option>';
+
+    result.data.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.code;   // IMPORTANT: set project CODE
+      option.textContent = `${item.code} - ${item.name}`;
+      select.appendChild(option);
+    });
+  })
+  .catch(error => console.error(error));
+
+
+// 🔹 Auto-fill code field and submit form
+document.addEventListener("DOMContentLoaded", function () {
+  const projectSelect = document.getElementById("id_project");
+  const codeInput = document.getElementById("id_code");
+
+  projectSelect.addEventListener("change", function () {
+    if (this.value) {
+      codeInput.value = this.value; // set project code
+      codeInput.form.submit();      // submit the same form
+    }
+  });
+});
+</script>
+
+
+
+{% endblock %}

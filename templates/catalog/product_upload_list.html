@@ -1,0 +1,72 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% block content %}
+
+<div class="row mb-2 mt-2">
+    <div class="col-12 col-md-12">
+        <div class="button-group" style="float:right;">
+            <a href="{% url 'product-upload-create' %}" class="btn btn-sm app-btn-primary">
+                <i class="fa fa-plus-circle fa-lg"></i> Add {{ model_name }}
+            </a>
+        </div>
+    </div>
+</div>
+
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+        <div class="app-card-body p-4">
+
+            <div class="table-responsive">
+                <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
+                    <thead>
+                        <tr>
+                            <th>Upload file</th>
+                            <th>Download file</th>
+                            <th>Total Records</th>
+                            <th>Failed Records</th>
+                            <th>Success Records</th>
+                            <th>Last Modified</th>
+                            <th>Modified User</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if page_obj.object_list %}
+                            {% for eachRow in page_obj.object_list %}
+                                <tr>
+                                    <td class="cell">
+                                        <span class="truncate">
+                                            <a href="/media/{{ eachRow.file }}">{{ eachRow.file }}</a>
+                                        </span>
+                                    </td>
+                                    <td class="cell">
+                                        <span class="truncate">
+                                            <a href="/media/{{ eachRow.output_file }}">{{ eachRow.output_file }}</a>
+                                        </span>
+                                    </td>
+                                    <td class="cell"><span class="truncate">{{ eachRow.total_records }}</span></td>
+                                    <td class="cell"><span class="truncate">{{ eachRow.failed_records }}</span></td>
+                                    <td class="cell"><span class="truncate">{{ eachRow.success_records }}</span></td>
+                                    <td class="cell">{{ eachRow.last_modified_at }}</td>
+                                    <td class="cell"><span class="truncate">{{ eachRow.updated_user.username }}</span></td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr>
+                                <td colspan="6"><h6 class="text-center">No Records found</h6></td>
+                            </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% include 'core/pagination.html' %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block pagejs %}
+{% endblock %}

@@ -1,0 +1,486 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+{% block previewcontent %}
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    
+
+    <style>
+        .active-po {
+            background-color: #00B2CC !important;
+          
+        }
+
+        /* Center only the message box vertically and horizontally */
+        #select-po-message {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 70vh; /* vertically centered-ish */
+            font-size: 1.3rem;
+            color: #555;
+            font-weight: 500;
+            text-align: center;
+            padding: 20px;
+        }
+
+        /* Cards styles */
+        .card {
+            box-shadow: 0 4px 10px rgb(0 0 0 / 0.1);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 30px;
+            background: white;
+            /* Remove centering for cards */
+            max-width: 100%;
+            /* You can add a max-width if your layout requires it */
+        }
+
+        #payment-table thead {
+            background-color: #007080;
+            color: white;
+        }
+        #payment-table tbody tr:hover {
+            background-color: #e9f5f5;
+        }
+        .btn-upload {
+            background-color: #007080;
+            border-color: #007080;
+            color: white;
+            transition: background-color 0.3s ease;
+        }
+        .btn-upload:hover {
+            background-color: #005f5f;
+            border-color: #005f5f;
+        }
+
+        /* Initially hide file upload and payment sections */
+        #file-upload, #payment-details {
+            display: none;
+        }
+    </style>
+</head>
+<!-- Centered initial message --> 
+ <div id="select-po-message"> Please select a PO from the sidebar to view details and upload invoices. </div>
+
+<!-- Payment Details Section -->
+<div id="payment-details" class="card">
+    <h3 class="mb-4">Invoice Details</h3>
+    <div class="table-responsive">
+        <table id="payment-table" class="table table-striped table-hover">
+            <thead>
+                <tr>
+                    <th>Installment Name</th>
+                    <th>Date</th>
+                    <th>Event</th>
+                    <th>Amount</th>
+                    <th>Percentage</th>
+                    <th>Mode</th>
+                    <th>Transaction/Cheque</th>
+                    <th>Remarks</th>
+                    <th>Tracking Files</th>
+                    <th>Invoice Files</th>
+                    <th>Upload</th>
+                    <th>Logs</th>
+                    
+
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td colspan="9" class="text-center text-muted">Select a PO from the sidebar to view payment details.</td></tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+<!-- Modal for displaying complete payment data -->
+<div class="modal fade" id="allPaymentModal" tabindex="-1" role="dialog" aria-labelledby="allPaymentModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title"><b>All Payment Details</b></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="table-responsive">
+              <table class="table table-bordered" id="all-payment-table">
+                  <thead>
+                      <tr>
+                          <th>Installment Name</th>
+                          <th>Date</th>
+                          <th>Event</th>
+                          <th>Amount</th>
+                          <th>Percentage</th>
+                          <th>Mode</th>
+                          <th>Transaction/Cheque</th>
+                          <th>Remarks</th>
+                          <th>Tracking Files</th>
+                          
+                          <th>Created date &time</th>
+                      </tr>
+                  </thead>
+                  <tbody id="all-payment-tbody">
+                      <!-- Full data will be injected here -->
+                  </tbody>
+              </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+
+{% endblock %}
+
+{% block scripts %}
+
+
+<script>
+    function initializeDataTable() {
+        const table = $('#payment-table');
+        if ($.fn.dataTable.isDataTable('#payment-table')) {
+            table.DataTable().destroy();
+        }
+        table.DataTable();
+    }
+    function formatDate(dateStr) {
+    if (!dateStr) return '';
+    const date = new Date(dateStr);
+    if (isNaN(date)) return dateStr; // fallback if it's not a valid date
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}-${month}-${year}`;
+}
+function formatDateTime(dateStr) {
+    if (!dateStr) return '';
+
+    const date = new Date(dateStr);
+    if (isNaN(date)) return dateStr; // fallback if invalid
+
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+
+    let hours = date.getHours();
+    const minutes = String(date.getMinutes()).padStart(2, '0');
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12 || 12; // convert to 12-hour format
+    const formattedTime = `${String(hours).padStart(2, '0')}:${minutes} ${ampm}`;
+
+    return `${day}-${month}-${year} ${formattedTime}`;
+}
+
+
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.po-sidebar-item').forEach(function (item) {
+            item.addEventListener('click', function () {
+                document.querySelectorAll('.po-sidebar-item').forEach(i => i.classList.remove('active-po'));
+                this.classList.add('active-po');
+
+                const poid = this.getAttribute('data-poid');
+                const procurementId = this.getAttribute('data-procurement-id');
+                
+
+                // Show the hidden sections now that a PO is selected
+                document.getElementById('select-po-message').style.display = 'none';
+         
+                document.getElementById('payment-details').style.display = 'block';
+
+                fetchPaymentDetails(poid, procurementId);
+            });
+        });
+    });
+
+// Keep track of selected files in an array (because input.files is readonly)
+function fetchPaymentDetails(poid, procurementId) {
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    const tbody = document.querySelector("#payment-table tbody");
+
+    tbody.innerHTML = `<tr><td colspan="9">Loading payment data...</td></tr>`;
+
+    fetch("", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            "X-CSRFToken": csrfToken
+        },
+        body: `poid=${encodeURIComponent(poid)}&procurement_id=${encodeURIComponent(procurementId)}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        const table = $('#payment-table');
+        if ($.fn.dataTable.isDataTable('#payment-table')) {
+            table.DataTable().destroy();
+        }
+        
+        console.log("Fetched payment data:", data); 
+        if (data.complete_data && data.complete_data.length > 0) {
+            debugger
+            tbody.innerHTML = "";
+            
+            data.complete_data.forEach(item => {
+            const files = Array.isArray(item.invoice_files)
+    ? item.invoice_files.map(f => {
+        if (!f) return "";
+
+        // Clean and trim URL
+        const cleanedUrl = f.replace(/\/media\/media\//, "/media/").trim();
+
+        // Get and trim file name
+        const fileName = cleanedUrl.split("/").pop().trim();
+
+        // Truncate in the middle: keep first 10 chars and last 7 chars
+        const maxStart = 5;
+        const maxEnd = 7;
+        const truncated =
+            fileName.length > maxStart + maxEnd
+                ? fileName.slice(0, maxStart) + "..." + fileName.slice(-maxEnd)
+                : fileName;
+
+        return `
+            <a href="${cleanedUrl}" target="_blank" 
+               title="${fileName}" 
+               style="text-decoration:none;color:#007bff;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                ${truncated} <i class="fas fa-eye" style="margin-left:6px;"></i>
+            </a>`;
+    }).join("")
+    : "";
+    
+
+const payment_files = Array.isArray(item.tracking_files)
+    ? item.tracking_files.map(f => {
+        if (!f) return "";
+
+        // Clean and trim URL
+        const cleanedUrl = f.replace(/\/media\/media\//, "/media/").trim();
+
+        // Get and trim file name
+        const fileName = cleanedUrl.split("/").pop().trim();
+
+        // Truncate in the middle: keep first 5 chars and last 7 chars
+        const maxStart = 5;
+        const maxEnd = 7;
+        const truncated =
+            fileName.length > maxStart + maxEnd
+                ? fileName.slice(0, maxStart) + "..." + fileName.slice(-maxEnd)
+                : fileName;
+
+        return `
+            <a href="${cleanedUrl}" target="_blank"
+               title="${fileName}"
+               style="text-decoration:none;color:#007bff;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                ${truncated} <i class="fas fa-eye" style="margin-left:6px;"></i>
+            </a>`;
+    }).join("")
+    : "";
+
+    // Now use `files` and `payment_files` in your HTML row
+
+
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${item.installment_name || ''}</td>
+                        <td>${formatDate(item.installment_date)}</td>
+                        <td>${item.payment_event || ''}</td>
+                        <td>${item.payment_amount || ''}</td>
+                        <td>${item.payment_percentage || ''}</td>
+                        <td>${item.payment_mode || ''}</td>
+                        <td>
+                            ${item.payment_mode === "cheque" ? `
+                                <div><strong>Cheque No:</strong> ${item.cheque_no || '-'}</div>
+                                <div><strong>Cheque Date:</strong> ${item.cheque_date || '-'}</div>
+                                <div><strong>Valid Till:</strong> ${item.cheque_validity || '-'}</div>
+                            ` : (item.transaction_id || '')}
+                        </td>
+
+                        <td>${item.payment_remarks || ''}</td>
+                         <td style="width: 100px;">
+                            <div style="max-height: 80px; overflow-y: auto;align-items: center;">
+                                ${payment_files.split(', ').join('<br>')}
+                        </div>
+                        <td style="width: 100px;">
+                            <div style="max-height: 80px; overflow-y: auto;align-items: center;">
+                                ${files.split(', ').join('<br>')}
+                        </div>
+                        </td>
+                       
+                        </td>
+
+
+
+                        <td>
+                            <input type="file" class="form-control form-control-sm installment-file" data-tracking-id="${item.tracking_id}" data-procurement-id="${ item.procurement_id }" multiple />
+                            <button class="btn btn-sm btn-upload mt-1" onclick="uploadInstallmentFile(this)">Upload</button>
+                        </td>
+                        
+                        <td>
+                            <button class="btn btn-outline-primary btn-sm"
+                                    data-logs='${JSON.stringify(item.logs)}'
+                                    onclick="showAllPaymentModal(this)">
+                                👁️
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+    $('#payment-table').DataTable()
+                
+            } else {
+                tbody.innerHTML = `<tr><td colspan="11">No payment data found.</td></tr>`;
+            }
+        })
+        .catch(err => {
+            console.error("Error fetching payment data:", err);
+            tbody.innerHTML = `<tr><td colspan="11">Error loading payment data.</td></tr>`;
+        });
+}
+function showAllPaymentModal(buttonElement) {
+    const logsJson = buttonElement.getAttribute("data-logs");
+    let completeData = [];
+
+    try {
+        completeData = JSON.parse(logsJson);
+    } catch (e) {
+        console.error("Invalid logs JSON", e);
+        return;
+    }
+
+    const modalBody = document.querySelector("#all-payment-tbody");
+    modalBody.innerHTML = "";
+
+    completeData.forEach(item => {
+                const files = Array.isArray(item.invoice_files)
+                ? item.invoice_files.map(f => `<a href="${f}" target="_blank">File</a>`).join("<br>")
+                : "";
+
+            const payment_files = Array.isArray(item.tracking_files)
+                ? item.tracking_files.map(f => `<a href="${f}" target="_blank">File</a>`).join("<br>")
+                : "";
+
+        modalBody.innerHTML += `
+            <tr>
+                <td>${item.installment_name || ''}</td>
+                <td>${formatDate(item.installment_date || '')}</td>
+                <td>${item.payment_event || ''}</td>
+                <td>${item.payment_amount || ''}</td>
+                <td>${item.payment_percentage || ''}</td>
+                <td>${item.payment_mode || ''}</td>
+                <td>
+                    ${item.payment_mode === "cheque" ? `
+                        <div><strong>Cheque No:</strong> ${item.cheque_no || '-'}</div>
+                        <div><strong>Cheque Date:</strong> ${item.cheque_date || '-'}</div>
+                        <div><strong>Valid Till:</strong> ${item.cheque_validity || '-'}</div>
+                    ` : (item.transaction_id || '')}
+                </td>
+
+                <td>${item.payment_remarks || ''}</td>
+                <td style="width: 100px;">
+                            <div style="max-height: 80px; overflow-y: auto;align-items: center;">
+                                ${payment_files.split(', ').join('<br>')}
+                        </div>
+                
+                <td>${formatDateTime(item.uploaded_date || '')}</td>
+            </tr>
+        `;
+    });
+
+    const modal = new bootstrap.Modal(document.getElementById('allPaymentModal'));
+    modal.show();
+}
+
+function uploadInstallmentFile(button) {
+    const fileInput = button.previousElementSibling;
+    const trackingId = fileInput.dataset.trackingId;
+    const files = fileInput.files;
+    const procurementId = fileInput.dataset.procurementId;
+    console.log(procurementId, 'procurementId');
+
+    if (!trackingId || files.length === 0) {
+        alert("Please select a file to upload.");
+        return;
+    }
+
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value ||
+                      document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+
+    const formData = new FormData();
+    formData.append('tracking_id', trackingId);
+    formData.append('procurement_id', procurementId);
+    formData.append('status', 'installment_upload');
+
+    for (const file of files) {
+        formData.append('files', file);
+    }
+
+    fetch("/invoice_page/", {
+        method: "POST",
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error("Upload failed");
+        return response.json();
+    })
+    .then(data => {
+        alert("Installment file uploaded successfully.");
+        fileInput.value = ""; // Clear input after upload
+
+        // Update the files column for this tracking ID row
+        if (data.files && data.tracking_id) {
+            const tableRows = document.querySelectorAll('#payment-table tbody tr');
+            tableRows.forEach(row => {
+                const uploadInput = row.querySelector('input[type="file"].installment-file');
+                if (uploadInput && uploadInput.dataset.trackingId == data.tracking_id) {
+                    const filesCell = row.children[9]; // 9th cell (0-based)
+
+                    // Format files like your other sections
+                    const formattedFiles = data.files.map(f => {
+                        if (!f) return "";
+
+                        // Clean and trim URL
+                        const cleanedUrl = f.replace(/\/media\/media\//, "/media/").trim();
+
+                        // Extract file name
+                        const fileName = cleanedUrl.split("/").pop().trim();
+
+                        // Truncate in the middle
+                        const maxStart = 5;
+                        const maxEnd = 7;
+                        const truncated =
+                            fileName.length > maxStart + maxEnd
+                                ? fileName.slice(0, maxStart) + "..." + fileName.slice(-maxEnd)
+                                : fileName;
+
+                        return `
+                            <a href="${cleanedUrl}" target="_blank"
+                               title="${fileName}"
+                               style="text-decoration:none;color:#007bff;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
+                                ${truncated} <i class="fas fa-eye" style="margin-left:6px;"></i>
+                            </a>`;
+                    }).join("");
+
+                    // Update the cell content
+                    filesCell.innerHTML = `
+                        <div style="max-height: 80px; overflow-y: auto; align-items: center; width: 100%;">
+                            ${formattedFiles}
+                        </div>
+                    `;
+                }
+            });
+        }
+    })
+    .catch(error => {
+        console.error("Error uploading installment file:", error);
+        alert("Something went wrong while uploading installment file.");
+    });
+}
+
+
+
+</script>
+{% endblock %}

@@ -1,0 +1,40 @@
+
+{% extends 'core/base.html' %}
+
+{% block title %}Home - My Inventory App{% endblock %}
+
+{% block content %}
+<div class="app-card alert alert-dismissible shadow-sm mb-4 mt-4 border-left-decoration" role="alert">
+    <div class="inner">
+        <div class="app-card-body p-1 p-lg-2 mt-6">
+            <h3 class="mb-3 text-danger"><i class="fa fa-warning"></i> Internal Server Error</h3>
+            <div class="row gx-5 gy-3">
+                <div class="col-12 col-lg-9">
+                    
+                    <div><div class="container text-center mt-3">
+    
+    <p>{{ message }}</p>
+    <a href="{% url 'home' %}" class="btn btn-default">Go to Home</a>
+    {% if  request.GET.next %}<a href="{% if request.GET.next %}{{ request.GET.next }}{%endif%}" class="btn btn-default">Back to Previous</a>{%endif%}
+  </div>
+</div> 
+                </div><!--//col-->
+                <div class="col-12 col-lg-3">
+                    
+                </div><!--//col-->
+            </div><!--//row-->
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        
+
+
+        </div><!--//app-card-body-->
+        
+    </div><!--//inner-->
+</div><!--//app-card-->
+    
+{% endblock %}
+
+
+
+
+

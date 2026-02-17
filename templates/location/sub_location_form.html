@@ -1,0 +1,155 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+
+<form method="post" action="{{ form_action_url }}" novalidate>
+    {% csrf_token %}
+
+    <div class="row mb-2 mt-2">
+        <div class="col-12 text-end">
+            <button type="button" id="openSaveModal" class="btn btn-sm app-btn-primary">
+                <i class="fa fa-save fa-lg"></i> Save
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-md-12">
+            <div class="app-card app-card-settings shadow-md">
+                <div class="app-card-body p-4">
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.location }}
+                                <label for="floatingLocation" class="form-label">
+                                    {{ form.location.label_tag }}
+                                </label>
+                                {% if form.location.errors %}
+                                <ul class="errorlist list-unstyled text-danger">
+                                    {% for error in form.location.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.name }}
+                                <label for="floatingName" class="form-label">
+                                    {{ form.name.label_tag }}
+                                </label>
+                                {% if form.name.errors %}
+                                <ul class="errorlist list-unstyled text-danger">
+                                    {% for error in form.name.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.code }}
+                                <label for="floatingCode" class="form-label">
+                                    {{ form.code.label_tag }}
+                                </label>
+                                {% if form.code.errors %}
+                                <ul class="errorlist list-unstyled text-danger">
+                                    {% for error in form.code.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.status }}
+                                <label for="floatingStatus" class="form-label">
+                                    {{ form.status.label_tag }}
+                                </label>
+                                {% if form.status.errors %}
+                                <ul class="errorlist list-unstyled text-danger">
+                                    {% for error in form.status.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.search_keywords }}
+                                <label for="floatingMetaKeyword" class="form-label">
+                                    {{ form.search_keywords.label_tag }}
+                                </label>
+                                {% if form.search_keywords.errors %}
+                                <ul class="errorlist list-unstyled text-danger">
+                                    {% for error in form.search_keywords.errors %}
+                                        <li>{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+{% endblock %}
+
+{% block pagecss %}
+
+<link href="{% static 'default/css/select2.min.css' %}" rel="stylesheet" />
+
+<style>
+  .select2-container .select2-selection--single {
+    height: 58px;
+    /* padding: 5px 10px; */
+    padding-top: 1.625rem;
+    padding-bottom: .625rem;
+  }
+  .select2-selection__rendered {
+    line-height: 26px !important;
+  }
+  .select2-container .select2-selection--single .select2-selection__rendered {
+    padding-left: 12px !important;
+  }
+  .select2-selection__arrow {
+    height: 36px !important;
+  }
+</style>
+
+
+{% endblock %}
+
+{% block pagejs %}
+
+<script>
+    $(document).ready(function() {
+        // Apply Select2 to the location field
+        $('#id_location').select2({
+            placeholder: "Select a location",
+            allowClear: false,
+            width: '100%'
+        });
+    });
+</script>
+
+<script src="{% static 'default/js/select2.min.js' %}"></script>
+
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% block content %}
+
+<div class="row mb-2 mt-2">
+    <div class="col-12 col-md-12 text-end">
+        <!-- Edit Button with SweetAlert2 -->
+        <button type="button" class="btn btn-sm app-btn-primary edit-link"
+                data-url="{% url 'product-attribute-update' product_obj.pk %}">
+            <i class="fa fa-edit fa-lg"></i> Edit
+        </button>
+    </div>
+</div>
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+        <!-- Vendor Menu or Navigation -->
+        {% include 'product/product_menu.html' %}
+        <div class="app-card-body p-4">
+
+            <div class="row mb-4">
+                <h6 class="mb-3">Product Attribute Information</h6>
+
+                <!-- Display Product Attribute Information -->
+                <div class="col-md-4"><strong>Attribute Name :</strong> {{ object.attribute.name }}</div>
+                <div class="col-md-4"><strong>Attribute Type :</strong> {{ object.attribute.attribute_type }}</div>
+                <div class="col-md-4"><strong>Value :</strong> {{ object.value }}</div>
+                <div class="col-md-4"><strong>Status :</strong> <span class="{{ object.status_name }}">{{ object.status_name }}</span></div>
+                <div class="col-md-4"><strong>Last Updated :</strong> {{ object.last_modified_at }}</div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block pagecss %}
+<style type="text/css">
+   label.required::after { display: none !important; }
+   label, strong { font-weight: bold !important; }
+</style>
+{% endblock %}
+
+{% block pagejs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Edit Button with SweetAlert2 Popup
+    document.querySelectorAll('.edit-link').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const url = btn.getAttribute('data-url');
+            
+            // Display SweetAlert2 popup
+            Swal.fire({
+                text: 'Do you want to edit this attribute?',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Edit',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                width: 350
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirect to edit page if confirmed
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

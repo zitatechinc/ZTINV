@@ -1,0 +1,88 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% block content %}
+
+<div class="row mb-2 mt-2">
+    <div class="col-12 col-md-12 text-end">
+        <div class="button-group">
+            <a href="{% url 'vendor-attachment-create' vendor_obj.pk %}" class="btn btn-sm app-btn-primary">
+                <i class="fa fa-plus"></i> Add {{ model_name }}
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+        {% include 'vendor/vendor_menu.html' %}
+        <div class="app-card-body p-4">
+
+            {% if not form_status %}
+            <div class="row mb-2">
+                <div class="col-md-12">
+                    <h6>Attachment Details</h6>
+                </div>
+            </div>
+            <div class="table-responsive mt-2">
+                <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
+                    <thead>
+                        <tr>
+                            <th>Attachment Type</th>
+                            <th>File</th>
+                            <th>Notes</th>
+                            <th>Vendor</th>
+                            <th>Last Modified</th>
+                            <th>Modified User</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if object_list %}
+                        {% for eachRow in object_list %}
+                        <tr>
+                            <td class="cell">
+                                <a href="{% url 'vendor-attachment-view' vendor_obj.pk eachRow.pk %}" class="text-decoration-none">
+                                    {{ eachRow.attachment_type }}
+                                </a>
+                            </td>
+                            <td class="cell"><a href="/media/{{ eachRow.file }}" target="_blank">{{ eachRow.file }}</a></td>
+                            <td class="cell">{{ eachRow.notes }}</td>
+                            <td class="cell">{{ eachRow.vendor.company_name1 }}</td>
+                            <td class="cell">{{ eachRow.last_modified_at }}</td>
+                            <td class="cell">{{ eachRow.updated_user.username }}</td>
+                            <td class="cell">
+                                <!-- View button as icon -->
+                                <a href="{% url 'vendor-attachment-view' vendor_obj.pk eachRow.pk %}">
+                                    <span class="badge app-btn-primary"><i class="fa fa-eye"></i> View</span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        {% else %}
+                        <tr>
+                            <td colspan="9" class="text-center">
+                                <h6>No Records found</h6>
+                            </td>
+                        </tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+
+            {% if form_status %}
+            <div class="row">
+                <div class="col-md-12">
+                    {% include 'vendor/vendor_attachment_form.html' %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block pagejs %}
+{% endblock %}

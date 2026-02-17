@@ -1,0 +1,194 @@
+<style type="text/css">
+  body{
+    font-size: 11px !important;
+  }
+  .btn-default {
+    border: 1px #ccc solid !important;
+    background: #fff !important;
+}
+  strong{font-size: 11px !important; font-weight: normal !important;color:  #000 solid !important;}
+ label.required::after {
+        content: ' *'; /* Adds an asterisk after the label text */
+        color: red;    /* Makes the asterisk red */
+        font-weight: normal !important; /* Optional: Make the asterisk bold */
+    }
+
+    .app-card-settings {
+     font-size: 11px !important;
+}
+
+form label,label, .form-label, table td label{font-weight: bold !important;font-size: 11px !important;}
+ .form-select, .form-control, .select2, .select-18-selection{color: #555 !important; font-size: 11px !important; font-weight: normal !important;}
+ .form-control{border-color:  #d5d5d5 !important;}
+
+.btn {
+     
+    padding: .5rem 1rem;
+    font-size: 0.8rem !important;
+    border: none;
+}
+
+.btn, .page-link, .nav-link, .nav-link, .submenu-link{
+  font-weight: normal !important; 
+   font-size: 13px !important;
+
+}
+{% if app %}
+  {% if app.theme %}
+        body {
+      font-family{ {{app.theme.font_family}} !important;
+
+
+       }
+
+  }
+
+      .app{
+        background: {{app.theme.bg_color}} !important;
+      }
+      .app-header {
+        background: {{app.theme.menu_bg_color}} !important;
+        color: {{app.theme.font_color}} !important;
+      }
+
+      .app-header h5{color:{{app.theme.heading_font_color}} !important; font-size: 14px !important}
+       .app-page-title, h1{color:{{app.theme.page_title_font_color}} !important;font-weight: normal !important;}
+
+      .app-sidepanel .sidepanel-inner{ 
+        background: {{app.theme.sidebar_bg_color}} !important;
+        color: {{app.theme.sidebar_font_color }}!important;
+     }
+      .app-nav .nav-link, .app-nav .nav-item,.app-nav .nav-link.active, .app-nav .submenu-link{
+        background: {{app.theme.sidebar_bg_color}} !important;
+        color: {{app.theme.sidebar_font_color}} !important;
+      }
+      .app-btn-primary, .btn-primary{background: {{app.theme.page_title_font_color}} !important; background-color: {{app.theme.page_title_font_color}} !important;}
+
+      .app-nav .nav-link:hover, .app-nav .nav-item:hover, .app-nav .nav-link.active:hover, .app-nav .submenu-link:hover{
+        color: {{app.theme.page_title_font_color}} !important;
+        
+      }
+
+      .app-footer{
+        background: {{app.theme.footer_bg_color}} !important;
+        color: {{app.theme.footer_font_color}} !important;
+      }
+
+     .nav-link.active{color:{{app.theme.page_title_font_color}} !important;}
+     .app-pagination .pagination .page-item.active .page-link{
+         background: {{app.theme.page_title_font_color}} !important;
+         background-color: {{app.theme.page_title_font_color}} !important;
+
+
+     }
+
+     @media (min-width: 1200px) {
+        .app-wrapper {
+            margin-left: 220px;
+        }
+    }
+
+      
+    thead, tr, th { 
+    background: #f5f6fe  !important;}
+
+     .app-sidepanel .sidepanel-inner{
+        width: 220px !important
+     }
+     th a {
+    color: #555 !important;
+    text-decoration: none;
+    
+}
+
+
+.text-error {
+  color: rgb(210 109 105) !important;
+  
+}
+
+.table tr .Active {
+  color: #5cb377;
+}
+.table tr .Draft {
+  color: #ffc107;
+}
+.table tr .Inactive {
+  color:#dc3545;
+}
+
+h1, .h1, h2, .h2, h3, .h3, h4, .h4, h5, .h5, h6, .h6
+ {
+    color: #555 !important;
+    font-size: 14px !important;
+}
+
+  {%endif%}
+{%endif%}
+.app-nav-tabs {
+    background: #fafafa !important;
+    padding: 8px !important;
+}
+.btn-default{
+  border: 1px #ccc solid !important;
+}
+
+.errorlist{
+  list-style: none !important;
+  margin: 0px !important;
+  padding: 0px !important;
+}
+
+.app-nav-tabs .nav-link.{{ request.resolver_match.url_name }} {
+    color: {{app.theme.page_title_font_color}} !important;
+    
+    border-bottom: 1px solid  {{app.theme.page_title_font_color}} !important;
+}
+
+.app-nav-tabs{
+  background-color: #e6e6e6 !important;
+  padding:0px !important;
+  
+  
+}
+.app-nav-tabs .nav-link{color: #333 !important;font-weight: bold;}
+.app-nav-tabs .nav-link:hover{background:  {{app.theme.page_title_font_color}} !important; color: #fff !important;}
+table{
+    font-size: 11px !important;
+}
+
+ thead, tr, th.td-2{ 
+    background: #fff  !important;
+     font-weight: normal !important;
+
+
+}
+thead, tr, th.td-1{
+    width: 12% !important;
+    font-weight: normal !important;
+    
+}
+
+.OPEN{
+    color:  #5cb377 !important;
+    
+   
+    font-weight:  bold;
+
+}
+.CLOSED{
+    color:  #d26d69 !important;
+    font-weight:  bold;
+    
+}
+
+.PARTIAL{
+    color:  #ffc107 !important;
+    font-weight:  bold;
+  
+}
+.sz{
+   font-weight:  bold;
+}
+
+</style>

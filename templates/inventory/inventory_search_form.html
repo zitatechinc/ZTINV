@@ -1,0 +1,346 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+   <div class="row">
+      <div class="col-12 col-md-12">
+         <div class="app-card app-card-settings shadow-md" >
+          <div class="app-card-body p-4">
+            <form method="post" action="{{form_action_url}}" class="mb-2" novalidate>
+                    {% csrf_token %}
+                    <div class="row">
+                
+                   <div class="col-auto" style="flex:1">
+                       <div class="form-floating ">
+                      {{ form.search_query }}
+                       <label for="floatingCode" class="form-label" >{{ form.search_query.label_tag }}</label>
+                      {% if form.search_query.errors %}
+                      <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                          {% for error in form.search_query.errors %}
+                              <li class="text-danger">{{ error }}</li>
+                          {% endfor %}
+                      </ul>
+                      {%endif%}
+                   </div>
+                  </div>
+                  <div class="col-auto mt-2">
+                    {{ form.group_by }}
+                  </div>
+                  <div class="col-auto mt-2 ">
+                    <button class="btn btn-sm app-btn-primary" type="submit"><i class="fa fa-search"></i> Search</button>
+                    <button id="reset-btn" class="btn btn-sm btn-default ms-2" type="button">Reset</button>
+                  </div>
+               
+            </div>
+          </form>
+
+           <div class="col-md-12">
+   
+    {% if results_grouped %}
+      {% for group, items in results_grouped.items %}
+        <div class="app-card-body p-2" style="background-color: #ffffff; font-size: 1rem">
+          <table class="table table-bordered mt-1">
+            <tr>
+                {% if group_by == 'location' %}
+                <th class="td-1">Location Code</th>
+                <td class="td-2">{{ group.0 }}</td>
+                <th class="td-1">Location Name</th>
+                <td class="td-2">{{ group.1 }}</td>                
+              {% else %}
+                <th class="td-1">Product</th>
+                <td class="td-2">{{ group.0 }}</td>
+                <th class="td-1">Product Name</th>
+                <td class="td-2">{{ group.1 }}</td>
+              {% endif %}
+              <th class="td-1">QTY</th>
+              <td class="td-2">{{ group.2 }}</td>
+              <th class="td-1">Serial Number</th>
+              <td class="td-2">
+                {% if group.3 == 1 %}
+                  {# render as clickable link that opens serial numbers modal #}
+
+                  
+            <a href="#" class="sn-link"
+              data-product-code="{{ group.0 }}"
+              data-product-name="{{ group.1 }}"
+              data-product-id="{% if items.0.product %}{{ items.0.product.id }}{% endif %}"
+              data-location-id="{% if items.0.location %}{{ items.0.location.id }}{% endif %}"
+              data-sublocation-id="{% if items.0.sub_location %}{{ items.0.sub_location.id }}{% endif %}">Yes</a>
+                {% elif group.3 == 0 %}
+                  No
+                {% else %}
+                  {{ group.3 }}
+                {% endif %}
+              </td>
+            </tr>
+          </table>
+          <div class="table-responsive" style="max-height:420px; overflow:auto;">
+            <table id="app_table_data" class="table table-bordered">
+              <thead>
+                <tr class="td-3">
+                  {% if group_by == 'product' %}
+                    <th>Location Code</th>
+                    <th>Location Name</th>
+                    <th>SubLocation Code</th>
+                    <th>SubLocation Name</th>
+                    <!-- <th>UOM</th> -->
+                     <th>Type</th>
+                    <th>Quantity</th>                
+
+                    <!-- <th>Type</th>
+                    <th>Quantity</th> -->
+                    <th>Action</th>
+                  {% else %}
+                    <th>Product Code</th>
+                    <th>Product Name</th>
+                    <th>SubLocation Code</th>
+                    <th>SubLocation Name</th>
+                    <!-- <th>UOM</th> -->
+                    <th>Type</th>
+                    <th>Quantity</th>
+                    <!-- <th>Type</th>
+                    <th>Quantity</th> -->
+                    
+                    <th>Action</th>
+                  {% endif %}
+                </tr>
+              </thead>
+              <tbody>
+                {% for inv in items %}
+                  <tr>
+                    {% if group_by == 'product' %}
+                      <td>{% if inv.location %}{{ inv.location.code }}{% else %}-{% endif %}</td>
+                      <td>{% if inv.location %}{{ inv.location.name }}{% else %}-{% endif %}</td>
+                      <td>{% if inv.sub_location %}{{ inv.sub_location.code }}{% else %}-{% endif %}</td>
+                      <td>{% if inv.sub_location %}{{ inv.sub_location.name }}{% else %}-{% endif %}</td>
+                      <!-- <td>{{ inv.uom }}</td> -->
+                      <!-- <td>
+                        <a href="#" class="gm-qty-link" data-product-id="{{ inv.product.id }}" data-location-id="{% if inv.location %}{{ inv.location.id }}{% else %}{% endif %}" data-sublocation-id="{% if inv.sub_location %}{{ inv.sub_location.id }}{% else %}{% endif %}">
+                          {{ inv.quantity|floatformat:0 }}
+                        </a>
+                      </td> -->
+                      <td>Quality Management</td>
+                      <td>{{ inv.quantity|floatformat:0 }}</td>
+                      <!-- <td>Issue Voucher</td>
+                      <td>{{ inv.issued_qty|floatformat:0 }}</td> -->
+                      <td>
+                          <!-- Existing quantity link -->
+                          <a href="#" class="gm-qty-link"
+                            data-product-id="{{ inv.product.id }}"
+                            data-location-id="{% if inv.location %}{{ inv.location.id }}{% endif %}"
+                            data-sublocation-id="{% if inv.sub_location %}{{ inv.sub_location.id }}{% endif %}">
+                            <!-- {{ inv.quantity|floatformat:0 }} -->
+                          </a>
+
+                          <!-- Button triggers the same click as the link -->
+                          <button type="button" class="btn btn-primary btn-sm ms-2 px-2 py-0"
+                                  style="color: white !important;"
+                                  onclick="this.previousElementSibling.click()">                              
+                              <span class="badge app-btn-primary"><i class="fa fa-eye"></i></span>
+                                        
+                          </button>
+                      </td>
+
+                    {% else %}
+                      <td>{% if inv.product %}{{ inv.product.code }}{% else %}-{% endif %}</td>
+                      <td>{% if inv.product %}{{ inv.product.name }}{% else %}-{% endif %}</td>
+                      <td>{% if inv.sub_location %}{{ inv.sub_location.code }}{% else %}-{% endif %}</td>
+                      <td>{% if inv.sub_location %}{{ inv.sub_location.name }}{% else %}-{% endif %}</td>
+                      <!-- <td>{{ inv.uom }}</td> -->
+                      <!-- <td>
+                        <a href="#" class="gm-qty-link" data-product-id="{{ inv.product.id }}" data-location-id="{% if inv.location %}{{ inv.location.id }}{% else %}{% endif %}" data-sublocation-id="{% if inv.sub_location %}{{ inv.sub_location.id }}{% else %}{% endif %}">
+                          {{ inv.quantity|floatformat:0 }}
+                        </a>
+                      </td> -->
+                      <td>
+                        <span>{{ inv.quantity|floatformat:0 }}</span>
+                      </td>
+                      <td>Quality Management</td>
+                      <td>
+                          <!-- Existing quantity link -->
+                          <a href="#" class="gm-qty-link"
+                            data-product-id="{{ inv.product.id }}"
+                            data-location-id="{% if inv.location %}{{ inv.location.id }}{% endif %}"
+                            data-sublocation-id="{% if inv.sub_location %}{{ inv.sub_location.id }}{% endif %}">
+                            <!-- {{ inv.quantity|floatformat:0 }} -->
+                          </a>
+
+                          <!-- Button triggers the same click as the link -->
+                          <button type="button" class="btn btn-primary btn-sm ms-2 px-2 py-0"
+                                  style="color: white !important;"
+                                  onclick="this.previousElementSibling.click()">                              
+                              <span class="badge app-btn-primary"><i class="fa fa-eye"></i></span>
+                                        
+                          </button>
+                      </td>
+                      <!-- <td>
+                        <button class="view-btn" 
+                                <a href="#" class="gm-qty-link" data-product-id="{{ inv.product.id }}" data-location-id="{% if inv.location %}{{ inv.location.id }}{% else %}{% endif %}" data-sublocation-id="{% if inv.sub_location %}{{ inv.sub_location.id }}{% else %}{% endif %}">
+                          View
+                        </button>
+                      </td> -->
+                    {% endif %}
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+          </div>
+        
+      {% endfor %}
+    {% else %}
+      {% if query %}
+        <div class="alert alert-warning">No results found for "{{ query }}".</div>
+      {% else %}
+
+        <div class="alert alert-info" id="welcome-msg">
+          Welcome to Inventory Search. Enter a product name, location, or sub-location above and click Search to find inventory records.<br>
+          <small class="text-muted">Note: If you search by multiple words, the search will look for records containing <strong>all</strong> words (AND search).</small>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+{% block pagejs %}
+<script type="text/javascript">
+    $("#id_search_query").val('{{search_query}}');
+
+</script>
+<script>
+  (function(){
+    // Use a robust selector for the input (in case the form rendering prefixes names)
+    let qInput = document.querySelector('input[name="q"]');
+    if(!qInput) qInput = document.querySelector('input[id$="_q"]') || document.querySelector('input[type="search"]') || null;
+    const resetBtn = document.getElementById('reset-btn');
+
+    function updateResetState(){
+      // Only enable the reset button when there's a value in the input or query param.
+      // Do not forcibly disable it if the server rendered it enabled.
+      try{
+        if(qInput && qInput.value && qInput.value.trim() !== ''){
+          resetBtn.disabled = false;
+          return;
+        }
+        const params = new URLSearchParams(window.location.search);
+        const qParam = params.get('q');
+        if(qParam && qParam.trim() !== ''){
+          resetBtn.disabled = false;
+          return;
+        }
+      } catch(e){}
+      // otherwise leave the button in its server-rendered state (do not disable)
+    }
+
+    // initial state
+    updateResetState();
+
+    // enable reset after typing
+    if(qInput){
+      qInput.addEventListener('input', updateResetState);
+    }
+
+    // auto-submit when group_by changes if a search has been performed or results exist
+    const groupRadios = document.querySelectorAll('input[type="radio"][name$="group_by"]');
+    const container = document.getElementById('inventory-search-container');
+    const hasResults = container && container.dataset && container.dataset.hasResults === '1';
+    if(groupRadios && groupRadios.length){
+      groupRadios.forEach(function(r){
+        r.addEventListener('change', function(){
+          // only auto-submit when there is a query param or input value or server results
+          const params = new URLSearchParams(window.location.search);
+          const qParam = params.get('q');
+          if((qInput && qInput.value && qInput.value.trim() !== '') || (qParam && qParam.trim() !== '') || hasResults){
+            // submit the form to reload grouped results
+            const form = r.closest('form');
+            if(form) form.submit();
+          }
+        });
+      });
+    }
+
+    // Reset action: remove query params and reload to initial view
+    resetBtn.addEventListener('click', function(){
+      // remove all query params by navigating to the path only
+      window.location = window.location.pathname;
+    });
+  })();
+</script>
+
+<!-- GM history modal -->
+<div class="modal fade" id="gmHistoryModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable modal-70">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h6 id="gmHistoryModalTitle">Goods Movement History</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="gmHistoryContent">
+        <div class="text-center">Loading...</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function(){
+    function loadGmHistory(productId, locationId, subLocationId){
+      const params = new URLSearchParams();
+      if(productId) params.set('product_id', productId);
+      if(locationId) params.set('location_id', locationId);
+      if(subLocationId) params.set('sub_location_id', subLocationId);
+
+      const url = `{% url 'inventory-gm-history' %}` + '?' + params.toString();
+
+      const content = document.getElementById('gmHistoryContent');
+      content.innerHTML = '<div class="text-center">Loading...</div>';
+
+      fetch(url, { credentials: 'same-origin' })
+        .then(resp => resp.text())
+        .then(html => {
+          content.innerHTML = html;
+          var modalEl = document.getElementById('gmHistoryModal');
+          // set title for GM history
+          var titleEl = document.getElementById('gmHistoryModalTitle'); if(titleEl) titleEl.textContent = 'Goods Movement History';
+          var modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+          modal.show();
+        })
+        .catch(err => {
+          content.innerHTML = '<div class="text-danger">Error loading history.</div>';
+        });
+    }
+
+    document.addEventListener('click', function(e){
+      const target = e.target.closest('.gm-qty-link');
+      if(!target) return;
+      e.preventDefault();
+      const productId = target.dataset.productId;
+      const locationId = target.dataset.locationId || '';
+      const subLocationId = target.dataset.sublocationId || '';
+      loadGmHistory(productId, locationId, subLocationId);
+    });
+  })();
+
+  // Serial number link handler - reuse same modal
+  (function(){
+    function loadSerials(productId, locationId, subLocationId){
+      const params = new URLSearchParams(); if(productId) params.set('product_id', productId); if(locationId) params.set('location_id', locationId); if(subLocationId) params.set('sub_location_id', subLocationId);
+      const url = `{% url 'inventory-serial-numbers' %}` + '?' + params.toString();
+      const content = document.getElementById('gmHistoryContent'); content.innerHTML = '<div class="text-center">Loading...</div>';
+      fetch(url, { credentials: 'same-origin' }).then(resp => resp.text()).then(html => { content.innerHTML = html; var modalEl = document.getElementById('gmHistoryModal'); // set title for serial numbers
+        var titleEl = document.getElementById('gmHistoryModalTitle'); if(titleEl) titleEl.textContent = 'Serial Number History';
+        var modal = bootstrap.Modal.getOrCreateInstance(modalEl); modal.show(); }).catch(err => { content.innerHTML = '<div class="text-danger">Error loading serial numbers.</div>'; });
+    }
+
+    document.addEventListener('click', function(e){ const t = e.target.closest('.sn-link'); if(!t) return; e.preventDefault(); const productId = t.dataset.productId || ''; const locationId = t.dataset.locationId || ''; const subLocationId = t.dataset.sublocationId || ''; loadSerials(productId, locationId, subLocationId); });
+  })();
+</script>
+
+{% endblock %}
+  {% endblock %}
+
+  

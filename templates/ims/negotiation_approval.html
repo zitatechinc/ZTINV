@@ -1,0 +1,1702 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+{% block styleblock%}
+
+
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <!-- Other head elements -->
+</head>
+<style>
+    .list-group-item.active {
+        color: rgb(204, 60, 60);
+        background-color: rgb(223, 234, 64);
+    }
+    .search-box {
+        position: relative;
+        width: 100%;
+    }
+    .search-box i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 8px 10px 8px 35px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    .form-container {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .form-container h4 {
+        text-align: center;
+        font-weight: bold;
+    }
+    .form-table {
+        width: 100%;
+        margin-top: 20px;
+    }
+    .form-table th, .form-table td {
+        padding: 10px;
+        border: 1px solid #ccc;
+    }
+    .form-table th {
+        background-color: #f0f0f0;
+        text-align: left;
+    }
+    .members-inputs {
+        margin-bottom: -1%;
+        overflow-x: auto;  /* Allows horizontal scrolling */
+        overflow-y: hidden;  /* Optional: hides vertical scrolling */
+        width: 100%;  /* Ensures it takes up the full width of its container */
+    }
+    
+    .members-inputMP{
+        margin-bottom: -1%;
+        overflow-x: auto;  /* Allows horizontal scrolling */
+        overflow-y: hidden;  /* Optional: hides vertical scrolling */
+        width: 100%;  /* Ensures it takes up the full width of its container */
+    }
+     {% comment %} #negotiationPreviewContainer {
+        border: 2px solid #000; /* Black border */
+        padding: 20px; 
+        margin: 20px auto;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }  {% endcomment %}
+    {% comment %} .quoted-input[readonly], 
+    .negotiated-input[readonly], 
+    .members-inputs[readonly], 
+    .members-inputMP[readonly], 
+    #file-upload:disabled, 
+    #file-upload-negotiated:disabled {
+        cursor: not-allowed;
+        
+    } {% endcomment %}
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    .active-procurement {
+      
+            background-color: #00B2CC !important; /* Light blue for highlighting */
+            border: 3px solid white;
+            position: relative;
+            overflow: hidden;
+            animation: glow-shadow 2s linear infinite;
+          }
+          
+          @keyframes glow-shadow {
+            0% {
+              box-shadow: 0 0 5px 2px white;
+            }
+            50% {
+              box-shadow: 0 0 15px 5px white;
+            }
+            100% {
+              box-shadow: 0 0 5px 2px white;
+            }
+          }
+    .list-group-item.active {
+        border-left: 3px solid #0066c0 !important;
+        background-color: #e6f2ff !important;
+        box-shadow: 0 2px 8px rgba(0, 102, 192, 0.2);
+    }
+    .list-group-item:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    #loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(6px);
+        display: none; /* Hide by default */
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+    .negotiated-input,.quoted-input{
+        width:50%;
+    }
+    .nav-link.active{
+        background-color: #007080 !important;
+    }
+    
+</style>
+{% endblock %}
+{% block previewcontent%}
+<div id="negotiationPreviewContainer" ></div>
+
+
+
+<div class="modal fade myModal" id="recommendModal" tabindex="-1" role="dialog" aria-labelledby="recommendModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recommendModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="recommendForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="remarks"><b>Remarks:</b></label>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="4" required></textarea>
+                    </div>
+
+
+                    <input type="hidden" name="procurement_id" id="recommendProcurementId" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary approveWithRemarksBtn" style="background-color:#007080;">Submit</button>
+                <button type="button" class="btn btn-secondary closeModalBtn" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+    
+</div>
+<div class="modal fade myModal" id="approveModal" tabindex="-1" role="dialog" aria-labelledby="approveModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="approveForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="approveremarks"><b>Remarks:</b></label>
+                        <textarea name="approveremarks" id="approveremarks" class="form-control" rows="4" required></textarea>
+                    </div>
+                    {% comment %} <div class="form-group">
+                        <label for="purchaseassistant"><b>Select Purchase Assistant User:</b></label>
+                        <select id="purchaseassistant" name="purchaseassistant" class="form-control" required>
+                            <option value="">Select User</option>
+                            {% for user in approveusers %}
+                            <option value="{{ user.emp_id }}" data-firstname="{{ user.first_name }}" data-lastname="{{ user.last_name }}">
+                                {{ user.first_name }} {{ user.last_name }} ({{ user.emp_id }})
+                              </option>
+                              
+                        {% endfor %}
+                        </select>
+                    </div> {% endcomment %}
+                    
+
+                    <input type="hidden" name="procurement_id" id="approveProcurementId" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="submitbtn btn btn-primary" id="approveenquiry" style="background-color:#007080;">Submit</button>
+                <button type="button" class="btn btn-secondary closeModalBtn" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade myModal" id="rejectModal" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="rejectForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="rejectremarks"><b>Remarks:</b></label>
+                        <textarea name="rejectremarks" id="rejectremarks" class="form-control" rows="4" required></textarea>
+                    </div>
+
+
+                    <input type="hidden" name="procurement_id" id="rejectProcurementId" />
+                    <input type="hidden" id="rejectstage" value="stage8">  <!-- or whatever stage it is -->
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="submit btn btn-primary" id="rejectenquiry" style="background-color:#007080;">Submit</button>
+                <button type="button" class="btn btn-secondary closeModalBtn" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var imm_user=''
+    var user = '';
+    var quo_id = '';
+    var stage = '';
+    var savedData='';
+    var particularId='';
+    
+    function getLatestCSTAction(stage, user, particularId) {
+        debugger;
+        if (!user || !Array.isArray(user.roles)) return null;
+
+        const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+        if (!isPurchaseAssistant) return null;
+
+        let latestAction = null;
+        let latestTime = null;
+
+        stage.forEach(([stageName, remarktype, datetime, id]) => {
+            if (String(id) !== String(particularId)) return;
+
+            const isStage8 = stageName?.toLowerCase() === 'stage8';
+            if (!isStage8) return;
+
+            const remark = remarktype?.toLowerCase();
+            if (!remark || (remark !== 'negotiation_return' && remark !== 'negotiation_modified')) return;
+
+            console.log(`Checking remark: ${remark} for ID: ${id} at ${datetime}`);
+
+            if (datetime) {
+                const dt = new Date(datetime);
+                if (!isNaN(dt)) {
+                    if (!latestTime || dt > latestTime) {
+                        latestTime = dt;
+                        latestAction = remark;
+                        console.log(`✅ Latest action updated to ${latestAction} at ${latestTime}`);
+                    }
+                } else {
+                    console.warn(`⚠️ Invalid date: ${datetime}`);
+                }
+            }
+        });
+
+        return latestAction;
+    }
+
+
+
+    // === Original helper functions (unchanged) ===
+    function hasCSTApprovalStage(stages, particularId) {
+        return stages.some(([stage, remarktype, , id]) =>
+            stage.toLowerCase() === 'stage8' &&
+            remarktype.toLowerCase() === 'negotiation_approval' &&
+            id === particularId
+        );
+    }
+
+
+    function hasCSTGenerateStage(stages, user, particularId) {
+        debugger;
+        if (!user || !user.roles) return false;
+
+        const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+        if (!isPurchaseAssistant) return false;
+
+        return stages.some(([stageName, remarktype, , id]) =>
+            stageName.toLowerCase() === 'stage8' &&
+            remarktype.toLowerCase() === 'negotiation' &&
+            id === particularId
+        );
+    }
+    {% comment %} function hasAAAprovalStage(stages, particularId) {
+        for (let i = 1; i < stages.length; i++) {
+            const [currStage, currRemark, , currId] = stages[i];
+            const [prevStage, prevRemark, , prevId] = stages[i - 1];
+
+            if (
+                currStage.toLowerCase() === 'stage5' &&
+                currRemark.toLowerCase() === 'reject' &&
+                currId === particularId &&
+                prevStage.toLowerCase() === 'stage8' &&
+                prevRemark.toLowerCase() === 'negotiation_approval' &&
+                prevId === particularId
+            ) {
+                return false;
+            }
+        }
+        return true;
+    } {% endcomment %}
+
+
+    function hasEnquiryRejectStage(stages, user, particularId) {
+        if (!user || !user.roles) return false;
+
+        const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+        if (!isPurchaseAssistant) return false;
+
+        return stages.some(([stageName, remarktype, , id]) =>
+            stageName.toLowerCase() === 'stage8' &&
+            remarktype.toLowerCase() === 'negotiation_return' &&
+            id === particularId
+        );
+    }
+
+
+    function hasEnquiryModifyStage(stages, user, particularId) {
+        if (!user || !user.roles) return false;
+
+        const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+        if (!isPurchaseAssistant) return false;
+
+        return stages.some(([stageName, remarktype, , id]) =>
+            stageName.toLowerCase() === 'stage8' &&
+            remarktype.toLowerCase() === 'negotiation_modified' &&
+            id === particularId
+        );
+    }
+        
+
+    $(document).ready(function() {
+        $('#prSearch').on('keyup', function() {
+          const searchText = $(this).val().toLowerCase();
+          let matchFound = false;
+      
+          $('#procurementSidebar .list-group-item').each(function() {
+            const prId = $(this).find('.view-pr-id').text().trim().toLowerCase();
+            if (prId.includes(searchText)) {
+              $(this).show();
+              matchFound = true;
+            } else {
+              $(this).hide();
+            }
+          });
+      
+          if (!matchFound && searchText !== '') {
+            showAlert("PR ID is not available");
+            $(this).val('');   // Clear the search input
+            $('#procurementSidebar .list-group-item').show();  // Show all items again
+          }
+        });
+      });
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        const sidebarItems = document.querySelectorAll(".view-pr-id");
+
+        sidebarItems.forEach(item => {
+            item.addEventListener("click", function (e) {
+                e.preventDefault();
+
+                // Remove highlight from all items
+                sidebarItems.forEach(i => i.closest("li").classList.remove("active-procurement"));
+
+                // Add highlight to the clicked item
+                this.closest("li").classList.add("active-procurement");
+        
+            });
+        });
+    });
+   
+    
+    $(document).on("click", ".view-pr-id", function (e) {
+    e.preventDefault();
+    let isFormSubmitted = false; 
+    showLoader();
+    const procurementId = $(this).data("id");
+    const csrfToken = $("meta[name='csrf-token']").attr("content");
+
+    $.ajax({
+        url: "{% url 'negotiation_approval' %}",
+        type: "POST",
+        headers: { 'X-CSRFToken': csrfToken },
+        data: { 'procurement_id': procurementId },
+        success: function (response) {
+            debugger;
+            console.log(response);
+            const vendors = response.vendors;
+            const particulars = response.particulars;
+            console.log(particulars,'particulars');
+            
+            quo_id = $(this).attr("quotation_id");
+            console.log(quo_id,'quo_id')
+            savedData = particulars
+                .map(item => item.saved_negotiation_data)
+                .filter(data => data && Object.keys(data).length > 0);
+            const nego_id = savedData[0]?.nego_id;
+            console.log(nego_id,'mmmmmmm');
+            var showSubmit = true;
+            console.log(savedData, 'Filtered Saved Negotiation Data');
+            console.log(savedData,'lokijuytre');
+            const negotiatedPrices = savedData.map(data => data.negotiated_price);
+            /*function isEmpty(obj) {
+                return Object.keys(obj).length === 0 && obj.constructor === Object;
+            }
+
+            
+            if (savedData && !isEmpty(savedData)) {
+                $('.submit-btn').hide();
+            }else{
+                $('.submit-btn').css('display', 'block');
+            }*/
+
+            user = response.users;
+            
+            console.log(user,'Naveen Madugula');
+
+            hideLoader();
+            imm_user = response.imm_user.id
+            console.log(imm_user);
+            let productNames = [];
+            let totalQtys = [];
+            let valueList = [];
+            let totalValue = 0;
+
+            particulars.forEach(particular => {
+                productNames.push(particular.item_name);
+                totalQtys.push(particular.total_qty_required);
+                if (particular.value) {
+                    valueList.push(particular.value);
+                    totalValue += parseFloat(particular.value);
+                }
+            });
+
+           
+            const quotedProducts = productNames.join(', ');
+            const totalQuantities = totalQtys.join(', ');
+            const quotedValues = valueList.join(', ');
+            const firstParticular = particulars[0] || {};
+            const quotedPaymentTerms = firstParticular.paymentterms || '';
+            const quotedDeliverySchedule = firstParticular.deliverytimeline || '';
+            const quotedDeliveryTerms = firstParticular.deliveryterms || '';
+            const now = new Date();
+            const formattedDate = now.toLocaleDateString('en-GB').replace(/\//g, '/');
+            const hours = now.getHours().toString().padStart(2, '0');  // 24-hour format
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');  // Add seconds
+            const formattedTime = `${hours}:${minutes}:${seconds}`;  // Format time as HH:mm:ss  
+            stage=response.stages; 
+            console.log(stage,'stage')
+
+
+
+            $('.openApproveModal').attr('quotation_id', quo_id);  
+            $('.openRejectModal').attr('quotation_id', quo_id);  
+            
+            // Create tab navigation
+            let tabNavHtml = `
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="particularTabs" role="tablist">`;
+
+            particulars.forEach((particular, index) => {
+                const isActive = index === 0 ? 'active' : '';
+                tabNavHtml += `
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link naveen ${isActive}" id="tab-${index}" data-bs-toggle="tab" 
+                                data-bs-target="#particular-${index}" type="button" role="tab" 
+                                aria-controls="particular-${index}" aria-selected="${index === 0 ? 'true' : 'false'}">
+                            ${particular.item_name || `Particular ${index+1}`}
+                        </button>
+                    </li>`;
+            });
+
+            tabNavHtml += `</ul></div><div class="card-body"><div class="tab-content" id="particularTabsContent">`;
+            function isLatestStage5Decision(stage, particularId) {
+    let latest = null;
+
+    stage.forEach(([stageName, remarktype, datetime, id]) => {
+        if (String(id) === String(particularId)) {
+            const time = new Date(datetime);
+            if (!isNaN(time)) {
+                if (!latest || time > latest.time) {
+                    latest = {
+                        stageName: stageName.toLowerCase(),
+                        remarktype: remarktype.toLowerCase(),
+                        time
+                    };
+                }
+            }
+        }
+    });
+
+    return latest?.stageName === 'stage5' &&
+           (latest.remarktype === 'approval' || latest.remarktype === 'reject');
+}
+
+            particulars.forEach((particular, index) => {
+                
+                
+                const particularSavedData = savedData[index] || {};
+                console.log(particularSavedData,'yummy');
+                debugger
+               const hasStage5Decision = isLatestStage5Decision(stage, particular.quotation_particular_id);
+
+                
+        
+                const isActive = index === 0 ? 'show active' : '';
+                
+                tabNavHtml += `
+                <div class="tab-pane fade ${isActive}" id="particular-${index}" role="tabpanel" aria-labelledby="tab-${index}">
+                    <div style="border: 1px solid #000; padding:20px;margin: 20px auto;border-radius: 10px;">
+                        <h4 style="text-align:center;"><strong><u>Techno Commercial Negotiation</u></strong></h4>
+                            <div style="text-align: right;">
+                                <div><strong>Date:</strong> ${particularSavedData.formatted_date || formattedDate}</div>
+                                <div><strong>Time:</strong> ${particularSavedData.formatted_time || formattedTime}</div>
+                            </div>
+                        <p><strong>Procurement ID:</strong> ${procurementId} &nbsp;&nbsp;
+                            <strong>Place:</strong> MSPL Gowra Palladium Hyd  &nbsp;
+                            <strong >Quotation Ref & Date:</strong> 
+                            <input type="text" disabled class="quotation-ref-date members-input" value="${particularSavedData.quotation_ref_date || ''}" style="margin-left: 10px;" />
+                        </p>
+                        <table class="table table-bordered">
+                            <thead><tr><th></th><th>Quoted</th><th>Negotiated</th></tr></thead>
+                            <tbody>
+                                <tr><td><b>Product</b></td>
+                                    <td><input type="text" class="quoted-input" value="${particular.item_name || ''}" disabled/></td>
+                                    <td><input type="text" class="negotiated-input" value="${particular.item_name || ''}" disabled /></td>
+                                </tr>
+                                <tr><td><b>Qty <span style="color:red;">*</span></b></td>
+                                    <td><input type="text" class="quoted-input" value="${particular.total_qty_required || ''}"disabled /></td>
+                                    <td><input type="text"  class="negotiated-input negotiated-quantity" value="${particularSavedData.negotiated_quantity || ''}" oninput="this.value = this.value.replace(/[^0-9.,]/g, '')" disabled /></td>
+                                </tr>
+                                <tr>
+                                    <td><b>Price <span style="color:red;">*</span></b></td>
+                                    <td>
+                                        <input type="text" class="quoted-input" 
+                                            value="${(particular.quoted_value || (particular.quoted_quantities?.[0]?.quoted_value)) || ''}" 
+                                            disabled/>
+                                    </td>
+                                    <td>
+                                    <input type="text" class="negotiated-input negotiation-input-price" 
+                                            value="${particularSavedData.negotiated_price || ''}"  
+                                            oninput="this.value = this.value.replace(/[^0-9.,]/g, '')" disabled />
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td><b>Taxes(%)</b></td>
+                                    <td>
+                                        <input type="number" class="quoted-input" value="${particularSavedData.quoted_taxes || ''}" min="0" max="100" step="0.01" disabled />
+                                    </td>
+                                    <td>
+                                        <input type="number" class="negotiated-input negotiated-taxes" value="${particularSavedData.negotiated_taxes || ''}" min="0" max="100" step="0.01" disabled />
+                                    </td>   
+                                </tr>
+                                <tr><td><b>Warranty / Guarantee</b></td>
+                                    <td><input type="text" class="quoted-input" value="${particularSavedData.quoted_warranty || ''}" disabled /></td>
+                                    <td><input type="text" class="negotiated-input" value="${particularSavedData.negotiated_warranty || ''}"  disabled/></td>
+                                </tr>
+                                <tr><td><b>Payment terms </b></td>
+                                    <td><input type="text" class="quoted-input" value="${particular.paymentterms || ''}" disabled/></td>
+                                    <td><input type="text" class="negotiated-input negotiated-paymentterms" value="${particularSavedData.negotiated_paymentterms || ''}" disabled /></td>
+                                </tr>
+                                <tr><td><b>Delivery Schedule </b></td>
+                                    <td><input type="text" class="quoted-input" value="${particular.deliverytimeline || ''}"disabled /></td>
+                                    <td><input type="text" class="negotiated-input negotiated-deliveryschedule" value="${particularSavedData.negotiateddeliveryschedule || ''}" disabled /></td>
+                                </tr>
+                                <tr><td><b>Delivery terms </b></td>
+                                    <td><input type="text" class="quoted-input" value="${particular.deliveryterms || ''}" disabled/></td>
+                                    <td><input type="text" class="negotiated-input negotiated-deliveryterms" value="${particularSavedData.negotiateddeliveryterms || ''}" disabled /></td>
+                                </tr>
+                                <tr><td><b>After Sales support</b></td>
+                                    <td><input type="text" class="quoted-input" value="${particularSavedData.quoted_aftersalessupport || ''}" disabled /></td>
+                                    <td><input type="text" class="negotiated-input" value="${particularSavedData.negotiated_aftersalessupport || ''}" disabled /></td>
+                                </tr>
+                                <tr>
+                                    <td><b>Documentation</b></td>
+                                    <td>
+                                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                                            <input disabled type="file" id="file-upload-${index}" />
+                                            ${particularSavedData.quoted_documentation ? `
+                                                <span>
+                                                    <a disabled href="${particularSavedData.quoted_documentation}" target="_blank">
+                                                        ${particularSavedData.quoted_documentation.split('/').pop()}
+                                                    </a>
+                                                </span>` : ''}
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                                            <input disabled type="file" id="file-upload-negotiated-${index}" />
+                                            ${particularSavedData.negotiated_documentation ? `
+                                                <span>
+                                                    <a  disabled href="${particularSavedData.negotiated_documentation}" target="_blank">
+                                                        ${particularSavedData.negotiated_documentation.split('/').pop()}
+                                                    </a>
+                                                </span>` : ''}
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>`;
+
+
+                        // Add Vendor Name per particular
+                        tabNavHtml += `
+                            <p><strong>Supplier:</strong> 
+                                <input disabled type="text" class="supplier-name members-input" value="${particular.vendor_name || ''}" readonly style="margin-left: 10px;" />
+                            </p>
+                            <p><strong>Any other point not covered:</strong> <textarea disabled class="members-inputs" style="overflow:auto; max-height:500px;">${particularSavedData.quoted_anyotherpointnotcovered || ''}</textarea></p>
+                            <p><strong>Remarks Of IMM:</strong> <textarea disabled class="members-inputMP" style="overflow:auto; max-height:500px;">${particularSavedData.quoted_memberspresent || ''}</textarea></p>
+                            <div style="text-align: right;">
+                                <p><strong>Rep from Finance:</strong> <input disabled type="text" class="rep-from-finance" value="${particularSavedData.rep_from_finance || ''}" style="margin-left: 10px;" /></p>
+                                <p><strong>Head IMM:</strong> <input disabled type="text" class="head-imm" value="${particularSavedData.head_imm || ''}" style="margin-left: 10px;" /></p>
+                                <p><strong>Director Project Delivery:</strong> <input disabled type="text" class="director-project-delivery" value="${particularSavedData.director_project_delivery || ''}" style="margin-left: 10px;" /></p>
+                                <p><strong>Chairman PNC:</strong> <input disabled type="text" class="chairman-pnc" value="${particularSavedData.chairman_pnc || ''}" style="margin-left: 10px;" /></p>
+                            </div>
+
+
+                       
+
+                        </div> <!-- End of .tab-pane -->
+                             <!-- ✅ Per-tab Submit and Download buttons -->
+                            <div style="text-align:left; margin-top:20px;">
+                        
+                           
+                                    ${!hasStage5Decision ? `
+                                        <button 
+                                            type="button" 
+                                            class="approve-btn btn btn-success openApproveModal" 
+                                            quotation_id="${particular.quotation_particular_id}" 
+                                            nego_id="${particularSavedData.nego_id}" 
+                                            style="background-color:#007080;border-color:#007080;">
+                                            Approve
+                                        </button>
+
+                                        <button 
+                                            type="button" 
+                                            class="reject-btn btn btn-danger openRejectModal" 
+                                            quotation_id="${particular.quotation_particular_id}" 
+                                            nego_id="${particularSavedData.nego_id}" 
+                                            style="background-color:#007080;border-color:#007080;">
+                                            Reject
+                                        </button>
+                                    ` : ''}
+
+                           
+
+                            </div>
+                    </div>
+                `;
+                
+            }); // END FOR EACH
+
+            tabNavHtml += `</div></div>`; // Close tab-content, card-body, card
+
+            
+            // Add buttons at the bottom
+            
+
+
+            $("#negotiationPreviewContainer").html(tabNavHtml);
+           
+
+            
+            // Initialize Bootstrap tabs if available
+            if (typeof bootstrap !== 'undefined') {
+                const tabEl = document.querySelector('#particularTabs');
+                if (tabEl) {
+                    new bootstrap.Tab(tabEl.querySelector('.nav-link.active'));
+                }
+            }
+            
+            //submkit button enables to only to the selected user not all IMM people
+            /*if (imm_user) {
+                $("#submitBtn").show();
+                console.log("Submit button shown because imm_user exists.");
+            } else {
+                $("#submitBtn").hide();
+                console.log("Submit button hidden because imm_user is missing.");
+            }*/
+            
+            // If already saved, disable editing
+            /*if (Object.keys(savedData).length > 0) {
+                isFormSubmitted = true;
+                $(".quoted-input, .negotiated-input, .members-inputMP, .members-inputs, .rep-from-finance, .head-imm, .director-project-delivery, .chairman-pnc, .quotation-ref-date, .supplier-name").attr("readonly", true);
+                $(".submitBtn").remove();
+
+                // Check for quoted_documentation and handle input field visibility and filename display
+                if (savedData.quoted_documentation && savedData.quoted_documentation.files && savedData.quoted_documentation.files.length > 0) {
+                    // Display the filename if a file is saved
+                    $('[id^="file-upload-"]').hide();  // Hide all file input fields
+                    $('[id^="file-name-quoted-"]').text(savedData.quoted_documentation.files[0].name).show();  // Show the filename
+                } else {
+                    // Hide both the input field and the filename if no file is saved
+                    $('[id^="file-upload-"]').hide();  // Hide the input field
+                    $('[id^="file-name-quoted-"]').hide();  // Hide the filename
+                }
+
+                // Check for negotiated_documentation and handle input field visibility and filename display
+                if (savedData.negotiated_documentation && savedData.negotiated_documentation.files && savedData.negotiated_documentation.files.length > 0) {
+                    // Display the filename if a file is saved
+                    $('[id^="file-upload-negotiated-"]').hide();  // Hide the file input field
+                    $('[id^="file-name-negotiated-"]').text(savedData.negotiated_documentation.files[0].name).show();  // Show the filename
+                } else {
+                    // Hide both the input field and the filename if no file is saved
+                    $('[id^="file-upload-negotiated-"]').hide();  // Hide the input field
+                    $('[id^="file-name-negotiated-"]').hide();  // Hide the filename
+                }
+            }*/
+
+                $(document).on("click", ".submit-btn", function () {
+                    debugger;
+                    const quo_id = $(this).attr("quotation_id");
+                    const tabIndex = $(this).attr("data-tab-index");
+
+                    // Store these values on the modal's button
+                    $(".approveWithRemarksBtn").attr("quotation_id", quo_id);
+                    $(".approveWithRemarksBtn").attr("data-tab-index", tabIndex);
+
+                    $("#recommendModal").modal('show');
+                });
+                
+                $(document).on('click', '.closeModalBtn', function() {
+                    $("#recommendModal").modal('hide');
+                    $('#approveModal').modal('hide');
+                    $('#rejectModal').modal('hide');
+                });
+                $(document).on("click", ".openApproveModal", function (e) {
+                    debugger;
+                    e.preventDefault();
+                    //var procurementId = $(this).data('procurement-id');
+                    //var procurementId = $(this).attr('quotation_id');
+                    const quo_id = $(this).attr("quotation_id");
+                    const tabIndex = $(this).attr("data-tab-index");
+
+                    // Store these values on the modal's button
+                    $(".submitbtn").attr("quotation_id", quo_id);
+                    $(".submitbtn").attr("data-tab-index", tabIndex);
+                    
+                    //console.log("Tab Index:", tabIndex);
+                    //console.log("Quotation ID:", procurementId);
+                    //console.log("Procurement ID:", procurementId); // <-- Debug here
+                    $('#approveProcurementId').val(procurementId);
+                    $('#approveModal').modal('show');
+                });
+
+
+                $(document).on("click", ".openRejectModal", function (e) {
+                    debugger;
+                    e.preventDefault();
+                    //var procurementId = $(this).data('procurement-id');
+                    //var procurementId = $(this).attr('quotation_id');
+                    const quo_id = $(this).attr("quotation_id");
+                    const tabIndex = $(this).attr("data-tab-index");
+
+                    // Store these values on the modal's button
+                    $(".submit").attr("quotation_id", quo_id);
+                    $(".submit").attr("data-tab-index", tabIndex);
+                    //console.log("Tab Index:", tabIndex);
+                    //console.log("Quotation ID:", procurementId);
+                    //console.log("Procurement ID:", procurementId); // <-- Debug here
+                    $('#rejectProcurementId').val(procurementId);
+                    $('#rejectModal').modal('show');
+                });
+
+                    // Submit handler and Validations
+                 
+                    $(document).on('click', '.approveWithRemarksBtn', function (e) {
+                        debugger;
+                        const submitBtn = $(this);
+                        const submit=$(this);
+                        const tabIndex = $(this).attr("data-tab-index");
+                        const quo_id = $(this).attr("quotation_id");
+
+                        console.log('tabIndex:', tabIndex);
+                        console.log('quo_id:', quo_id);
+                        //console.log(tabIndex);
+                        const tab = $(`.tab-pane[id='particular-${tabIndex}']`);
+                        console.log(tab);
+                        const remarks = $('#remarks').val().trim();
+                        if (!remarks) {
+                            hideLoader(); // Ensure loader is hidden first
+                            showAlert('Remarks cannot be empty');
+                            return; // stop function execution
+                        }
+
+                        showConfirmAlert("Are you sure you want to Submit?")
+                        .then((result) => {
+                            hideLoader();
+                            if (!result.isConfirmed) return;
+
+                            // Validate Negotiated Price
+                            let allNegotiatedFilled = true;
+                            tab.find(".negotiation-input-price").each(function () {
+                                let val = $(this).val().trim();
+                                if (val === "" || val === "0" || parseFloat(val) === 0) {
+                                    allNegotiatedFilled = false;
+                                    return false;
+                                }
+                            });
+
+                            /*if (!allNegotiatedFilled) {
+                                showAlert("Please fill the Negotiated Price details for all particulars (zero is not allowed).");
+                                hideLoader();
+                                return;
+                            }*/
+
+                            // Validate Negotiated Taxes
+                            let taxesValid = true;
+                            tab.find(".negotiated-taxes").each(function () {
+                                const taxVal = $(this).val().trim();
+                                if (taxVal === "" || isNaN(taxVal) || parseFloat(taxVal) <= 0) {
+                                    taxesValid = false;
+                                    return false;
+                                }
+                            });
+
+                            /*if (!taxesValid) {
+                                showAlert("Please fill in valid values for Negotiated Taxes for all particulars (must be greater than 0).");
+                                hideLoader();
+                                return;
+                            }*/
+
+                            // Validate Negotiated Payment Terms
+                            let paymentTermsValid = true;
+                            tab.find(".negotiated-paymentterms").each(function () {
+                                if ($(this).val().trim() === "") {
+                                    $(this).addClass("input-error");
+                                    paymentTermsValid = false;
+                                } else {
+                                    $(this).removeClass("input-error");
+                                }
+                            });
+
+                            // Validate Negotiated Delivery Schedule
+                            let deliveryScheduleValid = true;
+                            tab.find(".negotiated-deliveryschedule").each(function () {
+                                if ($(this).val().trim() === "") {
+                                    $(this).addClass("input-error");
+                                    deliveryScheduleValid = false;
+                                } else {
+                                    $(this).removeClass("input-error");
+                                }
+                            });
+
+                            // Validate Negotiated Delivery Terms
+                            let deliveryTermsValid = true;
+                            tab.find(".negotiated-deliveryterms").each(function () {
+                                if ($(this).val().trim() === "") {
+                                    $(this).addClass("input-error");
+                                    deliveryTermsValid = false;
+                                } else {
+                                    $(this).removeClass("input-error");
+                                }
+                            });
+
+                            // Validate Negotiated Quantity
+                            const negotiatedQuantityInputs = tab.find(".negotiated-quantity");
+                            let quantitiesValid = true;
+                            negotiatedQuantityInputs.each(function () {
+                                const negotiatedQuantityInput = $(this).val().trim();
+                                const quantities = negotiatedQuantityInput.split(",").map(q => q.trim());
+
+                                const isValid = quantities.length > 0 && quantities.every(q => q !== "" && !isNaN(q) && parseFloat(q) > 0);
+
+                                if (!isValid) {
+                                    $(this).addClass("input-error");
+                                    quantitiesValid = false;
+                                } else {
+                                    $(this).removeClass("input-error");
+                                }
+                            });
+
+                            // Prepare form data
+                            const formData = new FormData();
+
+                            // Collect quoted inputs
+                            tab.find(".quoted-input").each(function () {
+                                formData.append(`quoted_values_${tabIndex}[]`, this.value);
+                            });
+
+
+                            // Collect negotiated inputs
+                            tab.find(".negotiated-input").each(function () {
+                                const inputVal = this.value;
+                                const nameAttr = $(this).attr("name") || '';
+                                const isPriceField = nameAttr.toLowerCase().includes("price") || $(this).closest("tr").find("td:first").text().toLowerCase().includes("price");
+
+                                if (isPriceField) {
+                                    const formatted = inputVal
+                                        .split(',')
+                                        .map(v => parseFloat(v.trim()))
+                                        .filter(n => !isNaN(n))
+                                        .map(n => n.toFixed(2))
+                                        .join(', ');
+                                    formData.append(`negotiated_values_${tabIndex}[]`, formatted);
+                                } else {
+                                    formData.append(`negotiated_values_${tabIndex}[]`, inputVal);
+                                }
+                            });
+
+                            // Collect file uploads
+                            const file1 = document.getElementById(`file-upload-${tabIndex}`);
+                            const file2 = document.getElementById(`file-upload-negotiated-${tabIndex}`);
+                            if (file1?.files[0]) formData.append(`file-upload-${tabIndex}`, file1.files[0]);
+                            if (file2?.files[0]) formData.append(`file-upload-negotiated-${tabIndex}`, file2.files[0]);
+
+                            // Add common fields
+                            formData.append("procurement_id", procurementId);
+                            formData.append("particular_index", tabIndex);
+                            formData.append("place", "MSPL Gowra Palladium Hyd");
+                            formData.append("memberspresent", $(".members-inputMP").val());
+                            formData.append("anyotherpointnotcovered", $(".members-inputs").val());
+                            formData.append("rep_from_finance", $(".rep-from-finance").val());
+                            formData.append("head_imm", $(".head-imm").val());
+                            formData.append("director_project_delivery", $(".director-project-delivery").val());
+                            formData.append("chairman_pnc", $(".chairman-pnc").val());
+                            formData.append("quotation_ref_date", tab.find(".quotation-ref-date").val());
+                            formData.append(`remarks_${tabIndex}`, remarks);
+                            formData.append(`cst_particular_id_${tabIndex}`, quo_id);
+
+                            // Send via AJAX
+                            $.ajax({
+                                url: "{% url 'negotiation_approval' %}",
+                                type: "POST",
+                                headers: { 'X-CSRFToken': csrfToken },
+                                data: formData,
+                                processData: false,
+                                contentType: false,
+                                success: function (response) {
+                                    debugger;
+                                    console.log("Negotiation response:", response);
+                                    showSuccessAlert("Negotiation Saved successfully!");
+                                    $(`.submit-btn[data-tab-index='${tabIndex}']`).hide();
+                                    
+
+                                    // Optionally hide Approve/Reject buttons for Purchase Assistant
+                                /* if (response.users && response.users.roles.includes('Purchase Assistant')) {
+                                        $(`.approve-btn[data-tab-index='${tabIndex}']`).hide();
+                                        $(`.reject-btn[data-tab-index='${tabIndex}']`).hide();
+                                    }*/
+
+                                    $(`.view-pr-id[data-id='${procurementId}']`).closest("li").css("background-color", "#CCE5F0");
+                                    hideLoader();
+
+                                    // Disable current tab's inputs
+                                    tab.find(".quoted-input, .negotiated-input, .members-inputMP, .members-inputs, .rep-from-finance, .head-imm, .director-project-delivery, .chairman-pnc, .quotation-ref-date, .supplier-name").attr("readonly", true);
+                                    tab.find("[id^='file-upload-']").prop("disabled", true);
+
+                                    // Format price fields
+                                    tab.find(".negotiated-input").each(function () {
+                                        const isPriceField = $(this).closest("tr").find("td:first").text().toLowerCase().includes("price");
+                                        if (isPriceField) {
+                                            const cleaned = $(this).val()
+                                                .split(',')
+                                                .map(v => parseFloat(v.trim()))
+                                                .filter(n => !isNaN(n))
+                                                .map(n => n.toFixed(2))
+                                                .join(', ');
+                                            $(this).val(cleaned);
+                                        }
+                                    });
+
+                                    
+                                    //submitBtn.hide();
+
+                                },
+                                error: function (xhr) {
+                                    console.error("Save error:", xhr);
+                                    hideLoader();
+                                },
+                            });
+                        });
+                        });
+                        particulars.forEach((particular, index) => {
+                            $(document).on('click','#approveenquiry', function(e) {
+                                e.preventDefault();
+                                //alert("Approve button clicked");
+                                debugger;
+                                const remarks = $('#approveremarks').val();
+                                console.log('Approve Remarks:', remarks);
+                                const tabIndex = $(this).attr("data-tab-index");
+                                const quo_id = $(this).attr("quotation_id");
+                                const procurementId = $('#approveProcurementId').val();
+                                console.log('Procurement ID:', procurementId);
+                                const stage_action = 'recommend';
+                                if (!remarks) {
+                                    hideLoader()
+                                    showAlert("Remarks cannot be empty.")
+                                    return;
+                                }
+
+
+            
+                        showConfirmAlert('Are you sure,want to submit?').then((result) => {
+                            if (result.isConfirmed) {
+
+                                showLoader();
+                                let formData = new FormData();
+                        
+                                formData.append('procurement_id', procurementId);
+                                formData.append('nego_particular_id', quo_id); // ✅ take from current particular
+                                formData.append('remarks', remarks);
+                                formData.append('stage_action', stage_action);
+                                            
+                                //formData.append('role', role);
+                            
+                                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                    
+                                if (remarks) {
+                                    $.ajax({
+                                        url: "{% url 'negotiation_approval' %}",
+                                        type: 'POST',
+                                        data: formData,
+                                        processData: false,
+                                        contentType: false,
+                                        success: function(response) {
+                                            debugger;
+                                            console.log('Response:', response);
+                                            if (response && response.status === 'success') {
+                                                debugger;
+                                                $('#purchaseassistant').val('');
+                                               
+                                            
+                                                $(`#procurement-${response.stage_list[0].procurement_id}`).css("background-color", "#CCE5F0");
+                                                hideLoader();
+                                            
+                                                 // Get the negoId from response
+                                                    const negoId = response.stage_list[0].nego_quota_particular__quoted_vendors__id;
+
+                                                    // Log to make sure we're getting the expected ID
+                                                    console.log("Trying to hide buttons for nego_id:", negoId);
+
+                                                    // Find and log approve buttons
+                                                    const approveBtn = $(".approve-btn").filter(function () {
+                                                        const attr = $(this).attr("quotation_id");
+                                                        console.log("Checking approve button with nego_id:", attr);
+                                                        return attr == negoId;
+                                                    });
+
+                                                    // Find and log reject buttons
+                                                    const rejectBtn = $(".reject-btn").filter(function () {
+                                                        const attr = $(this).attr("quotation_id");
+                                                        console.log("Checking reject button with nego_id:", attr);
+                                                        return attr == negoId;
+                                                    });
+
+                                                    // Log the number of buttons found
+                                                    console.log("Approve buttons found:", approveBtn.length);
+                                                    console.log("Reject buttons found:", rejectBtn.length);
+
+                                                    // Force hide using !important (bypassing CSS conflicts)
+                                                    approveBtn.each(function () {
+                                                        this.style.setProperty('display', 'none', 'important');
+                                                    });
+
+                                                    rejectBtn.each(function () {
+                                                        this.style.setProperty('display', 'none', 'important');
+                                                    });
+
+                                                const stageDatetime = response.stage_list[0].datetime;
+                                                let formattedDate = '';
+                                                if (stageDatetime) {
+                                                    const dateObj = new Date(stageDatetime);
+                                                    const options = {
+                                                        timeZone: 'Asia/Kolkata',  // Timezone set to IST
+                                                        year: 'numeric',
+                                                        month: '2-digit',
+                                                        day: '2-digit',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        second: '2-digit',
+                                                        hour12: false
+                                                    };
+                                                    formattedDate = dateObj.toLocaleString('en-IN', options);
+                                                } else {
+                                                    formattedDate = 'Not Provided';
+                                                }
+                    
+                                                
+                                                showSuccessAlert('Procurement successfully Approved to IMM.')
+                                                $('#purchaseassistant').val(''); // Clear role selection
+                                                $('#remarks').val('');
+                                                 $(`#approveModal-${tabIndex}`).hide();
+                                                        $('.modal-backdrop').remove();
+                                                        $('body').removeClass('modal-open');
+                                                        $('body').css('padding-right', '');
+                                        
+                                                        $("#remarks").val('');
+                                                
+                                                $('#approveModal').modal('hide'); 
+                                                updateNotificationCount(procurementId);
+                                                var recommendremarks = `
+                                                    <div class="note-header">
+                                                        <h4 class="card-title" style="text-align:center;color:#800000;"><strong>NOTE ${response.stagecount}</strong></h4>
+                                                    </div>
+                                                    <div class="stage-note">
+                                                        <p>
+                                                            <span class="status-user" style="text-align:center; margin-top: 10px;">
+                                                                <strong>Status:</strong> ${rstatus}
+                                                            </span>
+                                                        </p>
+                                                        <p><strong>Remarks:</strong> ${response.stage_list[0].remarks || '_________________________'}</p>
+                    
+                                                        
+                                                        <p><strong>Date and Time:</strong> ${formattedDate}</p>
+                                        
+                                                        ${response.stage_list[0].forwarded_to__username ? `
+                                                            <p><strong>Forwarded To:</strong> 
+                                                                ${response.stage_list[0].forwarded_to__first_name || 'Unknown'} 
+                                                                (${response.stage_list[0].forwarded_to__username})
+                                                                ${response.stage_list[0].forwarded_to__userreg__role__role ? 
+                                                                    `[${response.stage_list[0].forwarded_to__userreg__role__role}]` : ''}
+                                                            </p>
+                                                        ` : ''}
+                    
+                                                        <span class="status-user" style="text-align:right; margin-bottom: 10px;">
+                                                        <div>
+                                                                <strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Name:</strong>
+                                                                ${(() => {
+                                                                    const first = response.stage_list[0].user__first_name || '';
+                                                                    const last = response.stage_list[0].user__last_name || '';
+                                                                    const fullName = `${first} ${last}`.trim();
+                                                                    return fullName || 'Not Provided';
+                                                                })()}
+                                                            </div>
+
+                                                            <div><strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Emp id:</strong> ${response.stage_list[0].user__username || 'Not Provided'}</div>
+                                                            <div><strong>Department:</strong> ${response.stage_list[0].user__userreg__user_dept__dept_name || 'Not Provided'}</div>
+                                                        </span>
+                                                    </div>
+                                                `;
+                                                
+                                                $("#tracking-list").append(recommendremarks);
+                    
+                                            } else {
+                                    
+                                                showAlert(response.message || "Something went wrong!")
+                                                hideLoader();
+                                            }
+                                        },
+                                        error: function() {
+                                            showWarningAlert('Something went wrong')
+                                            hideLoader();
+                                        }
+                                    });
+                                } else {
+                                    showAlert('Remarks cannot be empty');
+                                }
+                            }
+                        });
+
+
+                       
+                    });
+                       particulars.forEach((particular, index) => {
+                            $(document).on('click','#rejectenquiry', function(e) {
+
+                                e.preventDefault();
+                                //alert("Approve button clicked");
+                                debugger;
+                                const remarks = $('#rejectremarks').val();
+                                const tabIndex = $(this).attr("data-tab-index");
+                                const quo_id = $(this).attr("quotation_id");
+                                console.log('Approve Remarks:', remarks);
+                                const procurementId = $('#rejectProcurementId').val();
+                                console.log('Procurement ID:', procurementId);
+                                const stage_action = 'reject';
+                                if (!remarks) {
+                                    hideLoader();
+                                    showAlert("Remarks cannot be empty.")
+                                    return;
+                                }
+
+
+            
+                        showConfirmAlert('Are you sure,want to submit?').then((result) => {
+                            if (result.isConfirmed) {
+
+                                showLoader();
+                                let formData = new FormData();
+                        
+                                formData.append('procurement_id', procurementId);
+                                formData.append('nego_particular_id', quo_id); // ✅ take from current particular
+                                formData.append('remarks', remarks);
+                                formData.append('stage_action', stage_action);
+                                            
+                                //formData.append('role', role);
+                            
+                                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                    
+                                if (remarks) {
+                                    $.ajax({
+                                        url: "{% url 'negotiation_approval' %}",
+                                        type: 'POST',
+                                        data: formData,
+                                        processData: false,
+                                        contentType: false,
+                                        success: function(response) {
+                                            debugger;
+                                            console.log('Response:', response);
+                                            if (response && response.status === 'success') {
+                    
+                                                $('#purchaseassistant').val('');
+                                                $(`.approve-btn[data-tab-index='${tabIndex}']`).hide();
+                                                $(`.reject-btn[data-tab-index='${tabIndex}']`).hide();
+                                            
+                                                $(`#procurement-${response.stage_list[0].procurement_id}`).css("background-color", "#CCE5F0");
+                                                hideLoader();
+
+                                                 // Get the negoId from response
+                                                    const negoId = response.stage_list[0].nego_quota_particular;
+
+                                                    // Log to make sure we're getting the expected ID
+                                                    console.log("Trying to hide buttons for nego_id:", negoId);
+
+                                                    // Find and log approve buttons
+                                                    const approveBtn = $(".approve-btn").filter(function () {
+                                                        const attr = $(this).attr("nego_id");
+                                                        console.log("Checking approve button with nego_id:", attr);
+                                                        return attr == negoId;
+                                                    });
+
+                                                    // Find and log reject buttons
+                                                    const rejectBtn = $(".reject-btn").filter(function () {
+                                                        const attr = $(this).attr("nego_id");
+                                                        console.log("Checking reject button with nego_id:", attr);
+                                                        return attr == negoId;
+                                                    });
+
+                                                    // Log the number of buttons found
+                                                    console.log("Approve buttons found:", approveBtn.length);
+                                                    console.log("Reject buttons found:", rejectBtn.length);
+
+                                                    // Force hide using !important (bypassing CSS conflicts)
+                                                    approveBtn.each(function () {
+                                                        this.style.setProperty('display', 'none', 'important');
+                                                    });
+
+                                                    rejectBtn.each(function () {
+                                                        this.style.setProperty('display', 'none', 'important');
+                                                    });
+
+                                            
+                                                
+                                                const stageDatetime = response.stage_list[0].datetime;
+                                                let formattedDate = '';
+                                                if (stageDatetime) {
+                                                    const dateObj = new Date(stageDatetime);
+                                                    const options = {
+                                                        timeZone: 'Asia/Kolkata',  // Timezone set to IST
+                                                        year: 'numeric',
+                                                        month: '2-digit',
+                                                        day: '2-digit',
+                                                        hour: '2-digit',
+                                                        minute: '2-digit',
+                                                        second: '2-digit',
+                                                        hour12: false
+                                                    };
+                                                    formattedDate = dateObj.toLocaleString('en-IN', options);
+                                                } else {
+                                                    formattedDate = 'Not Provided';
+                                                }
+                                                
+                    
+                                                
+                                                showSuccessAlert('Procurement successfully Rejected to IMM.')
+                                                $('#purchaseassistant').val(''); // Clear role selection
+                                                $('#remarks').val('');
+                                                
+                                                 $(`#rejectModal-${tabIndex}`).hide();
+                                                        $('.modal-backdrop').remove();
+                                                        $('body').removeClass('modal-open');
+                                                        $('body').css('padding-right', '');
+                                        
+                                                        $("#remarks").val('');
+                                                
+                                                updateNotificationCount(procurementId);
+                                                var recommendremarks = `
+                                                    <div class="note-header">
+                                                        <h4 class="card-title" style="text-align:center;color:#800000;"><strong>NOTE ${response.stagecount}</strong></h4>
+                                                    </div>
+                                                    <div class="stage-note">
+                                                        <p>
+                                                            <span class="status-user" style="text-align:center; margin-top: 10px;">
+                                                                <strong>Status:</strong> ${rstatus}
+                                                            </span>
+                                                        </p>
+                                                        <p><strong>Remarks:</strong> ${response.stage_list[0].remarks || '_________________________'}</p>
+                    
+                                                        
+                                                        <p><strong>Date and Time:</strong> ${formattedDate}</p>
+                                        
+                                                        ${response.stage_list[0].forwarded_to__username ? `
+                                                            <p><strong>Forwarded To:</strong> 
+                                                                ${response.stage_list[0].forwarded_to__first_name || 'Unknown'} 
+                                                                (${response.stage_list[0].forwarded_to__username})
+                                                                ${response.stage_list[0].forwarded_to__userreg__role__role ? 
+                                                                    `[${response.stage_list[0].forwarded_to__userreg__role__role}]` : ''}
+                                                            </p>
+                                                        ` : ''}
+                    
+                                                        <span class="status-user" style="text-align:right; margin-bottom: 10px;">
+                                                        <div>
+                                                                <strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Name:</strong>
+                                                                ${(() => {
+                                                                    const first = response.stage_list[0].user__first_name || '';
+                                                                    const last = response.stage_list[0].user__last_name || '';
+                                                                    const fullName = `${first} ${last}`.trim();
+                                                                    return fullName || 'Not Provided';
+                                                                })()}
+                                                            </div>
+
+                                                            <div><strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Emp id:</strong> ${response.stage_list[0].user__username || 'Not Provided'}</div>
+                                                            <div><strong>Department:</strong> ${response.stage_list[0].user__userreg__user_dept__dept_name || 'Not Provided'}</div>
+                                                        </span>
+                                                    </div>
+                                                `;
+                                                
+                                                $("#tracking-list").append(recommendremarks);
+                    
+                                            } else {
+                                    
+                                                showWarningAlert(response.message || "Something went wrong!")
+                                                hideLoader();
+                                            }
+                                        },
+                                        error: function() {
+                                            showWarningAlert('Something went wrong')
+                                            hideLoader();
+                                        }
+                                    });
+                                } else {
+                                    showAlert('Remarks cannot be empty');
+                                }
+                            }
+                        });
+
+                });
+            });    
+            });
+            
+               
+                
+                    //Downlaod PDF
+                     $("#downloadPDFBtn").on("click", function () {
+                        /*if (!isFormSubmitted) {
+                            showAlert("Please submit the negotiation form before downloading the PDF.");
+                            return;
+                        }*/
+
+                        const container = $("#negotiationPreviewContainer");
+
+                        if (container.length === 0) {
+                            showAlert("Unable to generate PDF. Preview content not found.");
+                            return;
+                        }
+
+                        showLoader();
+
+                        // Save original container styles to restore later
+                        const originalHeight = container.css('height');
+                        const originalMaxHeight = container.css('max-height');
+                        const originalOverflow = container.css('overflow');
+
+                        // Temporarily expand container to show all content for PDF rendering
+                        container.css({
+                            height: 'auto',
+                            maxHeight: 'none',
+                            overflow: 'visible',
+                        });
+
+                        container
+                            .find("tr, .members-input, .members-inputMP, .members-inputs, table, div")
+                            .css({
+                                "page-break-inside": "avoid",
+                                "break-inside": "avoid",
+                                "box-sizing": "border-box"
+                            });
+
+                        container.find("table, th, td").css({
+                            "border": "none",
+                            "border-collapse": "collapse"
+                        });
+
+                        // Replace inputs and textareas with styled div/span for PDF
+                        container.find("input[type='text'], textarea").each(function () {
+                            const $input = $(this);
+                            if ($input.closest("a").length) return; // skip if inside <a>
+
+                            const value = $input.val() ?? '';
+                            const isInTable = $input.closest("table").length > 0;
+                            const isInline = $input.closest("p").length > 0;
+
+                            const cleanBlock = $(isInline ? "<span></span>" : "<div></div>")
+                                .text(value)
+                                .css({
+                                    "display": isInline ? "inline-block" : "block",
+                                    "max-width": isInTable ? "25ch" : "100%",
+                                    "font-size": "13px",
+                                    "line-height": "1.6",
+                                    "white-space": "pre-wrap",
+                                    "word-break": "break-word",
+                                    "overflow-wrap": "break-word",
+                                    "margin-left": isInline ? "10px" : "0",
+                                    "margin-bottom": isInline ? "0" : "6px",
+                                    "box-sizing": "border-box",
+                                    "padding": "6px 0",
+                                    "min-height": "20px",
+                                    "border": "none"
+                                })
+                                .addClass("pdf-clean");
+
+                            $input.hide().after(cleanBlock);
+                        });
+
+                        // Replace number inputs for Taxes(%)
+                        container.find("tr:has(td:contains('Taxes(%)')) input[type='number']").each(function () {
+                            const value = $(this).val() ?? '';
+                            const cleanBlock = $("<div></div>")
+                                .text(value)
+                                .css({
+                                    "display": "inline-block",
+                                    "width": $(this).css("width") || "45%",
+                                    "font-size": "13px",
+                                    "line-height": "1.6",
+                                    "white-space": "nowrap",
+                                    "margin-bottom": "6px",
+                                    "box-sizing": "border-box",
+                                    "padding": "6px 0",
+                                    "min-height": "20px",
+                                    "border": "none"
+                                })
+                                .addClass("pdf-clean");
+
+                            $(this).hide().after(cleanBlock);
+                        });
+                                container.find("input[type='file']").each(function () {
+                                const $input = $(this);
+                                const fullPath = $input.val() ?? '';
+                                const fileName = fullPath.split('\\').pop();  // Extract only filename
+                                const cleanBlock = $("<div></div>")
+                                    .text(fileName)
+                                    .css({
+                                        "display": "inline-block",
+                                        "font-size": "13px",
+                                        "line-height": "1.6",
+                                        "white-space": "nowrap",
+                                        "word-break": "break-word",
+                                        "overflow-wrap": "break-word",
+                                        "margin-bottom": "6px",
+                                        "box-sizing": "border-box",
+                                        "padding": "6px 0",
+                                        "min-height": "20px",
+                                        "border": "none"
+                                    })
+                                    .addClass("pdf-clean");
+ 
+                                $input.hide().after(cleanBlock);
+                            });
+                        // Hide the download button during PDF generation
+                        $("#downloadPDFBtn").hide();
+
+                        // Remove outer border temporarily
+                        const outerBox = container.find("div").first();
+                        const originalBorder = outerBox.css("border");
+                        outerBox.css("border", "none");
+
+                        // Load background image for PDF (optional)
+                        const imgUrl = '{% static "images/messylog.png" %}'; // Your image path
+                        const img = new Image();
+                        img.crossOrigin = 'anonymous';
+                        img.src = imgUrl;
+
+                        img.onload = function () {
+                            html2pdf()
+                                .from(container[0])
+                                .set({
+                                    margin: 10,
+                                    filename: `N-${procurementId || 'unknown'}.pdf`,
+                                    html2canvas: {
+                                        scale: 4,
+                                        useCORS: true,
+                                        scrollY: -window.scrollY // fixes some clipping issues
+                                    },
+                                    jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                                })
+                                .toPdf()
+                                .get('pdf')
+                                .then(function (pdf) {
+                                    const totalPages = pdf.internal.getNumberOfPages();
+                                    const pageWidth = pdf.internal.pageSize.getWidth();
+                                    const pageHeight = pdf.internal.pageSize.getHeight();
+
+                                    const imageWidth = pageWidth * 0.7;
+                                    const imageHeight = (imageWidth / img.width) * img.height;
+                                    const xPos = (pageWidth - imageWidth) / 2;
+                                    const yPos = (pageHeight - imageHeight) / 2;
+
+                                    for (let i = 1; i <= totalPages; i++) {
+                                        pdf.setPage(i);
+                                        // Uncomment to add watermark image
+                                        // pdf.addImage(img, 'PNG', xPos, yPos, imageWidth, imageHeight);
+                                        pdf.setDrawColor(0);
+                                        pdf.setLineWidth(0.5);
+                                        pdf.rect(10, 10, pageWidth - 20, pageHeight - 20);
+                                    }
+                                })
+                                .save()
+                                .then(() => {
+                                    // Cleanup: remove inserted spans/divs and show inputs again
+                                    container.find(".pdf-clean").remove();
+                                    container.find("input[type='text'], textarea, input[type='number']").show();
+
+                                    container.find("table, th, td").css({
+                                        "border": "",
+                                        "border-collapse": ""
+                                    });
+
+                                    outerBox.css("border", originalBorder);
+                                    // Restore container styles
+                                    container.css({
+                                        height: originalHeight,
+                                        maxHeight: originalMaxHeight,
+                                        overflow: originalOverflow,
+                                    });
+
+                                    hideLoader();
+                                    $("#downloadPDFBtn").show();
+                                });
+                        };
+
+                        img.onerror = function () {
+                            showAlert("Failed to load the background image for the PDF.");
+
+                            container.find(".pdf-clean").remove();
+                            container.find("input[type='text'], textarea, input[type='number']").show();
+                            container.find("table, th, td").css({
+                                "border": "",
+                                "border-collapse": ""
+                            });
+                            outerBox.css("border", originalBorder);
+
+                            // Restore container styles
+                            container.css({
+                                height: originalHeight,
+                                maxHeight: originalMaxHeight,
+                                overflow: originalOverflow,
+                            });
+
+                            $("#downloadPDFBtn").show();
+                            hideLoader();
+                        };
+                    });                       
+                }
+                });
+    });
+   
+
+    //websocket for sidebar
+    (function() {
+        const role = "imm";  // IMM role
+        const pageKey = "negotiation";  // Default to 'imm', but can be dynamic based on remark type
+        
+        const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const ws_url = `${ws_scheme}://${window.location.host}/ws/sidebar/${role}/${pageKey}/`;
+        const neg_socket = new WebSocket(ws_url);
+        
+        neg_socket.onopen = function() {
+            console.log("Neg sidebar WebSocket opened.");
+
+        }
+        neg_socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log("imm data", data)
+    
+            if (data.update_type === "refresh_sidebar_neg") {
+                // Only update if message is for IMM role and corresponding page
+               
+    
+                const procurementId = data.procurement_id;
+                const dateObj = new Date(data.timestamp);
+                let formattedDatetime = '';
+    
+                if (!isNaN(dateObj)) {
+                    const pad = num => String(num).padStart(2, '0');
+                    const day = pad(dateObj.getDate());
+                    const month = pad(dateObj.getMonth() + 1);
+                    const year = dateObj.getFullYear();
+                    const hours = pad(dateObj.getHours());
+                    const minutes = pad(dateObj.getMinutes());
+                    const seconds = pad(dateObj.getSeconds());
+                    formattedDatetime = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                }
+    
+                const listItem = $(`#procurementSidebar .list-group-item a.view-pr-id[data-id="${procurementId}"]`).closest('.list-group-item');
+                if (data.role !== "imm" || data.page !== pageKey) {
+                    console.log("Ignoring update for role/page:", data.role, data.page);
+                    if (data.page=="rejectedimm"){
+                        listItem.css('background-color', '#CCE5F0');
+                    }
+                
+                    return;
+                }
+                if (listItem.length) {
+                    listItem.find('div').eq(1).text(formattedDatetime);
+                    console.log('hi',data.forwarded_to_imm_user);
+                    // Apply background logic based on conditions
+                    if (data.forwarded_to_imm_user && pagekey) {
+                        listItem.css('background-color', '#f8f9fa'); // Reset background if forwarded
+                    } else {
+                        // Assuming procurement was recommended, update the background color
+                        listItem.css('background-color', '#CCE5F0'); // Highlight the item when recommended
+                    }
+                    $('#procurementSidebar').on('click', '.list-group-item', function() {
+                        // Remove the active class from all items
+                        $('#procurementSidebar .list-group-item').removeClass('active-procurement');
+                    
+                        // Add active class to the clicked item
+                        $(this).addClass('active-procurement');
+                    });
+                    
+                } else {
+                    // New procurement item
+                    const statusesString = (data.statuses || []).join(',');
+                    let backgroundColor = '#f8f9fa'; // Default background color
+
+                    // Apply background color for forwarded or recommended stage
+                    if (data.forwarded_to_imm_user) {
+                        backgroundColor = '#f8f9fa'; // Reset if forwarded
+                    } else {
+                        backgroundColor = '#CCE5F0'; // Highlight if recommended
+                    }
+    
+                    const newListItem = `
+                        <li id="procurement-${procurementId}" class="list-group-item" data-statuses="${statusesString}"
+                            style="background-color: ${backgroundColor}; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top:7px; padding:9px;">
+                            <a href="#" class="view-pr-id" data-id="${procurementId}" style="text-decoration: none; color: inherit; display: block;">
+                                <div style="font-weight: 500; font-size: 14px; color: black;">
+                                    ${procurementId}
+                                </div>
+                                <div style="font-size: 11px; color: black;">
+                                    ${formattedDatetime}
+                                </div>
+                            </a>
+                        </li>
+                    `;
+    
+                    $('#procurementSidebar').prepend(newListItem);
+                    $('#procurementSidebar').on('click', '.list-group-item', function() {
+                        // Remove the active class from all items
+                        $('#procurementSidebar .list-group-item').removeClass('active-procurement');
+                    
+                        // Add active class to the clicked item
+                        $(this).addClass('active-procurement');
+                    });
+                    
+                }
+                // Reapply any filter you have
+                $('#statusFilter').trigger('change');
+            }
+        };
+    
+        neg_socket.onclose = function() {
+            console.warn("neg sidebar WebSocket closed.");
+        };
+    })();
+
+</script>
+
+{% endblock scripts %}

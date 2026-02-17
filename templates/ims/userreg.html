@@ -1,0 +1,711 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+{% block mainblock %}
+<style>
+    .table th {
+        background-color:#007080;
+        color: white;
+    }
+    #head tbody tr {
+        border-bottom: 2px solid #ccc;
+    }
+
+      #usersTable_filter{
+        margin-bottom: 13px;
+
+      }  
+      #submit:focus {
+        outline: 2px solid white;
+        outline-offset: 2px;
+        box-shadow: 0 0 0 3px white;
+    }
+    
+    
+ 
+
+</style>
+<!-- Spinner loader container -->
+<div class="spinner-border loader" id="loader" role="status"
+     style="
+        width: 3rem;                /* Size of the spinner */
+        height: 3rem;
+        position: absolute;         /* Positioned relative to nearest positioned ancestor */
+        top: 50%;                  /* Center vertically */
+        left: 50%;                 /* Center horizontally */
+        z-index: 9999;             /* Make sure it stays on top of other elements */
+        display: none;             /* Hidden by default; shown when loading */
+        backdrop-filter: blur(6px); /* Blur effect on the background behind the spinner */
+        background-color: rgba(0, 0, 0, 0.3); /* Semi-transparent dark overlay */
+     ">
+     
+    <!-- Accessibility: Text read by screen readers -->
+    <span class="visually-hidden">Loading...</span>
+
+    <!-- Spinner animation (can be styled with CSS) -->
+    <div class="spinner"></div>
+</div>
+<div style="max-height: 86.5vh;  padding: 10px;">
+
+    <form id="procurementForm" enctype="multipart/form-data" method="POST">
+        {% csrf_token %}
+
+        <div class="container-fluid">
+            
+            <div class="card mt-4 " style="border-color: #7cc2e6; margin:15px;">
+                <div class="card-body" style="border-radius: 15px;
+                    box-shadow: 0px 4px 12pxrgb(53, 54, 54);;
+                    background-color: #ffffff;border: 1px solid  #7cc2e6;padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);margin-top: 0%; ">
+                    <h5 style="font-size: 1.5rem; text-align: center; color: black; text-decoration: underline;margin-bottom: 16px;">
+                        <b>User Registration</b>
+                    </h5>
+            <!-- First Row -->
+            <div class="row row-cols-1 row-cols-md-5">
+                <div class="col mb-3">
+                    <label for="departments" class="form-label"><b>Select Department:</b><span class="text-danger">*</span></label>
+                    <select id="departments" name="departments" class="form-select no-enter" required>
+                        <option value="">Select Department</option>
+                        {% for departments in departments %}
+                            <option value="{{ departments.id }}" data-id="{{ departments.dept_code }}" data-type="{{ departments.dept_name }}" data-depttype="{{ departments.dept_code }}">
+                                {{ departments.dept_name }} ({{ departments.dept_code }})
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+        
+                <div class="col mb-3">
+                    <label for="roles" class="form-label">
+                        <b>Roles:</b><span class="text-danger">*</span>
+                    </label>
+                    <select id="roles" name="roles" class="form-select no-enter" required multiple onchange="handleRoleSelection()">
+                        
+                        {% for role in roles %}
+                            <option value="{{ role.id }}" data-role="{{ role.role }}">{{ role.role }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <!-- Hidden input to hold Employee Role ID for JS reference -->
+                {% for role in roles %}
+                    {% if role.role == "Employee" %}
+                        <input type="hidden" id="employeeRoleId" value="{{ role.id }}">
+                    {% endif %}
+                {% endfor %}
+                <div class="col mb-3">
+                    <label for="email" class="form-label"><b>Email:</b><span class="text-danger">*</span></label>
+                    <input type="email" id="email" name="email" class="form-control no-enter" required>
+                </div>
+        
+                <div class="col mb-3">
+                    <label for="phoneno" class="form-label"><b>Phone No:</b><span class="text-danger">*</span></label>
+                    <input type="text" id="phoneno" name="phoneno" class="form-control no-enter"
+                        maxlength="10" inputmode="numeric"
+                        pattern="^\d{10}$" title="Phone number must be exactly 10 digits" required
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 10);">
+                </div>
+        
+                <div class="col mb-3">
+                    <label for="empid" class="form-label"><b>Employee ID:</b><span class="text-danger">*</span></label>
+                    <input type="text" id="empid" name="empid" class="form-control no-enter"
+                        maxlength="7" inputmode="numeric"
+                        required
+                        oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 7);">
+                </div>
+            </div>
+        
+            <!-- Second Row -->
+            <div class="row row-cols-1 row-cols-md-5">
+                <div class="col mb-3">
+                    <label for="firstname" class="form-label"><b>First Name:</b><span class="text-danger">*</span></label>
+                    <input type="text" id="firstname" name="firstname" class="form-control no-enter" required>
+                </div>
+        
+                <div class="col mb-3">
+                    <label for="lastname" class="form-label"><b>Last Name:</b></label>
+                    <input type="text" id="lastname" name="lastname" class="form-control no-enter">
+                </div>
+        
+                <div class="col mb-3" id="pass">
+                    <label for="password" class="form-label"><b>Password:</b><span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" id="password" name="password" class="form-control no-enter"
+                            pattern="^(?=.*[!@#$%^&*()_+\-=\[\]{};':&quot;\\|,.<>\/?]).{6,}$"
+                            title="Password must be at least 6 characters and include a special character" required>
+                        <span class="input-group-text">
+                            <i class="fas fa-eye-slash toggle-password" data-target="password" style="cursor: pointer;"></i>
+                        </span>
+                    </div>
+                </div>
+        
+                <div class="col mb-3" id="confirmpass">
+                    <label for="confirmpassword" class="form-label"><b>Confirm Password:</b><span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <input type="password" id="confirmpassword" name="confirmpassword" class="form-control no-enter" required>
+                        <span class="input-group-text">
+                            <i class="fas fa-eye-slash toggle-password" data-target="confirmpassword" style="cursor: pointer;"></i>
+                        </span>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem;">
+                    <label for="activeCheckbox" style="display: block; font-weight: bold; margin-bottom: 4px;">
+                      Status: <span class="text-danger">*</span>
+                    </label>
+                    <input type="checkbox" id="activeCheckbox" checked
+                           style="width: 20px; height: 20px; vertical-align: middle; cursor: pointer;">
+                    <span id="activeLabel" style="margin-left: 8px; font-weight: normal; cursor: pointer;">Active</span>
+                  </div>
+                  
+        
+                <!-- Placeholder column for spacing if needed -->
+                <div class="col mb-3"></div>
+            </div>
+            <div class="d-flex justify-content-end mt-3">
+                <button type="button" class="btn btn-primary"  id="submit" onclick="Submitreg()" style="margin-left: 93%;background-color:#007080;border-color:#007080;color:white;">Submit</button>
+            </div>
+        </div>
+        <div class="container-fluid mt-5" style="margin-bottom: 4%; margin-top: 7%; border: 1px solid #7cc2e6; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+            <h4 class="mb-4 text-center" style="text-decoration: underline;"><b>Registered Users</b></h4>
+        
+            <div style="max-height: 300px; ">
+                <table class="table table-striped" id="usersTable" style="width: 100%; border-collapse: collapse;">
+                    <thead style="background-color: #007080; color: white;">
+                        <tr>
+                            <th>Employee ID</th>
+                            <th>Name</th>
+                            <th>Email</th>
+                            <th>Phone No</th>
+                            <th>Department</th>
+                            <th>Roles</th>
+                            <th>Action</th>
+                            <th>Active/Inactive</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.emp_id }}</td>
+                            <td>{{ user.firstname }} {{ user.lastname }}</td> 
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.phone }}</td>
+                            <td>{{ user.department }}</td>
+                            <td>{{ user.roles|join:", " }}</td> 
+                            <td>
+                                <button class="btn btn-sm edituserBtn" style="background-color:#007080; border-color:#007080;color:white;">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                            <td>
+                                {% if user.is_active|stringformat:"s" == "True" %}
+                                    <span class="badge bg-success">Active</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        
+        
+        
+    </form>
+</div>
+
+{% endblock %}
+{%block scripts%}
+
+
+<script>
+    // When the DOM is fully loaded
+    $(document).ready(function() {
+        // Initialize Select2 plugin for the 'roles' dropdown with placeholder and options
+        $('#roles').select2({
+            placeholder: "Select Roles",
+            width: 'resolve',
+            allowClear: true
+        });
+    
+        // Initialize DataTables plugin on the users table for pagination, search, etc.
+        userTable = $('#usersTable').DataTable({
+            scrollY: "300px",        // Makes tbody scrollable
+            scrollCollapse: true,
+            paging: true,            // Enables pagination
+            fixedHeader: true        // Keeps the header static on scroll
+        });  
+    });
+
+    // When an edit button in the users table is clicked
+    $(document).on('click', '.edituserBtn', function() {
+        // Change the submit button text to "Update" for edit mode
+        $('#submit').text('Update');
+    });
+    $(document).ready(function () {
+        $('#activeCheckbox').change(function () {
+            if ($(this).is(':checked')) {
+                $('#activeLabel').text('Active');
+            } else {
+                $('#activeLabel').text('Inactive');
+            }
+        });
+    });
+    document.addEventListener("DOMContentLoaded", function() {
+    document.querySelectorAll(".no-enter").forEach(function(element) {
+        element.addEventListener("keydown", function(event) {
+            if (event.key === "Enter") {
+                event.preventDefault(); // Disable Enter key
+                return false;
+            }
+        });
+    });
+});
+
+    // Toggle password visibility when the eye icon is clicked
+    $(document).on('click', '.toggle-password', function() {
+        var targetId = $(this).data('target');  // Get the input id to toggle
+        var input = $('#' + targetId);
+        var icon = $(this);
+    
+        if (input.attr('type') === 'password') {
+            // Show password as text
+            input.attr('type', 'text');
+            icon.removeClass('fa-eye-slash').addClass('fa-eye');
+        } else {
+            // Hide password
+            input.attr('type', 'password');
+            icon.removeClass('fa-eye').addClass('fa-eye-slash');
+        }
+    });
+    
+    {% comment %} function handleRoleSelection() {
+        const selectElement = document.getElementById('roles');
+        // Filter out empty value option
+        const selectedRoles = Array.from(selectElement.selectedOptions)
+            .map(option => option.value)
+            .filter(value => value !== "");  // <-- ignore empty values
+    
+        const isIndentorSelected = selectedRoles.some(roleId => {
+            return selectElement.querySelector(`option[value="${roleId}"]`).dataset.role === 'Indentor';
+        });
+    
+        if (selectedRoles.length > 0) {
+            if (isIndentorSelected) {
+                Array.from(selectElement.options).forEach(option => {
+                    const role = option.dataset.role;
+                    if (role !== 'Indentor' && selectedRoles.length > 1) {
+                        option.disabled = true;
+                    } else {
+                        option.disabled = false;
+                    }
+                });
+            } else {
+                Array.from(selectElement.options).forEach(option => {
+                    const role = option.dataset.role;
+                    if (role !== 'Indentor' && !selectedRoles.includes(option.value)) {
+                        option.disabled = true;
+                    }
+                    if (role === 'Indentor' && !selectedRoles.includes(option.value)) {
+                        option.disabled = false;
+                    }
+                });
+            }
+        } else {
+            // Enable all options when nothing selected
+            Array.from(selectElement.options).forEach(option => {
+                option.disabled = false;
+            });
+        }
+    } {% endcomment %}
+    
+    function handleRoleSelection() {
+    const roleSelect = document.getElementById('roles');
+    const deptSelect = document.getElementById('departments');
+
+    // Get selected department
+    const selectedDept = deptSelect.options[deptSelect.selectedIndex]
+        ?.dataset.type?.trim();
+
+    const roleOptions = Array.from(roleSelect.options);
+
+    // ----- Allowed role combinations -----
+    const allowedCombinations = {
+        "IMM": [
+            ["Indentor", "IMM"],
+            ["IMM", "Recommending Authority"]
+        ],
+        "Accounts": [
+            ["Indentor", "Accounts"],
+            ["Accounts", "Recommending Authority"]
+        ]
+    };
+
+    if (allowedCombinations[selectedDept]) {
+
+        // Read selected roles
+        const selectedRoles = roleOptions
+            .filter(opt => opt.selected)
+            .map(opt => opt.dataset.role);
+
+        // Enable everything first
+        roleOptions.forEach(opt => opt.disabled = false);
+
+        // If nothing selected → do nothing yet
+        if (selectedRoles.length === 0) return;
+
+        // If one role selected → restrict to allowed combinations
+        if (selectedRoles.length === 1) {
+            const allowedNextRoles = allowedCombinations[selectedDept]
+                .filter(pair => pair.includes(selectedRoles[0])) // pairs containing selected role
+                .flat()
+                .filter(r => r !== selectedRoles[0]); // exclude already selected
+
+            roleOptions.forEach(opt => {
+                if (!allowedNextRoles.includes(opt.dataset.role)) {
+                    opt.disabled = true;
+                }
+            });
+        }
+
+        // If two roles selected → validate the pair
+        if (selectedRoles.length === 2) {
+            const isValidPair = allowedCombinations[selectedDept]
+                .some(pair =>
+                    pair.includes(selectedRoles[0]) &&
+                    pair.includes(selectedRoles[1])
+                );
+
+            if (!isValidPair) {
+                // Clear invalid second selection
+                roleOptions.forEach(opt => {
+                    opt.selected = false;
+                    opt.disabled = false;
+                });
+                alert("Invalid role combination for " + selectedDept);
+            } else {
+                // Lock everything else
+                roleOptions.forEach(opt => {
+                    if (!selectedRoles.includes(opt.dataset.role)) {
+                        opt.disabled = true;
+                    }
+                });
+            }
+        }
+
+        return; // Stop here for IMM & Accounts
+    }
+
+    // -------------------------------
+    // OLD LOGIC for other departments
+    // -------------------------------
+
+    const selectedValues = roleOptions
+        .filter(opt => opt.selected)
+        .map(opt => opt.value)
+        .filter(v => v !== "");
+
+    const isIndentorSelected = selectedValues.some(roleId => {
+        return roleSelect.querySelector(`option[value="${roleId}"]`)
+            .dataset.role === 'Indentor';
+    });
+
+    if (selectedValues.length > 0) {
+        if (isIndentorSelected) {
+            roleOptions.forEach(option => {
+                const role = option.dataset.role;
+                if (role !== 'Indentor' && selectedValues.length > 1) {
+                    option.disabled = true;
+                } else {
+                    option.disabled = false;
+                }
+            });
+        } else {
+            roleOptions.forEach(option => {
+                const role = option.dataset.role;
+                if (role !== 'Indentor' && !selectedValues.includes(option.value)) {
+                    option.disabled = true;
+                }
+                if (role === 'Indentor' && !selectedValues.includes(option.value)) {
+                    option.disabled = false;
+                }
+            });
+        }
+    } else {
+        roleOptions.forEach(option => option.disabled = false);
+    }
+}
+
+
+
+    // Call handleRoleSelection on initial page load to set checkbox state correctly
+    document.addEventListener("DOMContentLoaded", function () {
+        handleRoleSelection(); 
+    });
+    
+    var passram = false;  // Flag to skip password validation when editing existing user
+  
+
+    function Submitreg() {
+        debugger;
+    
+        // Collect form input values
+        var firstname = $("#firstname").val();
+        var lastname = $("#lastname").val();
+        var phoneno = $("#phoneno").val();
+        var email = $("#email").val();
+        var empid = $("#empid").val();
+        var dept = $("#departments option:selected").data("id");
+        var roles = $('#roles option:selected').map(function () {
+            return $(this).val();
+        }).get();
+    
+        if ($('#employeeCheckbox').is(':checked')) {
+            const employeeRoleId = $('#employeeRoleId').val();
+            if (!roles.includes(employeeRoleId)) {
+                roles.push(employeeRoleId);
+            }
+        }
+    
+        var password = $("#password").val();
+        var confirmpassword = $("#confirmpassword").val();
+    
+        var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        var phoneRegex = /^[0-9]{10}$/;
+        var empidRegex = /^[0-9]{1,7}$/;
+        var specialCharRegex = /[!@#$%^&*(),.?":{}|<>]/;
+        var isActive = $('#activeCheckbox').is(':checked') ? 'Active' : 'Inactive';
+    
+        // === Validation checks ===
+        if (!dept) return showAlert("Department is required");
+        if (roles.length === 0) return showAlert("At least one role must be selected");
+        if (!email) return showAlert("Email is required");
+        if (!emailRegex.test(email)) return showAlert("Invalid email format");
+        if (!phoneno) return showAlert("Phone number is required");
+        if (!phoneRegex.test(phoneno)) return showAlert("Phone number must be 10 digits");
+        if (!empid) return showAlert("Employee ID is required");
+        if (!empidRegex.test(empid)) return showAlert("Employee ID must be numeric and up to 7 digits");
+        if (!firstname) return showAlert("First Name is required");
+    
+        if (passram !== true) {
+            if (!password) return showAlert("Password is required");
+            if (!confirmpassword) return showAlert("Please Confirm Password");
+            if (!specialCharRegex.test(password)) return showAlert("Password must contain at least one special character");
+            if (password !== confirmpassword) return showAlert("Passwords do not match");
+        }
+    
+        // Check for duplicates
+        var isDuplicateEmail = false;
+        var isDuplicateEmpId = false;
+        userTable.rows().every(function () {
+            var rowData = this.data();
+            var existingEmpId = rowData[0];
+            var existingEmail = rowData[2];
+    
+            if (existingEmpId === empid && existingEmail === email) return;
+            if (existingEmpId === empid) isDuplicateEmpId = true;
+            if (existingEmail === email) isDuplicateEmail = true;
+        });
+    
+        if (isDuplicateEmpId) return showAlert("Employee ID already exists");
+        if (isDuplicateEmail) return showAlert("Email ID already exists");
+    
+        // Determine confirmation message based on mode
+        var isEditMode = $('#submit').text().trim() === 'Update';
+        var confirmMessage = isEditMode
+            ? "Are you sure you want to update this user?"
+            : "Are you sure you want to register this user?";
+    
+        // Confirmation popup before final submission
+        showConfirmAlert(confirmMessage).then((result) => {
+            if (result.isConfirmed) {
+                proceedWithRegistration({
+                    firstname,
+                    lastname,
+                    phoneno,
+                    email,
+                    empid,
+                    dept,
+                    password,
+                    confirmpassword,
+                    isActive,
+                    roles
+                });
+            }
+        });
+    }
+    
+    function proceedWithRegistration(data) {
+        let formData = new FormData();
+        formData.append("firstname", data.firstname);
+        formData.append("lastname", data.lastname);
+        formData.append("phoneno", data.phoneno);
+        formData.append("email", data.email);
+        formData.append("empid", data.empid);
+        formData.append("dept", data.dept);
+        formData.append("password", data.password);
+        formData.append("confirmpassword", data.confirmpassword);
+        formData.append("status", data.isActive);
+        data.roles.forEach(function (role) {
+            formData.append("roles[]", role);
+        });
+    
+        $.ajax({
+            type: 'POST',
+            url: "{% url 'register_user' %}",
+            data: formData,
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            processData: false,
+            contentType: false,
+            success: function (response) {
+                if (response.success) {
+                    $('#password, #confirmpassword').attr('type', 'password');
+                    $('.toggle-password').removeClass('fa-eye').addClass('fa-eye-slash');
+    
+                    let u = response.user;
+    
+                    userTable.rows().every(function () {
+                        var rowData = this.data();
+                        if (Array.isArray(rowData) && rowData[0] === data.empid) {
+                            this.remove();
+                            return false;
+                        }
+                    });
+    
+                    userTable.row.add([
+                        u.emp_id,
+                        u.name,
+                        u.email,
+                        u.phone,
+                        u.department.split(" ")[0],
+                        u.roles.join(", "),
+                        `<button class="btn btn-sm edituserBtn" style="background-color: #007080;border-color: #007080;color: white;" 
+                            data-user-id="${u.emp_id}"
+                            data-firstname="${data.firstname}"
+                            data-lastname="${data.lastname}"
+                            data-email="${data.email}"
+                            data-phone="${data.phoneno}"
+                            data-roles="${u.roles.join(', ')}"
+                            data-is-active="${u.is_active}">
+                            <i class="fas fa-edit"></i>
+                        </button>`,
+                        u.is_active === true || String(u.is_active).toLowerCase() === "true"
+                            ? '<span class="badge bg-success">Active</span>'
+                            : '<span class="badge bg-danger">Inactive</span>'
+                    ]).draw(false);
+    
+                    let message = response.message === 'User Created successfully.' ? 'User registered successfully' : 'User updated successfully';
+                    showSuccessAlert(message).then(() => {
+                        $('#procurementForm')[0].reset();
+                        $('#submit').text('Submit');
+                        $("#pass, #confirmpass").show();
+                        $('#roles').val([]).trigger('change');
+                        $('.toggle-password').removeClass('fa-eye').addClass('fa-eye-slash');
+                    });
+    
+                } else {
+                    const errorMsg = response.error || "An unexpected error occurred.";
+                    const isRoleError = errorMsg.includes("role change is not allowed") || errorMsg.startsWith("Cannot remove role");
+    
+                    (isRoleError ? showWarningAlert : showAlert)(errorMsg).then(() => {
+                        $('#procurementForm')[0].reset();
+                        $('#submit').text('Submit');
+                        $("#pass, #confirmpass").show();
+                        $('#roles').val([]).trigger('change');
+                        $('.toggle-password').removeClass('fa-eye').addClass('fa-eye-slash');
+                    });
+                }
+            },
+            error: function (xhr, status, error) {
+                alert('Error submitting registration: ' + error);
+                $(".loader").show();
+                $("body").css("pointer-events", "none");
+            }
+        });
+    }
+            
+    $(document).on("click", ".edituserBtn", function () {
+        debugger;
+
+        passram = true;
+
+        var $row = $(this).closest("tr");
+
+        var empId = $row.find("td:eq(0)").text().trim();
+        var fullName = $row.find("td:eq(1)").text().trim().split(" ");
+        var email = $row.find("td:eq(2)").text().trim();
+        var phone = $row.find("td:eq(3)").text().trim();
+        var department = $row.find("td:eq(4)").text().trim();
+        var roles = $row.find("td:eq(5)").text().trim().split(",").map(r => r.trim());
+        var statusText = $row.find("td:eq(7) span").text().trim(); // ✅ Extract from span
+
+        $("#empid").val(empId);
+        $("#firstname").val(fullName[0]);
+        $("#lastname").val(fullName.slice(1).join(" "));
+        $("#email").val(email);
+        $("#phoneno").val(phone);
+
+        $("#pass").hide();
+        $("#confirmpass").hide();
+
+        // Department selection
+        $("#departments option").filter(function () {
+            return $(this).text().includes(department);
+        }).prop("selected", true);
+
+        // Roles selection
+        var selectedRoleIds = [];
+        $("#roles option").each(function () {
+            if (roles.includes($(this).text().trim())) {
+                selectedRoleIds.push($(this).val());
+            }
+        });
+        $("#roles").val(selectedRoleIds).trigger("change");
+
+        // ✅ Handle status checkbox
+        var isActive = statusText.toLowerCase() === "active";
+        $("#activeCheckbox").prop("checked", isActive);
+        $("#activeLabel").text(isActive ? "Active" : "Inactive");
+
+        // Scroll to form
+        $('html, body').animate({
+            scrollTop: $(".container-fluid").offset().top
+        }, 500);
+    });
+
+    $(document).ready(function() {
+        var csrftoken = $('meta[name="csrf-token"]').attr('content');
+    
+        $('.toggleStatusBtn').on('click', function() {
+            var button = $(this);
+            var empId = button.data('empid');
+    
+            $.ajax({
+                url: "{% url 'toggle_user_status' %}",
+                type: "POST",
+                data: { emp_id: empId },
+                headers: { "X-CSRFToken": csrftoken },
+                success: function(data) {
+                    if (data.status === 'success') {
+                        if (data.is_active) {
+                            button.html('<i class="fas fa-toggle-on" style="color:green; font-size:1.5em;"></i>');
+                        } else {
+                            button.html('<i class="fas fa-toggle-off" style="color:red; font-size:1.5em;"></i>');
+                        }
+                    } else {
+                        alert('Failed to toggle status: ' + (data.message || 'Unknown error'));
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error: ' + error);
+                }
+            });
+        });
+    });
+    
+</script>
+
+{%endblock%}

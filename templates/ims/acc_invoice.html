@@ -1,0 +1,1043 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+{% block styleblock %}
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+</head>
+<!-- CSS Stylings -->
+<style>
+    .list-group-item.active {
+        color:rgb(204, 60, 60);
+        background-color:rgb(223, 234, 64);
+    }
+    .search-box {
+        position: relative;
+        width: 100%;
+    }
+    
+    .search-box i {
+        position: absolute;
+        left: 10px; /* Space from the left edge */
+        top: 50%;
+        transform: translateY(-50%); /* Vertically center the icon */
+        color: #888; /* Optional: Change color of the icon */
+    }
+    
+    .search-box input {
+        width: 100%;
+        padding: 8px 10px 8px 35px; /* Extra padding on the left for the icon */
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    .active-procurement {
+    
+            background-color: #00B2CC !important; /* Light blue for highlighting */
+            border: 3px solid white;
+            position: relative;
+            overflow: hidden;
+            animation: glow-shadow 2s linear infinite;
+          }
+          
+          @keyframes glow-shadow {
+            0% {
+              box-shadow: 0 0 5px 2px white;
+            }
+            50% {
+              box-shadow: 0 0 15px 5px white;
+            }
+            100% {
+              box-shadow: 0 0 5px 2px white;
+            }
+          }
+
+    table, th, td {
+        background-color: transparent !important;
+        border: 0.5px solid  rgba(98, 98, 98, 0.5);/* Border to make table edges visible if needed */
+    }
+    th, td {
+        background-color: transparent !important; /* Make table headers and cells transparent */
+        color: #fff; /* Text color for better readability if needed */
+    }
+    /* Optional: To make borders less intrusive */
+    tr, th {
+        border: 0.5px solid rgba(98, 98, 98, 0.5); /* Semi-transparent border */
+    }
+    #termsContainer {
+        background-color: transparent !important;
+    }
+    .no-border {
+        border: none !important;
+        box-shadow: none !important;
+    }
+    .list-group-item.active {
+        border-left: 3px solid #0066c0 !important;
+        background-color: #e6f2ff !important;
+        box-shadow: 0 2px 8px rgba(0, 102, 192, 0.2);
+    }
+    .list-group-item:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    {% comment %} #hi, #pdfContainer.remove-background {
+        background-image: none !important;
+        background-color: #ffffff !important;
+      } {% endcomment %}
+      
+      
+      .with-bg {
+        position: relative;
+        border: 1px solid #ddd;
+        padding: 20px;
+        border-radius: 8px;
+        background-color: #fff;
+        overflow: hidden; /* ensures rounded corners apply to background image */
+      }
+      
+      .with-bg::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-image: url('{% static "images/priya.png" %}');
+        background-size: 60%;
+        background-position: center;
+        background-repeat: no-repeat;
+        opacity: 0.6; /* same as your other container */
+        pointer-events: none; /* let clicks pass through */
+        z-index: 0;
+      }
+      
+      .with-bg > * {
+        position: relative;
+        z-index: 1; /* keep content above the background image */
+      }
+      
+      #loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(6px);
+        display: none; /* Hide by default */
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+     body{
+        overflow-y: hidden; 
+      }
+      .word-wrap {
+        word-wrap: break-word;
+        word-break: break-all;
+        max-width: 15ch; /* Limits width of the content to 15 characters */
+    }
+     
+    #logsModalBody {
+  overflow-x: auto;
+
+}
+
+.table-responsive {
+  min-width: 100%;
+}
+
+.table {
+  width: 100%;
+}
+    
+</style>
+{% endblock %}
+
+{% block previewcontent %}
+<div id="installmentFormContainer" class="d-none">
+  <!-- Procurement Summary Card -->
+  <div class="card p-3 mb-3">
+    <h5 class="mb-2"><strong>Procurement ID: <span id="procurementId"></span></strong></h5>
+    <p class="mb-0"><strong>Project Name:</strong> <span id="projectName"></span></p>
+    <p class="mb-0"><strong>Total Amount:</strong> ₹<span id="amountDisplay"></span></p>
+    <input type="hidden" id="amountValue" value="">
+
+    <div class="d-flex align-items-center mb-2 gap-2">
+      <p class="mb-0"><strong>Number of Installments:</strong> <span id="installmentCount">0</span></p>
+      <button type="button" class="btn btn-secondary btn-sm" id="addInstallmentBtn">+ Add Installment</button>
+    </div>
+
+    <!-- Installment Form -->
+    <form id="installmentForm">
+      <div id="installmentRows"></div>
+      <button type="submit" class="btn btn-primary mt-3" style="background-color:#007080;border-color:#007080;">Submit</button>
+    </form>
+  </div>
+
+<template id="installmentRowTemplate">
+  <div class="row mb-3 installment-row" 
+       data-index="" data-existing="true" data-id="" 
+       data-original-date="" data-original-amount="">
+
+    <input type="hidden" name="installment_ids[]" value="">
+
+    <div class="col-12 mb-2 d-flex justify-content-between align-items-center">
+      <strong class="installment-label">Installment</strong>
+      <button type="button" class="btn btn-sm view-logs-btn text-white" style="background-color:#007080;border-color:#007080;"
+        data-installment-id="" data-installmentname="" data-procurement-id="">
+        <i class="fa fa-eye"></i> Logs
+      </button>
+    </div>
+
+    <div class="col-md-2">
+      <label class="fw-bold">Date</label>
+      <input type="date" class="form-control date-input" name="dates[]" required>
+    </div>
+
+    <div class="col-md-2">
+      <label class="fw-bold">Percentage</label>
+      <input type="number" class="form-control percentage-input" name="percentages[]" step="0.01" min="0" max="100">
+    </div>
+
+    <div class="col-md-2">
+      <label class="fw-bold">Amount</label>
+      <input type="number" class="form-control amount-input" name="amounts[]" min="0" step="0.01">
+    </div>
+
+    <div class="col-md-2">
+      <label class="fw-bold">Payment Mode</label>
+      <select class="form-control payment-mode-select" name="payment_modes[]">
+        <option value="">-- Select --</option>
+        <option value="cash">Cash</option>
+        <option value="cheque">Cheque</option>
+        <option value="online">Online</option>
+      </select>
+    </div>
+
+    <div class="cheque-fields row w-100 mb-2" style="display: none;">
+      <div class="col-md-2">
+        <label class="fw-bold">Cheque No.</label>
+        <input type="text" class="form-control cheque-no" name="cheque_nos[]">
+      </div>
+      <div class="col-md-2">
+        <label class="fw-bold">Cheque Date</label>
+        <input type="date" class="form-control cheque-date" name="cheque_dates[]">
+      </div>
+      <div class="col-md-2">
+        <label class="fw-bold">Validity</label>
+        <input type="date" class="form-control cheque-validity" name="cheque_validities[]">
+      </div>
+    </div>
+
+    <div class="col-md-4">
+      <label class="fw-bold">Remarks</label>
+      <textarea class="form-control remarks-input" name="remarks[]" rows="3"></textarea>
+    </div>
+
+    <div class="row align-items-start">
+      <div class="col-md-4">
+        <label class="fw-bold">Reference No.</label>
+        <input type="text" class="form-control transaction-id" name="transaction_ids[]">
+      </div>
+
+      <div class="col-md-8">
+        <label class="fw-bold">Files</label>
+        <input type="file" class="form-control file-input" accept="application/pdf,image/*" multiple>
+        <div class="mt-1 file-preview-container"></div>
+      </div>
+    </div>
+
+    <div class="col-12">
+      <hr style="border-top: 2px solid black;">
+    </div>
+  </div>
+</template>
+
+<template id="newInstallmentRowTemplate">
+  <div class="row mb-3 installment-row" data-index="" data-existing="false">
+    <div class="col-12 mb-2 d-flex justify-content-between align-items-center">
+      <strong class="installment-label">Installment</strong>
+      <div>
+        <button type="button" class="btn btn-sm btn-outline-secondary view-logs-btn me-2" 
+          data-installmentname="" data-procurement-id="">
+          <i class="fa fa-eye"></i> Logs
+        </button>
+        <button type="button" class="btn btn-sm btn-outline-danger delete-installment-btn">
+          <i class="fa fa-trash"></i>
+        </button>
+      </div>
+    </div>
+
+    <div class="col-md-2"><label class="fw-bold">Date</label>
+      <input type="date" class="form-control" name="dates[]" required>
+    </div>
+    <div class="col-md-2"><label class="fw-bold">Percentage</label>
+      <input type="number" class="form-control" name="percentages[]" step="0.01" min="0" max="100">
+    </div>
+    <div class="col-md-2"><label class="fw-bold">Amount</label>
+      <input type="number" class="form-control" name="amounts[]" min="0" step="0.01">
+    </div>
+    <div class="col-md-2"><label class="fw-bold">Payment Mode</label>
+      <select class="form-control payment-mode-select" name="payment_modes[]">
+        <option value="">-- Select --</option>
+        <option value="cash">Cash</option>
+        <option value="cheque">Cheque</option>
+        <option value="online">Online</option>
+      </select>
+    </div>
+
+    <div class="cheque-fields row w-100 mb-2" style="display:none;">
+      <div class="col-md-2"><label class="fw-bold">Cheque No.</label>
+        <input type="text" class="form-control cheque-only-field" name="cheque_nos[]">
+      </div>
+      <div class="col-md-2"><label class="fw-bold">Cheque Date</label>
+        <input type="date" class="form-control cheque-only-field" name="cheque_dates[]">
+      </div>
+      <div class="col-md-2"><label class="fw-bold">Validity</label>
+        <input type="date" class="form-control cheque-only-field" name="cheque_validities[]">
+      </div>
+    </div>
+
+    <div class="col-md-4"><label class="fw-bold">Remarks</label>
+      <textarea class="form-control" name="remarks[]" rows="3"></textarea>
+    </div>
+
+    <div class="row align-items-start">
+      <div class="col-md-4">
+        <label class="fw-bold">Reference No.</label>
+        <input type="text" class="form-control" name="transaction_ids[]">
+      </div>
+      <div class="col-md-8">
+        <label class="fw-bold">Files</label>
+        <input type="file" class="form-control file-input" accept="application/pdf,image/*" multiple>
+        <div class="mt-1 file-preview-container"></div>
+      </div>
+    </div>
+
+    <div class="col-12"><hr style="border-top: 2px solid black;"></div>
+  </div>
+</template>
+
+  <!-- Installment Logs Modal -->
+<div class="modal fade" id="installmentLogsModal" tabindex="-1" aria-labelledby="logsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-xl">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="logsModalLabel">Installment Logs</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="logsModalBody">
+        <p class="text-muted">Fetching logs...</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Logs Table Template -->
+<template id="logsTableTemplate">
+  <div class="table-responsive mt-3">
+    <table id="logsTable" class="table table-striped table-hover table-bordered shadow-sm align-middle w-100">
+      <thead class="text-white text-center" style="background-color:#007080;">
+        <tr>
+          <th>Installment Date</th>
+          <th>Uploaded Time</th>
+          <th>Submitted By</th>
+          <th>Percentage</th>
+          <th>Amount</th>
+          <th>Mode</th>
+          <th>Cheque No</th>
+          <th>Cheque Date</th>
+          <th>Cheque Validity</th>
+          <th>Reference No.</th>
+          <th>Remarks</th>
+          <th>Files</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white" id="logsTableBody">
+        <!-- Filled dynamically -->
+      </tbody>
+    </table>
+  </div>
+</template>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+
+ // Parse procurement details passed from Django into a JavaScript object
+const procurementDetails = JSON.parse('{{ procurement_details_json|safe }}');
+
+
+// Calculate the total of all installment amounts entered
+function calculateTotalAmount() {
+  let total = 0;
+  document.querySelectorAll('input[name="amounts[]"]').forEach(input => {
+    const val = parseFloat(input.value);
+    if (!isNaN(val)) total += val;
+  });
+  return total;
+}
+
+// Calculate the total of all percentage values entered
+function calculateTotalPercentage() {
+  let total = 0;
+  document.querySelectorAll('input[name="percentages[]"]').forEach(input => {
+    const val = parseFloat(input.value);
+    if (!isNaN(val)) total += val;
+  });
+  return total;
+}
+
+// Updates the corresponding percentage or amount field in the same row when one is changed
+function updateAmountsOrPercentages(changedInput) {
+  const row = changedInput.closest('.installment-row');
+  const amountInput = row.querySelector('input[name="amounts[]"]');
+  const percentageInput = row.querySelector('input[name="percentages[]"]');
+  const dpoTotal = parseFloat(document.getElementById('dpoTotal').value);
+
+  if (changedInput === amountInput) {
+    const amt = parseFloat(amountInput.value);
+    if (!isNaN(amt)) {
+      const percentage = ((amt / dpoTotal) * 100).toFixed(2);
+      percentageInput.value = percentage;
+    } else {
+      percentageInput.value = '';
+    }
+  } else if (changedInput === percentageInput) {
+    const perc = parseFloat(percentageInput.value);
+    if (!isNaN(perc)) {
+      const amount = ((perc / 100) * dpoTotal).toFixed(2);
+      amountInput.value = amount;
+    } else {
+      amountInput.value = '';
+    }
+  }
+}
+
+// To track URLs of files marked for deletion
+let deletedFileUrls = []; 
+
+// To track files associated with each installment row by index
+let rowFiles = {};   
+
+function renderInstallmentRow(inst, i, procurementId) {
+  const template = document.getElementById('installmentRowTemplate');
+  const clone = template.content.cloneNode(true);
+  const row = clone.querySelector('.installment-row');
+
+  // Set row-level data
+  row.dataset.index = i;
+  row.dataset.id = inst.id;
+  row.dataset.originalDate = inst.date;
+  row.dataset.originalAmount = inst.amount;
+
+  row.querySelector('input[name="installment_ids[]"]').value = inst.id;
+  row.querySelector('.installment-label').textContent = `Installment ${i + 1}`;
+
+  const logsBtn = row.querySelector('.view-logs-btn');
+  logsBtn.dataset.installmentId = inst.id;
+  logsBtn.dataset.installmentname = inst.installmentname || '';
+  logsBtn.dataset.procurementId = procurementId;
+
+  row.querySelector('.date-input').value = inst.date || '';
+  row.querySelector('.percentage-input').value = inst.payment_percentage || '';
+  row.querySelector('.amount-input').value = inst.amount || '';
+  row.querySelector('.payment-mode-select').value = inst.payment_mode || '';
+  row.querySelector('.cheque-no').value = inst.cheque_no || '';
+  row.querySelector('.cheque-date').value = inst.cheque_date || '';
+  row.querySelector('.cheque-validity').value = inst.cheque_validity || '';
+  row.querySelector('.remarks-input').value = inst.payment_remarks || '';
+  row.querySelector('.transaction-id').value = inst.transaction_id || '';
+  row.querySelector('.file-preview-container').id = `filePreviewContainer_${i}`;
+
+  // Show/hide cheque fields
+  const chequeFields = row.querySelector('.cheque-fields');
+  if (inst.payment_mode === 'cheque') {
+    chequeFields.style.display = 'flex';
+  }
+
+  // Files
+  const fileInput = row.querySelector('.file-input');
+  const previewContainer = row.querySelector('.file-preview-container');
+  
+  fileInput.dataset.index = i;
+// Initialize once before adding any files
+rowFiles[i] = [];
+
+(inst.files || []).forEach(file => {
+  const fileId = file.id || file.url;
+  const fileEl = document.createElement('div');
+  fileEl.className = 'file-preview d-flex align-items-center mb-1';
+  fileEl.dataset.existing = 'true';
+  fileEl.dataset.fileUrl = file.url;
+
+  fileEl.innerHTML = `
+    <a href="${file.url}" target="_blank" class="me-2"><i class="fa fa-eye"></i> ${file.name}</a>
+    <input type="hidden" name="existing_files[${inst.id}][]" value="${fileId}">
+    <button type="button" class="btn btn-sm btn-outline-danger remove-file-btn ms-2">
+      <i class="fa fa-times"></i>
+    </button>
+    <div class="small text-muted ms-2">Uploaded: ${inst.uploaded_date || 'N/A'} | By: ${inst.submitted_by || 'N/A'}</div>
+  `;
+
+  // Push file into rowFiles after initializing
+  const fakeFile = { name: file.name, url: file.url, isExisting: true };
+  rowFiles[i].push(fakeFile);
+
+  previewContainer.appendChild(fileEl);
+});
+
+
+  document.getElementById('installmentRows').appendChild(clone);
+}
+
+function renderInstallmentForm(data) {
+  const container = document.getElementById('installmentFormContainer');
+  container.classList.remove('d-none');
+
+  if (!container) return console.error("Installment form container not found.");
+
+  // Ensure container has necessary classes
+  container.classList.add('rounded-container', 'mt-3');
+
+  // Clear dynamic installment rows only
+  const rowsContainer = container.querySelector('#installmentRows');
+  if (!rowsContainer) return console.error("installmentRows container not found.");
+  rowsContainer.innerHTML = '';
+
+  const installments = data.installments || [];
+  container.setAttribute('data-original-count', installments.length);
+
+  // Set procurement metadata
+  document.getElementById('procurementId').textContent = data.procurement_id || 'N/A';
+  document.getElementById('projectName').textContent = data.project_name || 'N/A';
+
+
+  {% comment %} document.getElementById('dpoTotalDisplay').textContent = data.dpo_total?.toLocaleString('en-IN') || '0';
+  document.getElementById('dpoTotal').value = data.dpo_total || 0; {% endcomment %}
+
+  const amountLabel = document.getElementById('amountLabel') || document.querySelector('#installmentFormContainer strong#amountLabel');
+  const amountDisplay = document.getElementById('amountDisplay') || document.querySelector('#installmentFormContainer span#amountDisplay');
+  const amountValue = document.getElementById('amountValue') || document.querySelector('#installmentFormContainer input#amountValue');
+
+  if (data.pr_events === "Online_order") {
+    // Online orders → show estimated value of all particulars
+    const totalEstimated = data.estimated_value || 0;
+    if (amountLabel) amountLabel.textContent = "Estimated Value:";
+    if (amountDisplay) amountDisplay.textContent = totalEstimated.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (amountValue) amountValue.value = totalEstimated;
+  } else {
+    // Purchase orders → show DPO total
+    const dpoTotal = data.dpo_total || 0;
+    if (amountLabel) amountLabel.textContent = "Total Amount:";
+    if (amountDisplay) amountDisplay.textContent = dpoTotal.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    if (amountValue) amountValue.value = dpoTotal;
+  }
+
+  document.getElementById('installmentCount').textContent = installments.length;
+
+  // Render all existing installments
+  installments.forEach((inst, i) => {
+    renderInstallmentRow(inst, i, data.procurement_id);
+  });
+
+  updateInstallmentCount(container);
+
+  // Bind dynamic behavior for select, file preview, etc.
+  container.querySelectorAll('.payment-mode-select').forEach(select => {
+    select.addEventListener('change', function () {
+      const row = this.closest('.installment-row');
+      const chequeFields = row.querySelector('.cheque-fields');
+      const chequeInputs = row.querySelectorAll('.cheque-only-field');
+
+      if (this.value === 'cheque') {
+        chequeFields.style.display = 'flex';
+        chequeInputs.forEach(input => input.setAttribute('required', 'required'));
+      } else {
+        chequeFields.style.display = 'none';
+        chequeInputs.forEach(input => input.removeAttribute('required'));
+      }
+    });
+
+    // Trigger change event to apply initial state
+    select.dispatchEvent(new Event('change'));
+  });
+
+  container.querySelectorAll('.file-input').forEach(input => {
+  const previewContainer = input.closest('.installment-row').querySelector('.file-preview-container');
+  bindFileInputPreview(input, previewContainer);
+});
+
+  container.querySelectorAll('.remove-file-btn').forEach(btn => {
+    btn.addEventListener('click', function (e) {
+      const wrapper = this.closest('.file-preview');
+      const fileUrl = wrapper?.dataset.fileUrl;
+
+      if (fileUrl) {
+        deletedFileUrls.push(fileUrl);
+        console.log("Marked for deletion:", fileUrl);
+      }
+
+      
+      if (wrapper) {
+        const hiddenInput = wrapper.querySelector('input[type="hidden"]');
+        if (hiddenInput) hiddenInput.remove();
+        wrapper.remove();
+      }
+    });
+  });
+
+  // Prevent multiple bindings to Add button
+  if (!container.dataset.addListenerBound) {
+    const addBtn = container.querySelector('#addInstallmentBtn');
+    addBtn.addEventListener('click', () => {
+      const index = container.querySelectorAll('.installment-row').length;
+      const template = document.getElementById('newInstallmentRowTemplate');
+      const newRow = template.content.cloneNode(true).querySelector('.installment-row');
+
+      newRow.dataset.index = index;
+      newRow.querySelector('.installment-label').textContent = `Installment ${index + 1}`;
+
+      const procurementId = document.querySelector('#dpoTotal')?.value || '';
+      newRow.querySelector('.view-logs-btn').dataset.installmentname = `Installment ${index + 1}`;
+      newRow.querySelector('.view-logs-btn').dataset.procurementId = procurementId;
+
+      newRow.querySelector('.file-input').dataset.index = index;
+      newRow.querySelector('.file-preview-container').id = `filePreviewContainer_${index}`;
+
+      container.querySelector('#installmentRows').appendChild(newRow);
+
+      newRow.querySelector('.payment-mode-select').addEventListener('change', function () {
+        const chequeFields = newRow.querySelector('.cheque-fields');
+        chequeFields.style.display = (this.value === 'cheque') ? 'flex' : 'none';
+      });
+
+      bindFileInputPreview(newRow.querySelector('.file-input'), container);
+
+      newRow.querySelector('.view-logs-btn').addEventListener('click', function () {
+        const modalBody = document.getElementById('logsModalBody');
+        modalBody.innerHTML = `<p class="text-muted">No logs available yet for this new installment.</p>`;
+        new bootstrap.Modal(document.getElementById('installmentLogsModal')).show();
+      });
+
+      newRow.querySelector('.delete-installment-btn').addEventListener('click', function () {
+        newRow.remove();
+        updateInstallmentCount(container);
+      });
+
+      newRow.querySelectorAll('input[name="amounts[]"], input[name="percentages[]"]').forEach(input => {
+        input.addEventListener('input', function () {
+          updateAmountsOrPercentages(this);
+        });
+      });
+
+      updateInstallmentCount(container);
+    });
+
+    // ✅ Mark as bound to prevent rebinding
+    container.dataset.addListenerBound = 'true';
+  }
+
+  // View logs for existing installments
+container.addEventListener('click', function (event) {
+  const btn = event.target.closest('.view-logs-btn');
+  if (!btn) return;
+
+  const installmentName = btn.dataset.installmentname;
+  const procurement = data;
+
+  const installment = procurement.installments.find(inst => inst.installmentname === installmentName);
+  const modalBody = document.getElementById('logsModalBody');
+  const logsModalInstance = bootstrap.Modal.getOrCreateInstance(document.getElementById('installmentLogsModal'));
+
+  modalBody.innerHTML = ''; // clear modal content
+
+  if (!installment || !installment.logs?.length) {
+    modalBody.innerHTML = `<p class="text-muted">No previous logs available for this installment.</p>`;
+    logsModalInstance.show();
+    return;
+  }
+
+  // Clone template
+  const template = document.getElementById('logsTableTemplate');
+  const tableContent = template.content.cloneNode(true);
+  const tbody = tableContent.querySelector('#logsTableBody');
+
+  installment.logs.forEach(log => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${log.date || '—'}</td>
+      <td>${log.uploaded_date || '—'}</td>
+      <td>${log.submitted_by || '—'}</td>
+      <td class="text-end">${log.payment_percentage?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}%</td>
+      <td class="text-end">₹${log.amount?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) || '0.00'}</td>
+      <td>${log.payment_mode || '—'}</td>
+      <td>${log.cheque_no || '—'}</td>
+      <td>${log.cheque_date || '—'}</td>
+      <td>${log.cheque_validity || '—'}</td>
+      <td>${log.transaction_id || '—'}</td>
+      <td>${log.payment_remarks || '—'}</td>
+      <td>
+        ${log.files?.length
+          ? log.files.map(f => `
+              <a href="${f.url}" target="_blank" class="d-block text-primary text-decoration-underline">
+                <i class="fa fa-eye"></i> ${f.name}
+              </a>
+            `).join('')
+          : '<span class="text-muted">—</span>'}
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  modalBody.appendChild(tableContent);
+  logsModalInstance.show();
+});
+
+
+  const logsModalEl = document.getElementById('installmentLogsModal');
+    logsModalEl.addEventListener('hidden.bs.modal', () => {
+      // Cleanup backdrop and body lock
+      document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+      document.body.classList.remove('modal-open');
+      document.body.style = ''; // Remove inline style if present
+    });
+
+
+  // Bind percentage/amount listeners
+  container.querySelectorAll('input[name="amounts[]"], input[name="percentages[]"]').forEach(input => {
+    input.addEventListener('input', function () {
+      updateAmountsOrPercentages(this);
+    });
+  });
+
+
+}
+
+// Form submission listener for the installment form
+document.addEventListener('submit', async function (e) {
+  if (e.target && e.target.id === 'installmentForm') {
+    e.preventDefault(); // Prevent default form submission behavior
+
+    // Calculate total amount and percentage entered
+    const dpoTotal = parseFloat(document.getElementById('amountValue').value); // DPO total value for validation
+    const amountInputs = document.querySelectorAll('input[name="amounts[]"]');
+    const percentageInputs = document.querySelectorAll('input[name="percentages[]"]');
+
+    let totalAmount = 0;
+    let totalPercentage = 0;
+    let hasInvalidValues = false;
+
+    // Sum up all entered amounts, and check for invalid values
+    amountInputs.forEach(input => {
+      const val = parseFloat(input.value);
+      if (!isNaN(val)) {
+        if (val <= 0) hasInvalidValues = true; 
+        totalAmount += val;
+      }
+    });
+
+    // Sum up all entered percentages, and check for invalid values
+    percentageInputs.forEach(input => {
+      const val = parseFloat(input.value);
+      if (!isNaN(val)) {
+        if (val <= 0) hasInvalidValues = true;
+        totalPercentage += val;
+      }
+    });
+
+    // Validate totals before submitting
+    let errorMsg = '';
+
+    if (hasInvalidValues) {
+      errorMsg += 'Amount and percentage values must be positive and non-zero.\n';
+    }
+
+    if (totalAmount.toFixed(2) > dpoTotal) {
+      errorMsg += `Total amount (₹${totalAmount}) exceeds DPO total (₹${dpoTotal}).\n`;
+    }
+
+    if (totalPercentage > 100) {
+      errorMsg += `Total percentage (${totalPercentage.toFixed(2)}%) exceeds 100%.\n`;
+    }
+
+    if (totalAmount.toFixed(2) < dpoTotal || totalPercentage < 100) {
+      errorMsg += `Total amount (₹${totalAmount.toFixed(2)}) and percentage (${totalPercentage.toFixed(2)}%) must exactly match DPO.\n`;
+    }
+
+    if (errorMsg) {
+      showWarningAlert(errorMsg);
+      return;
+    }
+
+    //  Prepare FormData for submission if validation passes
+    showLoader(); // Show loading spinner
+
+    const formData = new FormData();
+    const prId = document.querySelector('#installmentFormContainer h5').textContent.split(':')[1].trim(); // Extract PR ID
+    const rows = document.querySelectorAll('.installment-row');
+
+    // Loop through each row and append form data
+    rows.forEach((row, index) => {
+      const date = row.querySelector('input[type="date"]').value || '';
+      const amount = row.querySelector('input[name="amounts[]"]').value || '';
+
+      const paymentMode = row.querySelector('select[name="payment_modes[]"]')?.value || '';
+      
+      // Include cheque fields only if payment mode is cheque
+      let chequeNo = '', chequeDate = '', chequeValidity = '';
+      if (paymentMode.toLowerCase() === 'cheque') {
+        chequeNo = row.querySelector('input[name="cheque_nos[]"]')?.value || '';
+        chequeDate = row.querySelector('input[name="cheque_dates[]"]')?.value || '';
+        chequeValidity = row.querySelector('input[name="cheque_validities[]"]')?.value || '';
+      }
+
+      const transactionId = row.querySelector('input[name="transaction_ids[]"]')?.value || '';
+      const remark = row.querySelector('input[name="remarks[]"]')?.value || '';
+      const percentage = row.querySelector('input[name="percentages[]"]')?.value || '';
+
+      const fileInput = row.querySelector('input[type="file"]');
+
+      // Files previously selected and tracked globally
+      const files = rowFiles[index] || []; 
+
+      // Get installment name from log button (used for grouping)
+      const installmentName = row.querySelector('.view-logs-btn')?.dataset.installmentname || 'Default';
+      formData.append('installmentnames[]', installmentName);
+
+      // Add all necessary fields to FormData
+      formData.append('dates[]', date);
+      formData.append('amounts[]', amount);
+      const isExisting = row.getAttribute('data-existing') === 'true';
+      formData.append('is_existing[]', isExisting ? 'true' : 'false');
+
+      formData.append('payment_modes[]', paymentMode);
+      formData.append('cheque_nos[]', chequeNo);
+      formData.append('cheque_dates[]', chequeDate);
+      formData.append('cheque_validities[]', chequeValidity);
+      formData.append('transaction_ids[]', transactionId);
+      formData.append('remarks[]', remark);
+      formData.append('percentages[]', percentage);
+
+      // Append multiple files for this installment row
+      for (let f of files) {
+        if (f instanceof File) {
+          formData.append(`files_${index}[]`, f);
+        } else if (f.isExisting) {
+          // Send metadata for existing files
+          formData.append(`existing_files_metadata_${index}[]`, JSON.stringify({
+            name: f.name,
+            url: f.url
+          }));
+        }
+      }
+
+    });
+
+    // Include list of files that were removed before submission
+    deletedFileUrls?.forEach(url => formData.append('deleted_file_urls[]', url));
+    console.log(" Files marked for deletion before submit:", deletedFileUrls);
+
+    formData.append('procurement_id', prId);
+// Debug: Print all key-value pairs in FormData
+for (let pair of formData.entries()) {
+  console.log(`${pair[0]}:`, pair[1]);
+}
+
+    // Submit FormData to backend using Fetch API
+    try {
+      const response = await fetch('/payments/', {
+        method: 'POST',
+        headers: {
+          'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      hideLoader(); // Hide loader once response is received
+
+      if (data.message) {
+        // Show message and refresh sidebar color and installment form
+        showSuccessAlert(data.message);
+        $(`.view-pr-id[data-id='${prId}']`).closest("li").css("background-color", "#CCE5F0");
+
+        // Update global procurementDetails with latest info
+        const index = procurementDetails.findIndex(pr => pr.procurement_id === prId);
+        if (index !== -1) {
+          procurementDetails[index] = {
+            procurement_id: prId,
+            project_name: data.project_name || '',
+            installments: data.installments || [],
+            dpo_total: data.dpo_total || 0,
+          };
+        }
+        
+        // Re-render updated form
+        renderInstallmentForm(procurementDetails[index]); 
+      } else {
+        // Backend returned error
+        showWarningAlert(data.error || 'Failed to save installments.');
+      }
+    } catch (err) {
+      console.error('Error submitting installments:', err);
+      showWarningAlert('Error submitting installments.');
+      hideLoader();
+    }
+  }
+});
+
+
+// Updates the total installment count and renumbers each installment label.
+function updateInstallmentCount(container) {
+  const rows = container.querySelectorAll('.installment-row');
+
+  // Update the total count display
+  container.querySelector('#installmentCount').textContent = rows.length;
+
+  // Update each row's label
+  rows.forEach((row, index) => {
+    const label = row.querySelector('.form-label');
+    if (label) label.textContent = `Installment ${index + 1}`;
+  });
+}
+
+/**
+ * Binds file input to a specific installment row.
+ * Handles preview rendering and file tracking per row.
+ */
+function bindFileInputPreview(input, container) {
+  const row = input.closest('.installment-row');
+  const index = row.dataset.index;
+  const previewContainer = document.getElementById(`filePreviewContainer_${index}`);
+
+  // Initialize file tracking arrays if not already set
+  if (!rowFiles[index]) rowFiles[index] = [];
+  if (!input.selectedFiles) input.selectedFiles = [];
+
+  // Bind change event to track selected files and render previews
+  input.addEventListener('change', function () {
+    const selected = Array.from(this.files);
+
+    selected.forEach(file => {
+      // Prevent duplicates
+      const isDuplicate = input.selectedFiles.some(f => f.name === file.name && f.size === file.size);
+      if (!isDuplicate) {
+        input.selectedFiles.push(file);     // Track newly selected
+        rowFiles[index].push(file);         // Add to per-row file tracking
+      }
+    });
+
+    // Update preview area with all selected files
+    renderFilePreview(input, previewContainer, index);
+
+    // Reset input to allow re-selecting same file again
+    this.value = '';
+  });
+}
+
+/**
+ * Renders file previews in the given preview container for selected files.
+ * Preserves existing server-uploaded file previews, and shows new client-selected files.
+ */
+function renderFilePreview(input, previewContainer, index) {
+  const row = input.closest('.installment-row');
+
+  // Keep existing file previews
+  const existingPreviews = row.querySelectorAll('.file-preview[data-existing="true"]');
+  previewContainer.innerHTML = ''; // Clear preview container
+
+  // Re-append existing previews
+  existingPreviews.forEach(preview => {
+    previewContainer.appendChild(preview);
+  });
+
+  // Render new previews for client-selected files
+  input.selectedFiles.forEach((file, idx) => {
+    const fileUrl = URL.createObjectURL(file);
+
+    // Create preview item for each selected file
+    const fileItem = document.createElement('div');
+    fileItem.className = 'file-preview-item d-flex align-items-center gap-2 mb-1';
+    fileItem.innerHTML = `
+      <a href="${fileUrl}" target="_blank"><i class="fa fa-eye"></i> ${file.name}</a>
+      <button type="button" class="btn btn-sm btn-outline-danger remove-file" data-index="${idx}">
+        <i class="fa fa-times"></i>
+      </button>
+    `;
+
+    // Remove file logic
+    fileItem.querySelector('.remove-file').addEventListener('click', function () {
+      const removeIdx = parseInt(this.dataset.index);
+      const removedFile = input.selectedFiles[removeIdx];
+
+      // Remove from both input-selected and rowFiles
+      input.selectedFiles.splice(removeIdx, 1);
+      rowFiles[index] = rowFiles[index].filter(f => !(f.name === removedFile.name && f.size === removedFile.size));
+
+      // Re-render to reflect updated list
+      renderFilePreview(input, previewContainer, index);
+    });
+
+    previewContainer.appendChild(fileItem);
+  });
+}
+
+
+// Run once the DOM is fully loaded
+document.addEventListener("DOMContentLoaded", () => {
+
+  // PR ID Click Handler: Highlight clicked PR and load its data
+  document.querySelectorAll(".view-pr-id").forEach(item => {
+
+    item.addEventListener("click", function (e) {
+      debugger;
+      e.preventDefault();
+
+      // Remove highlighting from all PR items
+      document.querySelectorAll(".view-pr-id").forEach(i => 
+        i.closest("li").classList.remove("active-procurement")
+      );
+
+      // Highlight the clicked PR
+      this.closest("li").classList.add("active-procurement");
+
+      // Get the PR ID from the clicked element's dataset
+      const prId = this.dataset.id;
+
+      // Find corresponding procurement data from global array
+      const data = procurementDetails.find(item => item.procurement_id === prId);
+
+      // Render installment form if matching data found
+      if (data) renderInstallmentForm(data);
+    });
+  });
+
+  // PR ID Search Filter
+  $('#prSearch').on('keyup', function () {
+    const searchText = $(this).val().toLowerCase();
+    let matchFound = false;
+
+    // Loop through each procurement item and show/hide based on match
+    $('#procurementSidebar .list-group-item').each(function () {
+      const prId = $(this).find('.view-pr-id').text().trim().toLowerCase();
+      const matches = prId.includes(searchText);
+      $(this).toggle(matches);
+      matchFound = matchFound || matches;
+    });
+
+    // If no match found, show warning and reset search
+    if (!matchFound && searchText !== '') {
+      showWarningAlert("PR ID is not available");
+      $(this).val('');
+      $('#procurementSidebar .list-group-item').show(); // Reset list
+    }
+  });
+
+});
+
+</script>
+{% endblock scripts %}

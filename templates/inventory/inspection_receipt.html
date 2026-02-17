@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inspection Receipt Document</title>
+
+  <!-- Load static files -->
+  {% load static %}
+
+  <style>
+    /* Simple A4 paper styling */
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+      margin: 0;
+      padding: 0;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+
+    table, th, td {
+      border: 1px solid black;
+      padding: 4px 6px;
+      text-align: center;
+    }
+
+    .header {
+      text-align: center;
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 16px;
+      text-transform: uppercase;
+    }
+
+    .section-title {
+      font-weight: bold;
+      margin-top: 10px;
+      margin-bottom: 4px;
+      text-align: left;
+    }
+
+    .signature-block {
+      margin-top: 30px;
+    }
+
+    /* Specific styling for the Inspection Department table */
+    .inspection-table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed; /* Forces equal column width for this table */
+    }
+
+    .inspection-table th, .inspection-table td {
+      border: 1px solid black;
+      padding: 8px;
+      text-align: center;
+      word-wrap: break-word;
+    }
+
+    .inspection-table th {
+      width: 12.5%; /* Ensure equal width for all 8 columns */
+    }
+  </style>
+</head>
+<body>
+  <div class="header">Inspection Cum Receipt Document (IRV)</div>
+
+  <table>
+    <tr>
+      <td><b>Supplier:</b> {{ po_obj.vendor.code }} ({{ po_obj.vendor.company_name1 }})</td>
+      <td><b>Indentor:</b> {{ indentor }}</td>
+      <td><b>Document No:</b> {{ document_no }}</td>
+      <td><b>Date:</b> {{ document_date }}</td>
+    </tr>
+  </table>
+
+  <table class="inspection-table" style="width: 100%;">
+    <thead>
+      <tr>
+        <th style="width: 20%;">Document Number</th>
+        <th style="width: 20%;">Purchase Order/Ref</th>
+        <th style="width: 20%;">Invoice/DC</th>
+        <th style="width: 20%;">RR/LR/DD/Hand</th>
+        <th style="width:20%;">GR</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr >
+        <td style="width: 20%;">{{ document_number }}</td>
+        <td style="width: 20%;">{{ po_obj.code }}</td>
+        <td style="width: 20%;">{{ invoice_dc }}</td>
+        <td style="width: 20%;">{{ rr_lr_dd_hand }}</td>
+        <td style="width: 20%;">{{ gr }}</td>
+      </tr>
+      <tr>
+        <td style="width: 20%;"><b>Date</b></td>
+        <td style="width: 20%;">{{ document_date1 }}</td>
+        <td style="width: 20%;">{{ document_date2 }}</td>
+        <td style="width: 20%;">{{ document_date3 }}</td>
+        <td style="width: 20%;">{{ document_date4 }}</td>
+      </tr>
+    </tbody>
+  </table>
+  
+
+  <div class="section-title">Receiving Stores:</div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width: 12.5%;">Sl No</th>
+        <th style="width: 12.5%;">Material Code</th>
+        <th style="width: 12.5%;">Description</th>
+        <th style="width: 12.5%;">Part no as per PO</th>
+        <th style="width: 12.5%;">Unit</th>
+        <th style="width: 12.5%;">Ordered Qty</th>
+        <th style="width: 12.5%;">Challan Qty</th>
+        <th style="width: 12.5%;">Received Qty</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in po_obj.getItems %}
+      <tr>
+        <td style="width: 12.5%;">{{ forloop.counter }}</td>        
+        <td style="width: 12.5%;">{{ item.item.code }}</td>
+        <td style="width: 12.5%;">{{ item.item.name}}</td>
+        <td style="width: 12.5%;">{{ item.item.uom }}</td>
+        <td style="width: 12.5%;">{{item.uom}}</td>
+        <td style="width: 12.5%;" class="yet_to_be_received">{{ item.quantity|add:"0" }}</td>
+        <td style="width: 12.5%;">{{ item.already_received_qt }}</td>
+        <td style="width: 12.5%;">{{ item.rejected_qty }}</td>
+        
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="section-title">Inspection Department:</div>
+  <!-- This table will have equal row space due to the "inspection-table" class -->
+  <table class="inspection-table">
+  <thead>
+    <tr>
+      <th style="width: 10%;">Sl No</th>
+      <th style="width: 25%;">Material Code</th>
+      <th style="width: 10%;">Unit</th>
+      <th style="width: 12.5%;">Received Qty</th>
+      <th style="width: 12.5%;">Accepted Qty</th>
+      <th style="width: 12.5%;">Rejected Qty</th>
+      <th style="width: 12.5%;">Rejected Code</th>
+      <th style="width: 12.5%;">Accepted Value</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for item in po_obj.getItems %}
+    <tr>
+      <td style="width: 10%;">{{ forloop.counter }}</td>
+      <td style="width: 25%;">{{ item.item }}</td>
+      <td style="width: 8%;">{{ item.uom }}</td>
+    
+      
+        <td style="width: 12.5%;">{{item.already_received_qty}} </td>
+        <td style="width: 12.5%;">{{ item.good_qty }}</td>
+        <td style="width: 12.5%;">{{ item.rejected_qty }}</td>
+        <td style="width: 12.5%;"></td>
+        <td style="width: 12.5%;"></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+  <p>Rejection Codes: 1. Damaged 2. Dimensional Deviation 3. Isometric form error 4. Test results not meeting chemical specification 
+    5. Test result not meeting physical specification, Practical trial not satisfactory 7. Wrong material supplied 8. Blowholes, Porosity, Cavity, Extra materials etc. 9. Excess Supplied 10. Appearance not Good.</p>
+
+  <p>Rejected document No & Date: {{ rejected_doc_no_date }}</p>
+
+  <div class="signature-block">
+    <p>Signature of Inspection Agency: {{ inspection_signature }} ({{ inspection_sign_date }})</p>
+    <p>Name & Designation: {{ inspection_name_designation }}</p>
+    <p>Signature of Stores In-charge: {{ stores_signature }} ({{ stores_sign_date }})</p>
+    <p>Name & Designation: {{ stores_name_designation }}</p>
+  </div>
+
+  <p>Distribution of copies: Accounts / IMM / Indentor / Stores In-charge</p>
+</body>
+</html>

@@ -1,0 +1,133 @@
+{% extends 'core/base.html' %}
+{% block content %}
+
+<div class="row mb-2 mt-2">
+    <div class="col-12 col-md-12">
+        <div class="button-group" style="float:right;">
+            <a href="{% url 'theme-create' %}" class="btn btn-sm app-btn-primary">
+                <i class="fa fa-circle-plus fa-lg"></i> Add
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+        <div class="app-card-body p-4">
+            <div class="table-responsive">
+                <table class="table app-table-hover mb-0 text-left table-bordered app-table-stripped" id="app_table_data">
+                    <thead>
+                        <tr>
+                            <th class="cell">ID</th>
+                            <th>
+                                {% if SortByColumn == 'ASC' and OrderByColumn == 'name' %}
+                                <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=name&SortByColumn=DESC">
+                                    <i class="fa fa-sort-down"></i>&nbsp;Name
+                                </a>
+                                {% elif SortByColumn == 'DESC' and OrderByColumn == 'name' %}
+                                <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=name&SortByColumn=ASC">
+                                    <i class="fa fa-sort-up"></i>&nbsp;Name
+                                </a>
+                                {% else %}
+                                <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=name&SortByColumn=ASC">
+                                    <i class="fa fa-sort"></i>&nbsp;Name
+                                </a>
+                                {% endif %}
+                            </th>
+
+                            <th>
+                                {% if SortByColumn == 'ASC' and OrderByColumn == 'status' %}
+                                <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=status&SortByColumn=DESC">
+                                    <i class="fa fa-sort-down"></i>&nbsp;Status
+                                </a>
+                                {% elif SortByColumn == 'DESC' and OrderByColumn == 'status' %}
+                                <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=status&SortByColumn=ASC">
+                                    <i class="fa fa-sort-up"></i>&nbsp;Status
+                                </a>
+                                {% else %}
+                                <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=status&SortByColumn=ASC">
+                                    <i class="fa fa-sort"></i>&nbsp;Status
+                                </a>
+                                {% endif %}
+                            </th>
+
+                            <th>
+                                {% if SortByColumn == 'ASC' and OrderByColumn == 'updated_at' %}
+                                <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=updated_at&SortByColumn=DESC">
+                                    <i class="fa fa-sort-down"></i>&nbsp;Last Modified
+                                </a>
+                                {% elif SortByColumn == 'DESC' and OrderByColumn == 'updated_at' %}
+                                <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=updated_at&SortByColumn=ASC">
+                                    <i class="fa fa-sort-up"></i>&nbsp;Last Modified
+                                </a>
+                                {% else %}
+                                <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=updated_at&SortByColumn=ASC">
+                                    <i class="fa fa-sort"></i>&nbsp;Last Modified
+                                </a>
+                                {% endif %}
+                            </th>
+                            <th class="cell">Modified User</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eachRow in page_obj.object_list %}
+                        <tr>
+                            <td class="cell">{{eachRow.id}}</td>
+                            <td class="cell">{{ eachRow.name }}</td>
+                            <td class="cell">
+                                {% if eachRow.status == 1 %}
+                                    <span class="badge bg-success">Active</span>
+                                {% elif eachRow.status == 0 %}
+                                    <span class="badge bg-warning">Draft</span>
+                                {% else %}
+                                    <span class="badge bg-danger">Inactive</span>
+                                {% endif %}
+                            </td>
+                            <td class="cell">{{ eachRow.last_modified_at }}</td>
+                            <td class="cell">{{ eachRow.last_modified_user }}</td>
+                            <td class="cell">
+                                <!-- Edit Button -->
+                                <button type="button" class="btn btn-sm app-btn-primary edit-link"
+                                        data-url="{% url 'theme-update' eachRow.pk %}">
+                                    <i class="fa fa-edit"></i> Edit
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block pagejs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="text/javascript">
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.edit-link').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            const url = btn.getAttribute('data-url');
+
+            // SweetAlert2 Popup for Edit Confirmation
+            Swal.fire({
+                text: 'Do you want to edit this theme?',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Edit',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                width: 350
+            }).then(result => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

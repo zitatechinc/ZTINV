@@ -1,0 +1,72 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="app-card app-card-settings shadow-md">
+            <div class="app-card-body p-4">
+
+                <!-- 🔍 Compact Keyword Search -->
+                <!-- <form method="get" class="mb-3">
+                    <div class="input-group" style="max-width: 300px;">
+                        <input 
+                            type="text" 
+                            name="keyword" 
+                            class="form-control" 
+                            placeholder="Search keyword..." 
+                            value="{{ request.GET.keyword }}"
+                        >
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fa fa-search"></i> Search
+                        </button>
+                    </div>
+                </form> -->
+                {% include 'core/search_audit_form.html' %}
+
+                <div class="table-responsive">
+                    <table class="table app-table-hover mb-0 text-left table-bordered app-table-striped"
+                           id="app_table_data">
+                        <thead>
+                            <tr>
+                                <th>Entity Name</th>
+                                <th>Row ID</th>
+                                <th>Column Name</th>
+                                <th>New Value</th>
+                                <th>Old Value</th>
+                                <th>Action</th>
+                                <th>User</th>
+                                <th>Timestamp</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for log in object_list %}
+                            <tr>
+                                <td>{{ log.EntityName }}</td>
+                                <td>{{ log.RowID }}</td>
+                                <td>{{ log.ColumnName }}</td>
+                                <td class="bg-success text-white">{{ log.NewValue }}</td>
+                                <td class="bg-danger text-white">{{ log.OldValue }}</td>
+                                <td>{{ log.Action }}</td>
+                                <td>{{ log.User }}</td>
+                                <td>{{ log.Timestamp }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="8" class="text-center text-muted">
+                                    No records found
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+
+                {% include 'core/pagination.html' %}
+
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

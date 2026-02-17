@@ -1,0 +1,26 @@
+<div class="row p-1">
+    <div class="col-md-12 mb-2">
+        <h3>Audit Information</h3>
+    </div>
+    <!-- Audit Information Fields -->
+    <div class="col-md-4">
+        <strong><label>Created User :</label></strong>
+        {{ object.created_user }}
+    </div>
+    <div class="col-md-4">
+        <strong><label>Modified User :</label></strong>  
+        {{ object.last_modified_user }}
+    </div>
+    <div class="col-md-4"></div>
+    <div class="col-md-4">
+        <strong><label>Created Date :</label></strong>  
+        {{ object.created_at }}
+    </div>
+    <div class="col-md-4">
+        <strong><label>Last Modified :</label></strong>  
+        {{ object.last_modified_at }}
+    </div>
+</div>
+
+
+

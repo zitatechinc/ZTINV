@@ -1,0 +1,3021 @@
+
+
+
+{% extends 'ims/index.html' %}
+{% load static %}
+{% block styleblock%}
+
+<!-- <script src="{% static "js/bootstrap.bundle.min.js" %}"></script> -->
+{% comment %} ok ok {% endcomment %}
+
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <style>
+            .search-box {
+                position: relative;
+                width: 100%;
+            }
+            
+            .search-box i {
+                position: absolute;
+                left: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                color: #888;
+            }
+            
+            .search-box input {
+                width: 100%;
+                padding: 8px 10px 8px 35px;
+                border: 1px solid #ddd;
+                border-radius: 20px;
+                font-size: 0.9rem;
+                transition: all 0.3s;
+            }
+            
+            .cst-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+                margin-bottom: 20px;
+            }
+            
+            .cst-table th, .cst-table td {
+                border: 1px solid #ddd;
+                padding: 8px;
+                text-align: left;
+            }
+            
+            .cst-table th {
+                background-color: #f2f2f2;
+                text-align: center;
+                font-weight: bold;
+            }
+            
+            .cst-table td {
+                vertical-align: top;
+            }
+            
+            .price-input {
+                width: 100%;
+                padding: 5px;
+                border: 1px solid #ddd;
+                text-align: right;
+            }
+            
+            .terms-input {
+                width: 100%;
+                padding: 5px;
+                border: 1px solid #ddd;
+                text-align: center;
+            }
+            
+            .fixed-value {
+                text-align: center;
+            }
+            
+            .levels-container {
+                margin-top: 20px;
+                background-color: #f8f9fa;
+                padding: 20px;
+                border-radius: 8px;
+                box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            }
+            
+            .action-buttons {
+                margin-top: 20px;
+                display: flex;
+                justify-content: flex-end;
+                gap: 10px;
+            }
+            
+            .action-buttons button {
+                padding: 8px 20px;
+                border: none;
+                border-radius: 4px;
+                cursor: pointer;
+                font-size: 14px;
+            }
+            
+            .saveCSTButton {
+                background-color:#007080;
+                border-color:#007080;
+                color: white;
+            }
+            
+            {% comment %} .saveCSTButton.disabled {
+                background-color: #cccccc !important;
+                cursor: not-allowed;
+                opacity: 0.6;
+            }
+            
+            .saveCSTButton.enabled {
+                background-color:#007080 !important;
+                cursor: pointer;
+                opacity: 1;
+            } {% endcomment %}
+            
+            #editCSTButton {
+                background-color: #2196F3;
+                color: white;
+            }
+
+            #recommendCSTButton {
+                background-color: #6c757d;
+                color: white;
+            }
+            
+            #cancelBtn {
+                background-color: #f44336;
+                color: white;
+            }
+            
+            .is-invalid {
+                border-color: #dc3545 !important;
+            }
+            
+            .invalid-feedback {
+                width: 100%;
+                margin-top: .25rem;
+                font-size: 80%;
+                color: #dc3545;
+            }
+            
+            .additional-info {
+                margin: 20px 0;
+            }
+            
+            .additional-info label {
+                display: block;
+                margin-bottom: 8px;
+                font-weight: bold;
+            }
+            
+            .additional-info textarea {
+                width: 100%;
+                padding: 10px;
+                border: 1px solid #ddd;
+                border-radius: 4px;
+                min-height: 80px;
+                resize: vertical;
+            }
+
+            /* Modal styles for vendor levels */
+            .vendor-levels-modal {
+                margin-top: 15px;
+                border-radius: 8px;
+                overflow: hidden;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            }
+            
+            .vendor-levels-table {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 14px;
+            }
+            
+            .vendor-levels-table th {
+                background-color: #343a40;
+                color: white;
+                padding: 10px;
+                text-align: center;
+            }
+            
+            .vendor-levels-table td {
+                padding: 10px;
+                border: 1px solid #dee2e6;
+            }
+            
+            .vendor-levels-table tr:nth-child(even) {
+                background-color: #f8f9fa;
+            }
+            
+            .vendor-levels-table tr:hover {
+                background-color: #e9ecef;
+            }
+            
+            .level-badge {
+                display: inline-block;
+                padding: 3px 8px;
+                border-radius: 12px;
+                font-weight: bold;
+                font-size: 12px;
+                color: white;
+                text-align: center;
+                min-width: 60px;
+            }
+            
+            .level-1 {
+                background-color: #28a745;
+            }
+            
+            .level-2 {
+                background-color: #ffc107;
+                color: #212529;
+            }
+            
+            .level-3 {
+                background-color: #dc3545;
+            }
+            
+            .level-other {
+                background-color: #6c757d;
+            }
+            
+            .total-amount {
+                font-weight: bold;
+                text-align: right;
+            }
+            
+
+            /* Single vendor specific styles */
+            .single-vendor-table th:nth-child(4),
+            .single-vendor-table td:nth-child(4) {
+                background-color: #f8f9fa;
+                font-weight: bold;
+            }
+            .cst-table th div:first-child {
+                font-weight: bold;
+                margin-bottom: 3px;
+            }
+            
+            .cst-table th div:last-child {
+                font-size: 12px;
+                font-weight: normal;
+                color: #666;
+            }
+            .list-group-item.active {
+            border-left: 3px solid #0066c0 !important;
+            background-color: #e6f2ff !important;
+            box-shadow: 0 2px 8px rgba(0, 102, 192, 0.2);
+        }
+        .list-group-item:hover {
+            transform: translateX(2px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        #loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(6px);
+            display: none; /* Hide by default */
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        body{
+            overflow-y: hidden; 
+        } 
+        .list-group-item.active {
+            background-color: #00B2CC !important; /* Light blue for highlighting */
+            border: 3px solid white;
+            position: relative;
+            overflow: hidden;
+            animation: glow-shadow 2s linear infinite;
+        }
+        
+        @keyframes glow-shadow {
+            0% {
+            box-shadow: 0 0 5px 2px white;
+            }
+            50% {
+            box-shadow: 0 0 15px 5px white;
+            }
+            100% {
+            box-shadow: 0 0 5px 2px white;
+            }
+        }
+        .bg-gray {
+        background-color: #f8f9fa !important; /* Light gray background */
+        color: #6c757d !important; /* Gray text color */
+        }
+        .custom-popup .swal2-actions {
+            gap: 20px !important; /* Increase space between buttons */
+        }
+        .custom-popup .swal2-confirm,
+        .custom-popup .swal2-cancel {
+            background-color: #007080 !important;
+            border-color: #007080 !important;
+            color: white !important;
+            padding: 8px 20px;
+            font-weight: 600;
+            border-radius: 4px;
+            box-shadow: none;
+            transition: background-color 0.3s ease;
+        }
+        
+        .custom-popup .swal2-confirm:hover,
+        .custom-popup .swal2-cancel:hover {
+            background-color: #005959 !important; /* Slightly darker on hover */
+            border-color: #005959 !important;
+            color: white !important;
+        }
+            .d-inline-block::-webkit-scrollbar {
+    height: 6px;
+    }
+    .d-inline-block::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+    }
+    .d-inline-block::-webkit-scrollbar-track {
+    background: transparent;
+    }
+    </style>
+
+</head>
+{% endblock %}
+{% block previewcontent%}
+<div id="previewContent"></div>
+
+<!-- Modal for submission of CST details with Remarks -->
+<div class="modal fade myModal" id="recommendModal1" tabindex="-1" role="dialog" aria-labelledby="recommendModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recommendModalLabel"><strong>Add Remarks</strong></h5>
+            </div>
+            <div class="modal-body">
+              
+
+                <div class="modal-section-title"><strong>Remarks:</strong></div>
+                <form id="recommendForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        
+                        <textarea name="remarks" id="remarks" class="form-control" rows="4" required>Recommended</textarea>
+                    </div>
+                    <div class="form-group" id="sendToContainer" style="display:none;">
+                        <label for="send_to"><strong>Send To:</strong></label>
+                        <select class="form-control" name="send_to" id="send_to">
+                            <option value="Indentor" selected>Indentor</option>
+                            <option value="DPO">DPO</option>
+                        </select>
+                    </div>
+
+                  
+                    <input type="hidden" name="procurement_id" id="recommendProcurementId" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="saveCSTDATA"  style="background-color:#007080;">Submit</button>
+                <button type="button" class="btn btn-secondary" id="saveCloseModalBtn" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Modal Template -->
+<div class="modal fade" id="vendorDetailsModal" tabindex="-1" aria-labelledby="vendorDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="vendorDetailsModalLabel"><b>Vendor Delivery Details</b></h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="vendorModalBody">
+        <!-- Vendor-specific content will be injected here -->
+      </div>
+    </div>
+  </div>
+</div>
+ 
+<div class="modal fade myModal" id="approveModal" tabindex="-1" role="dialog" aria-labelledby="approveModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="approveForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="approveremarks"><b>Remarks:</b></label>
+                        <textarea name="approveremarks" id="approveremarks" class="form-control" rows="4" required>Approved</textarea>
+                    </div>
+
+
+                    <input type="hidden" name="procurement_id" id="approveProcurementId" />
+                    <input type="hidden" id="rejectstage" value="stage6">  <!-- or whatever stage it is -->
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="approveCST" style="background-color:#007080;">Submit</button>
+                <button type="button" class="btn btn-secondary"  id="approveCloseModalBtn" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+ 
+<div class="modal fade myModal" id="rejectModal" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="rejectForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="rejectremarks"><b>Remarks:</b></label>
+                        <textarea name="rejectremarks" id="rejectremarks" class="form-control" rows="4" required>Returned</textarea>
+                    </div>
+
+
+                    <input type="hidden" name="procurement_id" id="rejectProcurementId" />
+                    <input type="hidden" id="rejectstage" value="stage6">  <!-- or whatever stage it is -->
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="rejectCST" style="background-color:#007080;">Submit</button>
+                <button type="button" class="btn btn-secondary"  id="rejectCloseModalBtn" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock%}
+
+{% block scripts %}
+<!-- <script src="{% static "js/bootstrap.bundle.min.js" %}"></script>
+c -->
+<script src="{% static "js/jquery-3.6.0.min.js" %}"></script>
+
+
+<script>
+    var item_details =[]
+    var imm_user=''
+    let procurementSocket;
+    let reconnectAttempts = 0;
+    const maxReconnectAttempts = 5;
+    var isSingleVendor='';
+    const reconnectDelay = 3000; // 3 seconds
+    
+    var projectName = '';
+    var prId='';
+    var user = '';
+    var users='';
+    var stage='';
+    var saved_cst = '';
+    var enquiryno='';
+    var send_to=''
+    function formatDisplayText(source_type, dollarValue, inrValue, deliveryData) {
+        const pricePart = source_type === 'Import' 
+            ? `${dollarValue || '-'} USD / ${inrValue || '-'} INR`
+            : `${inrValue || '-'} INR`;
+        
+        if (deliveryData.delivery_type === 'fullquantity') {
+            const qty = deliveryData.total_qty || '';
+            const timeline = deliveryData.deliverytimeline || '';
+            const unit = deliveryData.delivery_unittypes || 'days';
+            return `${pricePart} / ${qty} Qty in ${timeline} ${unit}`;
+        } else if (deliveryData.delivery_type === 'staggered' && deliveryData.delivery_rows) {
+            const totalQty = deliveryData.delivery_rows.reduce((sum, row) => sum + parseInt(row.qty || 0), 0);
+            return `${pricePart} / ${totalQty} Qty in ${deliveryData.delivery_rows.length} deliveries`;
+        }
+        return pricePart;
+    }
+    
+    function formatDate(dateStr) {
+        let [day, month, year] = dateStr.split("-");
+        return `${year}-${month}-${day}`; // convert to YYYY-MM-DD
+    }
+
+    {% comment %} function connectWebSocket() {
+        const wsScheme = window.location.protocol === "https:" ? "wss://" : "ws://";
+        const wsPath = wsScheme + window.location.host + "/ws/procurement_updates/";
+        procurementSocket = new WebSocket(wsPath);
+ 
+        procurementSocket.onmessage = function(e) {
+            const data = JSON.parse(e.data);
+            console.log('WebSocket message received:', e.data); 
+            if (data.type === 'procurement_update' || data.type === 'initial_data') {
+                const procurementList = data.procurements.procurements;  // 👈 Extract the list
+                const userDetails = data.procurements.user_details;      // Optional: Use this elsewhere if needed
+                updateProcurementList(procurementList);
+            }
+        };
+ 
+        procurementSocket.onclose = function(e) {
+            console.log('WebSocket closed, attempting to reconnect...');
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                setTimeout(connectWebSocket, reconnectDelay);
+            } else {
+                console.error('Max reconnection attempts reached');
+            }
+        };
+ 
+        procurementSocket.onerror = function(e) {
+            console.error('WebSocket error:', e);
+        };
+    } {% endcomment %}
+    // Function to generate payment events dropdown options
+    function getPaymentEventsOptions() {
+        // These should match exactly with your model's payment_events_choices
+        return [
+            {value: "Along with PO as an advance", text: "Along with PO as an advance"},
+            {value: "On supply of full material", text: "On supply of full material"},
+            {value: "On supply of partial material", text: "On supply of partial material"},
+            {value: "On supply and acceptance of material", text: "On supply and acceptance of material"},
+            {value: "None", text: "None"}
+        ];
+    }
+
+    // Function to update the procurement list in the sidebar
+    {% comment %} function updateProcurementList(procurements) {
+        const sidebar = $('#procurementSidebar');
+        sidebar.empty();
+        
+        procurements.forEach(procurement => {
+            const activeClass = procurement.is_active ? 'active' : '';
+            
+            const bgColor = procurement.action_performed ? 'white' : '#CCE5F0';
+            console.log(`Procurement ID: ${procurement.id}, Action Performed: ${procurement.action_performed}`);
+            
+            const item = `
+                <li id="procurement-${procurement.id}" class="list-group-item  ${activeClass}"
+                    style="background-color: ${bgColor}; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top:7px;padding:7px; color: #212526;">
+                    <a href="#" class="view-pr-id" data-id="${procurement.procurement_id}" 
+                    data-project="${procurement.project_name}" data-user="${procurement.username}"
+                    style="text-decoration: none; color: inherit; display: block;">
+                        <div style="font-weight: 500; font-size: 14px; ">
+                            ${procurement.procurement_id}
+                        </div>
+                         <div style="font-size: 13px; font-weight: 600; ">
+                            ${procurement.procurement_title}
+                        </div>
+                        <div style="font-size: 11px; color: black;">
+                            ${procurement.datetime}
+                        </div>
+                    </a>
+                </li>
+            `;
+            sidebar.append(item);
+        });
+    } {% endcomment %}
+   
+   
+    $(document).on('click', '.view-pr-id',function(){
+        $('.view-pr-id.active').removeClass('active')
+        $(this).addClass('active')
+    })
+
+    $(document).ready(function() {
+        // Handle date input validation for terms
+        $('body').on('change', '.terms-input[type="date"]', function() {
+            const selectedDate = new Date($(this).val());
+            const today = new Date();
+            today.setHours(0, 0, 0, 0); // Set to beginning of day
+            
+            if (selectedDate < today) {
+                showAlert('Please select today or a future date.');
+                $(this).val(''); // Clear the invalid date
+                return false;
+            }
+        });
+    
+        // Also prevent manual entry of past dates
+        $('body').on('keyup', '.terms-input[type="date"]', function(e) {
+            // If user tries to submit with Enter key
+            if (e.key === 'Enter') {
+                const selectedDate = new Date($(this).val());
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                
+                if (selectedDate < today) {
+                    showAlert('Please select today or a future date.');
+                    $(this).val('');
+                    return false;
+                }
+            }
+        });
+    
+        // Handle number input validation for price and terms
+        $('body').on('change', '.price-input, .terms-input[type="number"]', function() {
+            const value = parseFloat($(this).val());
+            
+            if (isNaN(value)) {
+                return; // Allow empty field (will be caught by required validation)
+            }
+            
+            // Special handling for GST and Discount fields (allow 0)
+            if ($(this).hasClass('percentage-field')) {
+                if (value < 0) {
+                    showAlert('Percentage cannot be negative.');
+                    $(this).val('');
+                    return false;
+                }
+                if (value > 100) {
+                    showAlert('Percentage cannot exceed 100%.');
+                    $(this).val('');
+                    return false;
+                }
+            } 
+            // For all other number inputs (prevent 0 and negative)
+            else {
+                if (value <= 0) {
+                    showAlert('Please enter a positive number.');
+                    $(this).val('');
+                    return false;
+                }
+            }
+        });
+        
+        // Also prevent manual entry of invalid numbers
+        $('body').on('keyup', '.price-input, .terms-input[type="number"]', function(e) {
+            // If user tries to submit with Enter key
+            if (e.key === 'Enter') {
+                const value = parseFloat($(this).val());
+                
+                if (isNaN(value)) return;
+                
+                // Special handling for GST and Discount fields
+                if ($(this).hasClass('percentage-field')) {
+                    if (value < 0) {
+                        showAlert('Percentage cannot be negative.');
+                        $(this).val('');
+                        return false;
+                    }
+                    if (value > 100) {
+                        showAlert('Percentage cannot exceed 100%.');
+                        $(this).val('');
+                        return false;
+                    }
+                } 
+                // For all other number inputs
+                else {
+                    if (value <= 0) {
+                        showAlert('Please enter a positive number.');
+                        $(this).val('');
+                        return false;
+                    }
+                }
+            }
+        });
+    
+        $('.terms-input').on('input', function() {
+            const minDate = $(this).attr('min'); // today's date
+            const val = $(this).val();
+            if (val && val < minDate) {
+                $(this).val('');
+                showAlert('Please select today or a future date.');
+            }
+        });
+   
+        // Handle PR click to show CST form
+        //connectWebSocket();
+
+        $('#procurementSidebar').on('click', '.view-pr-id', function(e) {
+            e.preventDefault();
+            prId = $(this).data('id');
+            projectName = $(this).data('project');
+            user = $(this).data('user');
+            showComparativeStatement(prId, projectName, user);
+            let previousSelected = null;
+            if (previousSelected) {
+                previousSelected.className = "list-group-item"; 
+            }
+         
+            this.parentElement.className = "list-group-item active";
+            $('.list-group-item').removeClass('active');
+
+        
+            $(this).closest('.list-group-item').addClass('active');
+        });
+
+        $('#prSearch').on('keyup', function() {
+            const searchText = $(this).val().toLowerCase();
+            let matchFound = false;
+        
+            $('#procurementSidebar .list-group-item').each(function() {
+            const prId = $(this).find('.view-pr-id').text().trim().toLowerCase();
+            if (prId.includes(searchText)) {
+                $(this).show();
+                matchFound = true;
+            } else {
+                $(this).hide();
+            }
+            });
+        
+            if (!matchFound && searchText !== '') {
+            showAlert("PR ID is not available");
+            $(this).val('');   // Clear the search input
+            $('#procurementSidebar .list-group-item').show();  // Show all items again
+            }
+        });
+       
+        $('.terms-input').on('input', function() {
+            const minDate = $(this).attr('min'); // today's date
+            const val = $(this).val();
+            if (val && val < minDate) {
+                $(this).val('');
+                showAlert('Please select today or a future date.');
+            }
+        });
+    });
+        
+    function addOrUpdateItem(item_details, newItem) {
+        // find index of existing record with same vendor_id and particularId
+        const index = item_details.findIndex(
+            item => item.vender_id === newItem.vender_id && item.particularId === newItem.particularId
+        );
+
+        if (index !== -1) {
+            // remove old record
+            item_details.splice(index, 1);
+        }
+
+        // push new record
+        item_details.push(newItem);
+    }
+        
+    // Handle Save CST button click
+    function showComparativeStatement(prId, projectName, user) {
+        showLoader();
+        debugger;
+        const previewContent = $('#previewContent');
+        previewContent.show().empty();
+        
+        const csrfToken = $("meta[name='csrf-token']").attr("content");
+        
+        $.ajax({
+            url: '/ims/comparative/',
+            type: 'POST',
+            data: {
+                'procurement_id': prId,
+                'project_name': projectName,
+                'user': user,
+                'action': 'getdata'
+            },
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            success: function(response) {
+                debugger
+                console.log(response,'response');
+                const enquiryNo = response?.enquiries?.[0]?.enquiryno || '';
+                isSingleVendor = response.vendors.length === 1;
+                console.log(isSingleVendor,'isSingleVendor')
+                $('#approveCST').data('isSingleVendor', isSingleVendor);
+                imm_user = response.imm_user ? response.imm_user.id : null;
+                var nonquotedvendors = response.vendor_list;
+                console.log(nonquotedvendors,'nonquotedvendors');
+                var procurementId = response.procurement_id;
+                stage=response.stages;
+                hideLoader();
+                item_details =[]
+                //const hasSavedData = Object.keys(response.saved_cst).length > 0;
+                const hasLevels = response.levels && response.levels.length > 0;
+                const source_type = response.source_type;
+                const userData = response.user_data;
+                const cstdata=response.cstdata;
+                send_to = cstdata?.[0]?.send_to || '';
+                $('#approveCST').data('send_to', send_to);
+
+                console.log(send_to,'send_to')
+                var installmentsCount ;
+                saved_cst = response.saved_cst || '';
+                console.log(saved_cst,'saved_cst')
+                users = response.user;
+                console.log(users  ,'hgfvd')
+                $('.approve-btn').attr('data-procurement-id', prId);
+
+                // similarly for reject button if needed
+                $('.reject-btn').attr('data-procurement-id', prId);
+                const vendorMarquee = nonquotedvendors.length > 0 ? `                
+                    <marquee behavior="scroll" direction="left" 
+                            style="color: #721c24; font-weight: bold; font-size: 16px; margin-bottom: 15px; 
+                                    background-color: #fff3cd; padding: 10px; border: 1px solid #ffeeba; border-radius: 5px;">
+                        ⚠ The following vendors have not uploaded their quotations: 
+                        ${nonquotedvendors.map(v => `M/s ${v.company_name}`).join(', ')}
+                    </marquee>
+                ` : '';
+                
+                let additionalInfo =  '';
+                var paydiv = ''
+                if(response.cstdata.length > 0){
+                    additionalInfo = response.cstdata[0].additional_info || '';
+                    installmentsCount = response.cstdata[0].payment_invest.length
+                    if(installmentsCount){
+                        var pay_det = response.cstdata[0].payment_invest
+                        const paymentEventsOptions = getPaymentEventsOptions();
+                        for (let i = 1; i <= pay_det.length; i++) {
+                            const div = document.createElement('div');
+                            div.className = 'form-group row mb-3 border-bottom pb-3';
+                            
+                            // Generate options HTML
+                            let optionsHtml = '<option value="">Select Payment Event</option>';
+                            paymentEventsOptions.forEach(option => {
+                                if(pay_det[i-1]["tracking"][0]["payment_events"]==option.value){
+                                    optionsHtml += `<option selected value="${option.value}">${option.text}</option>`;
+                                }else{
+                                    optionsHtml += `<option value="${option.value}">${option.text}</option>`;
+                                }
+                            });
+
+                            
+                            // let formattedDate = formatDate(pay_det[i-1]["tracking"][0]["installment_date"]);
+
+
+                            div.innerHTML = `
+                                <div class="col-md-4">
+                                    <label for="installment_date_${i}" class="form-label"><b>Payment ${i} Date:</b></label>
+                                    <input type="date" name="installment_date_${i}" id="installment_date_${i}" 
+                                        class="form-control" required value="${pay_det[i-1]["tracking"][0]["installment_date"]}"/>
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="percentage_${i}" class="form-label"><b>Percentage (%):<span class="text-danger ms-1">*</span></b></label>
+                                    <input type="number" name="percentage_${i}" id="percentage_${i}" 
+                                        class="form-control" required min="1" max="100" step="0.01" 
+                                        placeholder="Enter percentage" value="${parseInt(pay_det[i-1]["tracking"][0]["payment_percentage"])}"/>
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="payment_events_${i}" class="form-label"><b>Payment Event:<span class="text-danger ms-1">*</span></b></label>
+                                    <select name="payment_events_${i}" id="payment_events_${i}" 
+                                            class="form-select installment-payment-event" required>
+                                        ${optionsHtml}
+                                    </select>
+                                </div>
+                            `;
+                            paydiv=paydiv+ div.outerHTML;;
+                        }
+                    }
+                    
+                }
+                /*if (hasSavedData) {
+                    const firstVendorId = Object.keys(response.saved_cst)[0];
+                    additionalInfo = response.saved_cst[firstVendorId].additional_info || '';
+                }*/
+                
+                
+                const cstForm = `                        
+                    <div class="cst-form-container" style="background-color: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); width: 100%;">
+                        ${!isSingleVendor ? `
+                            <h1 style="text-align: center; margin-bottom: 20px; font-size: 24px; color: #333;"><b>COMPARATIVE STATEMENT (CST)</b></h1>
+                        ` : ''}
+                        ${vendorMarquee}
+                        <!-- Top section with procurement details -->
+                        <div style="width: 100%; margin-bottom: 20px;">
+                            <div style="display: flex; flex-wrap: wrap; gap: 20px; font-size: 14px;">
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <div style="font-weight: bold;">Enquiry No:</div>
+                                    <div>${enquiryNo || 'N/A'}</div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <div style="font-weight: bold;">Date:</div>
+                                    <div>${new Date().toLocaleDateString('en-GB')}</div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <div style="font-weight: bold;">Project:</div>
+                                    <div>${response.project_id.id}-${response.project_id.name}</div>
+                                </div>
+                                
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <div style="font-weight: bold;">Indentor:</div>
+                                    <div>${userData.full_name}</div>
+                                </div>
+                                <div style="display: flex; gap: 5px; align-items: center;">
+                                    <div style="font-weight: bold;">Source of Make:</div>
+                                    <div>${source_type}</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Single combined items table -->
+                        <div style="width: 100%; overflow-x: auto; margin-bottom: 20px;">
+                            <table class="cst-table ${isSingleVendor ? 'single-vendor-table' : ''}">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 5%;">S.No</th>
+                                        <th style="width: 25%;">Description of item / Part no</th>
+                                        <th style="width: 5%;">Qty</th>
+                                        ${response.vendors.map(vendor => 
+                                            `<th style="width: 10%; cursor: pointer; color: blue;" data-vendor-id="${vendor.vendor_id}" class="vendor-header" title="Click to view delivery details">M/s ${vendor.company_name}</th>`
+                                        ).join('')}
+                                    </tr>
+                                </thead>
+                                <tbody class="cst-table-body">
+                                    ${
+                                        response.particulars.map((particular, index) => `
+                                            <tr data-particular-id="${particular.id}">
+                                                <td>${index + 1}</td>
+                                                <td>${particular.item_name}/ ${particular.partno}</td>
+                                                <td>${particular.total_qty_required}</td>
+                                                ${response.vendors.map(vendor => {
+                                                    const rows = []
+                                                    const savedCst = response.saved_cst?.[vendor.vendor_id] || {};
+                                                    const savedItemInr = savedCst.items?.[particular.id] || '';
+                                                    const savedItemUsd = savedCst.dollar_items?.[particular.id] || '';
+                                                    const deliveryTimeline = savedCst.deliverytimeline?.[particular.id] || '';
+                                                    const deliveryUnit = savedCst.delivery_unittypes?.[particular.id] || 'days';
+                                                    const deliveryType = savedCst.deliverytype?.[particular.id] || '';
+                                                    const qty = savedCst.qty?.[particular.id] || '';
+                                                    const colorlow = savedCst.system_gen_vend?.[particular.id] || false;
+                                                    for(i=0;i<qty.length;i++){
+                                                        rows.push({ qty:qty[i], timeline:deliveryTimeline.split(",")[i], unit:deliveryUnit.split(",")[i] });
+                                                    }
+                                                    let displayText = '<span class="text-muted">Click to enter</span>';
+                                                    let isClickable = true;
+
+                                                    if (savedItemInr || savedItemUsd) {
+                                                        const pricePart = source_type === 'Import'
+                                                            ? `${savedItemUsd || '-'} USD / ${savedItemInr || '-'} INR`
+                                                            : `${savedItemInr || '-'} INR`;
+
+                                                        const pqty = particular.total_qty_required || '';
+                                                        displayText = `${pricePart} / ${qty||pqty} Qty in ${deliveryTimeline} ${deliveryUnit}`;
+                                                        isClickable = false;
+                                                    }
+
+                                                    // // Determine if this is the lowest price + fastest delivery
+                                                    // let isLowest = false;
+                                                    // if (response.vendors.length > 1) {
+                                                    //     const vendorComparisons = response.vendors.map(v => {
+                                                    //         const inrValue = parseFloat(response.saved_cst?.[v.vendor_id]?.items?.[particular.id]) || Infinity;
+                                                    //         const timeline = parseInt(response.saved_cst?.[v.vendor_id]?.deliverytimeline?.[particular.id]) || Infinity;
+                                                    //         return { vendorId: v.vendor_id, inrValue, timeline };
+                                                    //     });
+
+                                                    //     const minPrice = Math.min(...vendorComparisons.map(v => v.inrValue));
+                                                    //     const vendorsWithMinPrice = vendorComparisons.filter(v => v.inrValue === minPrice);
+                                                    //     const minTimeline = Math.min(...vendorsWithMinPrice.map(v => v.timeline));
+
+                                                    //     isLowest = vendorsWithMinPrice.some(v =>
+                                                    //         v.vendorId === vendor.vendor_id && v.timeline === minTimeline
+                                                    //     );
+                                                    // }
+
+                                                    // Set background color
+                                                    let bgColor = '';
+                                                    // if (savedItemInr) {
+                                                    //     bgColor = isLowest ? '#d4edda' : '#ffffff'; // Green if lowest
+                                                    // }
+                                                    bgColor = colorlow ? '#d4edda' : '#ffffff'; // Green if lowest
+
+                                        
+                                                    addOrUpdateItem(item_details, {
+                                                        vender_id: vendor.vendor_id,
+                                                        particularId: particular.id,
+                                                        inrValue: savedItemInr,
+                                                        dollarValue: savedItemUsd,
+                                                        deliveryType: deliveryType,
+                                                        rows: rows
+                                                    });
+
+                                                    return `
+                                                        <td class="cst-cell" 
+                                                            data-vendor-id="${vendor.vendor_id}" 
+                                                            data-particular-id="${particular.id}"
+                                                            data-inr-value="${savedItemInr}"
+                                                            data-dollar-value="${savedItemUsd}"
+                                                            data-delivery-timeline="${deliveryTimeline}"
+                                                            data-delivery-unit="${deliveryUnit}"
+                                                            style="cursor: pointer; background-color: ${bgColor}"
+                                                        >
+                                                            ${displayText}
+                                                        </td>
+                                                    `;
+                                                }).join('')}
+                                            </tr>
+                                        `).join('')}
+
+                                    <!-- Vendor terms rows -->
+                                    <tr data-field="quotation_reference">
+                                        <td colspan="3" style="font-weight: bold;">Quotation Reference: </td>
+                                        ${response.vendors.map(vendor => {
+                                            const savedValue = response.saved_cst[vendor.vendor_id]?.terms?.quotation_reference || '';
+                                            return `<td><input type="text" class="terms-input required-field" 
+                                                    data-vendor-id="${vendor.vendor_id}" 
+                                                    value="${savedValue}" 
+                                                    required></td>`;
+                                        }).join('')}
+                                    </tr>       
+                                    
+                                    <tr data-field="validityoffer">
+                                        <td colspan="3" style="font-weight: bold;">Validity of offer: </td>
+                                        ${response.vendors.map(vendor => {
+                                            let savedValue = response.saved_cst[vendor.vendor_id]?.terms?.validityoffer || '';
+                                            let today = new Date().toISOString().split('T')[0];
+                                            return `<td>
+                                                <input type="date" class="terms-input required-field future-date"
+                                                    data-vendor-id="${vendor.vendor_id}"
+                                                    value="${savedValue}"
+                                                    min="${today}"
+                                                    title="Select Offer Validity Date"
+                                                    required>
+                                            </td>`;
+                                        }).join('')}
+                                    </tr>
+
+                                    <tr data-field="discount">
+                                        <td colspan="3" style="font-weight: bold;">Discount offered (%): </td>
+                                        ${response.vendors.map(vendor => {
+                                            const savedValue = response.saved_cst[vendor.vendor_id]?.terms?.discount || '';
+                                            return `<td><input type="number" min="0" max="100" step="0.01" 
+                                                    class="terms-input required-field percentage-field" 
+                                                    data-vendor-id="${vendor.vendor_id}" 
+                                                    value="${savedValue}" 
+                                                    required></td>`;
+                                        }).join('')}
+                                    </tr>
+
+                                    ${response.source_type === 'Indigenous' ? `
+                                    <tr data-field="gst">
+                                        <td colspan="3" style="font-weight: bold;">GST (%): </td>
+                                        ${response.vendors.map(vendor => {
+                                            const savedValue = response.saved_cst[vendor.vendor_id]?.terms?.gst || '';
+                                            return `<td><input type="number" min="0" max="100" step="0.01" 
+                                                    class="terms-input required-field percentage-field" 
+                                                    data-vendor-id="${vendor.vendor_id}" 
+                                                    value="${savedValue}" 
+                                                    required></td>`;
+                                        }).join('')}
+                                    </tr>` : ''}
+                                    
+                                    <tr data-field="deliveryterms">
+                                        <td colspan="3" style="font-weight: bold;">Delivery terms </td>
+                                        ${response.vendors.map(vendor => {
+                                            const savedValue = response.saved_cst[vendor.vendor_id]?.terms?.deliveryterms || '';
+                                            return `<td><textarea  class="terms-input" style="resize: vertical; max-height: 150px; max-width: 300px; min-height: 50px;min-width: 150px;" data-vendor-id="${vendor.vendor_id}">${savedValue}</textarea></td>`;
+                                        }).join('')}
+                                    </tr>
+                                    
+                                    <tr data-field="paymentterms">
+                                        <td colspan="3" style="font-weight: bold;">Payment terms</td>
+                                        ${response.vendors.map(vendor => {
+                                            const savedValue = response.saved_cst[vendor.vendor_id]?.terms?.paymentterms || '';
+                                            return `<td><textarea class="terms-input" style="resize: vertical; max-height: 150px; max-width: 300px; min-height: 50px;min-width: 150px;" data-vendor-id="${vendor.vendor_id}" placeholder="eg: Net 30 ">${savedValue}</textarea></td>`;
+                                        }).join('')}
+                                    </tr>
+
+                                    <tr data-field="packaging_charges">
+                                        <td colspan="3" style="font-weight: bold;">Packaging Charges: </td>
+                                        ${response.vendors.map(vendor => {
+                                            const savedValue = response.saved_cst[vendor.vendor_id]?.terms?.packaging_charges || '';
+                                            return `<td><input type="number" class="terms-input required-field" data-vendor-id="${vendor.vendor_id}" value="${savedValue}" required></td>`;
+                                        }).join('')}
+                                    </tr>
+                                    
+                                    <tr data-field="insurance_charges">
+                                        <td colspan="3" style="font-weight: bold;">Insurance Charges: </td>
+                                        ${response.vendors.map(vendor => {
+                                            const savedValue = response.saved_cst[vendor.vendor_id]?.terms?.insurance_charges || '';
+                                            return `<td><input type="number" class="terms-input" value="${savedValue}" data-vendor-id="${vendor.vendor_id}"></td>`;
+                                        }).join('')}
+                                    </tr>
+                                    
+                                ${response.source_type === 'Import' ? `
+                                    <tr data-field="customs_duty">
+                                        <td colspan="3" style="font-weight: bold;">Customs Duty:</td>
+                                        ${response.vendors.map(vendor => {
+                                            const savedValue = response.saved_cst[vendor.vendor_id]?.terms?.customs_duty || '';
+                                            return `<td><input type="number" class="terms-input" value="${savedValue}" data-vendor-id="${vendor.vendor_id}"></td>`;
+                                        }).join('')}
+                                    </tr>` : ''}
+                                    
+                                    <tr data-field="coc">
+                                        <td colspan="3" style="font-weight: bold;">CoC:</td>
+                                        ${response.vendors.map(vendor => {
+                                            const savedValue = response.saved_cst[vendor.vendor_id]?.terms?.coc || false;
+                                            return `<td><input type="checkbox" class="terms-input" ${savedValue ? 'checked' : ''} data-vendor-id="${vendor.vendor_id}"></td>`;
+                                        }).join('')}
+                                    </tr>
+                                    
+                                    <tr data-field="material_test_report">
+                                        <td colspan="3" style="font-weight: bold;">Material Test Report Required:</td>
+                                        ${response.vendors.map(vendor => {
+                                            const checked = response.saved_cst[vendor.vendor_id]?.terms?.material_test_report ? 'checked' : '';
+                                            return `<td><input type="checkbox" class="terms-input" ${checked} data-vendor-id="${vendor.vendor_id}"></td>`;
+                                        }).join('')}
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Additional Information Section -->
+                        <div class="additional-info">
+                            <label for="additionalInfo">Additional Information (if any):</label>
+                            <textarea id="additionalInfo" name="additional_info">${additionalInfo}</textarea>
+                        </div>
+                        
+                        <div class="form-group mt-3">
+                            <label for="installments"><b>Number of Payment Installments:<span class="text-danger ms-1">*</span></b></label>
+                            <input type="number" name="installments" id="installments" class="form-control" min="1" value="${installmentsCount}" />
+                        </div>
+                        
+                            <!-- Placeholder for dynamic date fields -->
+                        ${
+                            installmentsCount == undefined ||  installmentsCount == 0 
+                            ? ` <div id="installmentDatesWrapper" style="max-height: 300px; display:none;" 
+                                    class="mt-3 border rounded p-2">
+                                    <div id="installmentDatesContainer">
+                                        
+                                    </div>
+                                </div>
+                                
+                            `
+                            : `
+                                <div id="installmentDatesWrapper" style="max-height: 300px; " 
+                                    class="mt-3 border rounded p-2">
+                                    <div id="installmentDatesContainer">
+                                        ${paydiv}
+                                    </div>
+                                </div>
+                            `
+                        }
+                        <div class="action-buttons">
+                             <button type="button" class="btn btn-success saveCSTButton" style="max-height: 38px; max-width: 98px; margin-top: 61px;" >Submit</button>
+
+                            ${response.user.roles.includes('IMM') && response.cstdata.length > 0 ? `
+                            <button type="button" class="approve-btn btn-success " data-procurement-id="${procurementId}" style="margin-top: 5%; background-color:#28a745; border-color:#28a745; color: white !important;">Approve</button>
+                            <button type="button" class="reject-btn btn-danger " data-procurement-id="${procurementId}" style="margin-top: 5%; background-color: #dc3545; color: white !important; ">Return</button>
+                            ` : ''}
+
+                        </div>
+
+                        
+                        
+                        ${hasLevels && !isSingleVendor ? displayLevels(response.levels) : ''}
+                    </div>
+                `;
+                
+                previewContent.append(cstForm);
+                if (installmentsCount && installmentsCount > 0) {
+                    $('#installments').trigger('input');
+                }
+                
+                // Helper to get latest action between cst and enquiry_modified
+                function getLatestCSTAction(stage, users) {
+                
+                    // Ensure we are working with a single user
+                    const user = Array.isArray(users) ? users[0] : users;
+
+                    if (!user || !Array.isArray(user.roles)) {
+                        console.warn("User or roles not defined properly");
+                        return null;
+                    }
+
+                    const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+                    if (!isPurchaseAssistant) {
+                        console.log("User is not a Purchase Assistant");
+                        return null;
+                    }
+
+                    let latestAction = null;
+                    let latestTime = null;
+
+                    stage.forEach(([stageName, remarktype, datetime]) => {
+                        const remark = remarktype.toLowerCase();
+                        const isStage7 = stageName.toLowerCase() === 'stage7';
+
+                        if (!isStage7) return;
+
+                        if (remark === 'cst_return' || remark === 'cst_modified') {
+                            const dt = new Date(datetime);
+                            if (!latestTime || dt > latestTime) {
+                                latestTime = dt;
+                                latestAction = remark;
+                            }
+                        }
+                    });
+
+                    return latestAction; // 'cst_return', 'cst_modified', or null
+                }
+
+                // Your original functions (unchanged)
+                function hasCSTApprovalStage(stages) {
+                    return stages.some(([stage, remarktype]) =>
+                    stage.toLowerCase() === 'stage7' && remarktype.toLowerCase() === 'cst_approval'
+                    );
+                }
+
+                function hasCSTGenerateStage(stages, user) {
+                    if (!user || !user.roles) return false;
+                
+                    const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+                    if (!isPurchaseAssistant) return false;
+                
+                    return stages.some(([stageName, remarktype]) =>
+                    stageName.toLowerCase() === 'stage7' && remarktype.toLowerCase() === 'cst'
+                    );
+                }
+                
+                function hasCSTRejectStage(stages, user) {
+                    if (!user || !user.roles) return false;
+                
+                    const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+                    if (!isPurchaseAssistant) return false;
+                
+                    return stages.some(([stageName, remarktype]) =>
+                    stageName.toLowerCase() === 'stage7' && remarktype.toLowerCase() === 'cst_return'
+                    );
+                }
+                
+                function hasCSTModifyStage(stages, user) {
+                    if (!user || !user.roles) return false;
+                
+                    const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+                    if (!isPurchaseAssistant) return false;
+                
+                    return stages.some(([stageName, remarktype]) =>
+                    stageName.toLowerCase() === 'stage7' && remarktype.toLowerCase() === 'cst_modified'
+                    );
+                }        
+                // Check if DPO Approval is followed by Stage4 Reject
+                function isDpoApprovedThenStage4Rejected(stages) {
+                    let dpoApprovalTime = null;
+                    let stage4RejectTime = null;
+
+                    stages.forEach(([stage, remark, datetime]) => {
+                        const lowerStage = stage.toLowerCase();
+                        const lowerRemark = remark.toLowerCase();
+                        const time = new Date(datetime);
+
+                        if (lowerStage === 'stage7' && lowerRemark === 'cst_approval') {
+                            dpoApprovalTime = time;
+                        }
+
+                        if (lowerStage === 'stage1' && lowerRemark === 'cst_return') {
+                            if (!stage4RejectTime || time > stage4RejectTime) {
+                                stage4RejectTime = time;
+                            }
+                        }
+                    });
+
+                    // Return true only if stage4 reject happened after dpo approval
+                    return dpoApprovalTime && stage4RejectTime && stage4RejectTime > dpoApprovalTime;
+                }
+                debugger
+                if (!(Object.keys(saved_cst).length === 0)) {
+                    const isPurchaseAssistant = users.roles.includes('Purchase Assistant');
+                    const lastStage = stage[stage.length - 1];
+                    const [stageNo, action,datetime,rejectuser] = lastStage;
+                    debugger
+                    if (stageNo === 'stage7' && (action === 'CST' || action === 'CST_Modified' || action === "CST_return" )) {
+                        $(".saveCSTButton").show()
+                        if(!isPurchaseAssistant){
+                            $(".approve-btn").show();
+                            $(".reject-btn").show();
+                        }else{
+                            $(".approve-btn").hide();
+                            $(".reject-btn").hide();
+                        }
+                    } 
+                    else if ((stageNo === 'stage1' || stageNo === 'stage2') && action === 'Reject' && rejectuser === "stage3")  { //stage3
+                        
+                            $(".saveCSTButton").show()
+                            if(!isPurchaseAssistant){
+                                $(".approve-btn").show();
+                                $(".reject-btn").show();
+                            }else{
+                                $(".approve-btn").hide();
+                                $(".reject-btn").hide();
+                            }
+                        
+                    }else{
+                        $(".saveCSTButton").hide()
+                        $(".approve-btn").hide();
+                        $(".reject-btn").hide();
+                    }
+                    
+                } else {
+                    $(".saveCSTButton").show();
+                }
+
+
+                
+                // Show/hide save button based on imm_user
+                /*if (imm_user) {
+                    $("#saveCSTButton").show();
+                    console.log("Submit button shown because imm_user exists.");
+                } else {
+                    $("#saveCSTButton").hide();
+                    console.log("Submit button hidden because imm_user is missing.");
+                }*/
+
+                // If data exists, disable inputs initially
+            /* if (hasSavedData) {
+                    previewContent.find('input, textarea, select').prop('disabled', true);
+                } else {
+                    previewContent.find('input, textarea, select').prop('disabled', false);
+                }*/
+
+                // Set up validation for the form
+                setupFormValidation();
+                
+                // Handle cell click to show modal for entering item details
+                $('.cst-table-body').on('click', '.cst-cell', function() {
+                    const $cell = $(this);
+                    const cellContent = $cell.html().trim();
+                    //const isClickable = cellContent.includes('Click to enter');
+                    //if (!isClickable) {
+                    //    return; // Exit if cell has content
+                    //}
+                    const vendorId = $(this).data('vendor-id');
+                    console.log(vendorId);
+                    const particularId = $(this).data('particular-id');
+                    console.log(particularId);
+                    const vendor = response.vendors.find(v => v.vendor_id == vendorId);
+                    console.log(vendor);
+                    const particular = response.particulars.find(p => p.id == particularId);
+                    console.log(particular);
+                    const savedTerms = item_details.filter(function(data){
+                        return data.vender_id == vendorId && data.particularId == particularId
+                    })
+                    const savedItemInr =    savedTerms[0].inrValue || '';
+                    console.log(savedItemInr);
+                    const savedItemUsd = savedTerms[0].dollarValue || '';
+                    console.log(savedItemUsd);
+                    $('#vendorDetailsModal').data('vendor-id', vendorId);
+                    $('#vendorDetailsModal').data('particular-id', particularId);
+                    // Determine delivery type from saved data
+                    let deliveryType = savedTerms[0].deliveryType || 'Full Quantity';
+                    const deliveryRows = savedTerms[0].rows || [];
+                    if (deliveryRows.length === 0) {
+                        // Handle case where there are no delivery rows
+                        console.log("No delivery rows found.");
+                        fullQuant = '';
+                        fullTimeline =''
+                        fullTimelineUnit = ''
+                    }else{
+                        fullQuant = deliveryRows[0].qty || '';
+                        fullTimeline = deliveryRows[0].timeline || '';
+                        fullTimelineUnit = deliveryRows[0].timeline_unit || '';
+                    }
+
+                    // Build modal HTML
+                    const modalHtml = `
+                        <div class="container-fluid">
+                            <div class="row mb-3 align-items-center">
+                                <div class="col-md-6">
+                                    <h5 class="mb-0"><strong>Vendor:</strong> M/s ${vendor.company_name}</h5>
+                                </div>
+                                <div class="col-md-6 text-end">
+                                    <div class="d-inline-block text-nowrap overflow-auto" style="max-width: 100%;">
+                                        <h5 class="mb-0">
+                                            <strong>Item:</strong> ${particular.item_name} / ${particular.partno}
+                                        </h5>
+                                    </div>
+                                </div>
+ 
+                            </div>
+
+                            <div class="row mb-3">
+                                <!-- Delivery Type -->
+                                <div class="col-md-6">
+                                    <label class="fw-bold">Delivery Type:</label>
+                                    <select data-delivery-data class="form-select" id="deliveryTypeSelect">
+                                        <option value="Full Quantity" ${deliveryType === 'Full Quantity' ? 'selected' : ''}>Full Quantity</option>
+                                        <option value="Staggered" ${deliveryType === 'Staggered' ? 'selected' : ''}>Staggered</option>
+                                    </select>
+                                </div>
+
+                                <!-- Quoted Prices -->
+                                <div class="col-md-6">
+                                    <label class="fw-bold mb-1 d-block">Quoted Prices(per quantity):</label>
+                                    <div class="d-flex gap-3 align-items-center">
+                                        ${source_type === 'Import' ? `
+                                            <div class="input-group" style="width: 150px;">
+                                                <span class="input-group-text">$</span>
+                                                <input data-dollar-value  type="number" class="form-control price-input-dollar" placeholder="USD" value="${savedItemUsd}">
+                                            </div>
+                                            <div class="input-group" style="width: 150px;">
+                                                <span class="input-group-text">₹</span>
+                                                <input data-inr-value type="number" class="form-control price-input-inr" placeholder="INR" value="${savedItemInr}">
+                                            </div>
+                                        ` : `
+                                            <div class="input-group" style="width: 150px;">
+                                                <span class="input-group-text">₹</span>
+                                                <input data-inr-value type="number" class="form-control price-input-inr" placeholder="INR" value="${savedItemInr}">
+                                            </div>
+                                            {% comment %} <div class="input-group" style="width: 150px;">
+                                                <span class="fw-bold">Quantity:</span>
+                                                <input type="number" class="form-control" id="fullQtyInput" value="${savedTerms.total_qty || particular.total_qty_required}" min="1" required>
+                                            </div> {% endcomment %}
+                                        `}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Full Quantity Section -->
+                            <div id="fullQuantitySection" class="${deliveryType === 'Full Quantity' ? '' : 'd-none'}">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label class="fw-bold">Quantity:</label>
+                                        <input type="number" class="form-control" id="fullQtyInput" 
+                                            value="${fullQuant || particular.total_qty_required}" min="1" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label class="fw-bold">Delivery Timeline: </label>
+                                        <div class="d-flex gap-2">
+                                            <input type="number" class="form-control" id="fullTimelineValue" 
+                                                value="${fullTimeline|| ''}" required>
+                                            <select class="form-select" id="fullTimelineUnit" required>
+                                                <option value="days" ${fullTimelineUnit === 'days' ? 'selected' : ''}>Day(s)</option>
+                                                <option value="weeks" ${fullTimelineUnit === 'weeks' ? 'selected' : ''}>Week(s)</option>
+                                                <option value="months" ${fullTimelineUnit === 'months' ? 'selected' : ''}>Month(s)</option>
+                                                <option value="years" ${fullTimelineUnit === 'years' ? 'selected' : ''}>Year(s)</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Staggered Quantity Section -->
+                            <div id="staggeredSection" class="${deliveryType === 'Staggered' ? '' : 'd-none'}">
+                                <table class="table table-bordered align-middle">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th>Quantity</th>
+                                            <th>Delivery Timeline <span style="color:red;">*</span></th>
+                                            <th>
+                                                <button type="button" class="btn btn-success btn-sm" id="addRowBtn">
+                                                    <i class="fas fa-plus"></i>
+                                                </button>
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="deliveryRowsTableBody">
+                                        ${deliveryRows.map(row => `
+                                            <tr class="delivery-row">
+                                                <td>
+                                                    <input type="number" class="form-control quantity-input" 
+                                                        value="${row.qty}" min="1" required>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex gap-2">
+                                                        <input type="number" class="form-control timeline-value" 
+                                                            value="${row.timeline}" required>
+                                                        <select class="form-select timeline-unit" required>
+                                                            <option value="days" ${row.unit === 'days' ? 'selected' : ''}>Days</option>
+                                                            <option value="weeks" ${row.unit === 'weeks' ? 'selected' : ''}>Weeks</option>
+                                                            <option value="months" ${row.unit === 'months' ? 'selected' : ''}>Months</option>
+                                                            <option value="years" ${row.unit === 'years' ? 'selected' : ''}>Years</option>
+                                                        </select>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-danger btn-sm remove-row">
+                                                        <i class="fas fa-minus"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        `).join('')}
+                                        ${deliveryRows.length === 0 ? `
+                                            <tr class="delivery-row">
+                                                <td>
+                                                    <input type="number" class="form-control quantity-input" min="1" required>
+                                                </td>
+                                                <td>
+                                                    <div class="d-flex gap-2">
+                                                        <input type="number" class="form-control timeline-value" required>
+                                                        <select class="form-select timeline-unit" required>
+                                                            <option value="days">Days</option>
+                                                            <option value="weeks">Weeks</option>
+                                                            <option value="months">Months</option>
+                                                            <option value="years">Years</option>
+                                                        </select>
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <button type="button" class="btn btn-danger btn-sm remove-row">
+                                                        <i class="fas fa-minus"></i>
+                                                    </button>
+                                                </td>
+                                            </tr>
+                                        ` : ''}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <div class="modal-footer mt-3">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                <button type="button" class="btn btn-primary submit" id="submitDeliveryDetails">Save</button>
+                            </div>
+                        </div>
+                    `;
+
+                    $('#vendorModalBody').html(modalHtml);
+                    $('#vendorDetailsModal').modal('show');
+                });
+
+                // Handle delivery type change in modal
+                $('#vendorModalBody').on('change', '#deliveryTypeSelect', function() {
+                    const selectedType = $(this).val();
+                    $('#fullQuantitySection').toggleClass('d-none', selectedType !== 'Full Quantity');
+                    $('#staggeredSection').toggleClass('d-none', selectedType !== 'Staggered');
+                });
+
+                // Add new staggered row
+                $('#vendorModalBody').on('click', '#addRowBtn', function() {
+                    const newRow = `
+                        <tr class="delivery-row">
+                            <td>
+                                <input type="number" class="form-control quantity-input" min="1" required>
+                            </td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <input type="number" class="form-control timeline-value" required>
+                                    <select class="form-select timeline-unit" required>
+                                        <option value="days">Days</option>
+                                        <option value="weeks">Weeks</option>
+                                        <option value="months">Months</option>
+                                        <option value="years">Years</option>
+                                    </select>
+                                </div>
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-danger btn-sm remove-row">
+                                    <i class="fas fa-minus"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    `;
+                    $('#deliveryRowsTableBody').append(newRow);
+                });
+
+                // Remove staggered row
+                $('#vendorModalBody').on('click', '.remove-row', function() {
+                    if ($('#deliveryRowsTableBody tr').length > 1) {
+                        $(this).closest('tr').remove();
+                    } else {
+                        showAlert('At least one delivery row is required');
+                    }
+                });
+
+                
+
+                // Handle saving delivery details
+                $('#vendorModalBody').on('click', '#submitDeliveryDetails', function() {
+                    
+                    var vendorId = $('#vendorDetailsModal').data('vendor-id');
+                    var particularId = $('#vendorDetailsModal').data('particular-id');
+                    var inrValue = $('.price-input-inr').val();
+                    var dollarValue = source_type === 'Import' ? $('.price-input-dollar').val() : null;
+                    var deliveryType = $('#deliveryTypeSelect').val();
+                    var rows = [];
+                    if (!inrValue) {
+                        showAlert('Please enter at least the INR price');
+                        return;
+                    }
+
+                    let deliveryData = {};
+                    let displayText = '';
+
+                    if (deliveryType === 'Full Quantity') {
+                        const qty = $('#fullQtyInput').val();
+                        const timeline = $('#fullTimelineValue').val();
+                        const unit = $('#fullTimelineUnit').val();
+
+                        if (!qty ) {
+                            showAlert('Please fill Qty value');
+                            return;
+                        }
+                        if(!timeline){
+                           showAlert('Please fill Timeline value');
+                            return; 
+                        }
+
+                        deliveryData = {
+                            delivery_type: 'Full Quantity',  // Make sure this matches your backend expectations
+                            total_qty: qty,
+                            deliverytimeline: timeline,
+                            delivery_unittypes: unit
+                        };
+                        rows.push({ qty:qty, timeline:timeline, unit:unit });
+                        displayText = `${source_type === 'Import' ? `${dollarValue || '-'} USD / ` : ''}${inrValue || '-'} INR / ${qty} Qty in ${timeline} ${unit}`;
+                    } else {
+                        // Staggered delivery
+                        
+                        let isValid = true;
+                        let totalQty = 0;
+
+                        $('#deliveryRowsTableBody tr').each(function() {
+                            debugger
+                            const qty = $(this).find('.quantity-input').val();
+                            const timeline = $(this).find('.timeline-value').val();
+                            const unit = $(this).find('.timeline-unit').val();
+
+                            if (!qty || !timeline) {
+                                isValid = false;
+                                return false; // exit loop
+                            }
+
+                            rows.push({ qty, timeline, unit });
+                            totalQty += parseInt(qty);
+                        });
+                        
+
+                        
+
+                        if (!isValid || rows.length === 0) {
+                            showAlert('Please fill all required fields for staggered delivery');
+                            return;
+                        }
+
+                        deliveryData = {
+                            delivery_type: 'Staggered',  // Make sure this matches your backend expectations
+                            delivery_rows: rows
+                        };
+
+                        displayText = `${source_type === 'Import' ? `${dollarValue || '-'} USD / ` : ''}${inrValue || '-'} INR / ${totalQty} Qty in ${rows.length} deliveries`;
+                    }
+
+                    // Update the cell with all necessary data attributes
+                    const $cell = $(`.cst-cell[data-vendor-id="${vendorId}"][data-particular-id="${particularId}"]`);
+                    
+                    $cell.html(displayText)
+                        .attr('data-delivery-data', JSON.stringify(deliveryData))
+                        .attr('data-inr-value', inrValue)
+                        .attr('data-dollar-value', dollarValue || '')
+                        .css('cursor', 'pointer');
+                    
+                    // Usage
+                    addOrUpdateItem(item_details, {
+                        vender_id: vendorId,
+                        particularId: particularId,
+                        inrValue: inrValue,
+                        dollarValue: dollarValue,
+                        deliveryType: deliveryType,
+                        rows: rows
+                    });
+
+                    $('#vendorDetailsModal').modal('hide');
+
+                });
+
+                let pendingFormData = null;
+                
+
+                $(document)
+                .off("click", "#saveCSTDATA")  // remove only this button’s handler
+                .on("click", "#saveCSTDATA", function (e) {
+                    e.preventDefault();
+                    submitCSTData();
+                });
+
+                document.getElementById('installments').addEventListener('input', function() {
+                    const count = parseInt(this.value);
+                    const wrapper = document.getElementById('installmentDatesWrapper');
+                    const container = document.getElementById('installmentDatesContainer');
+
+                    // Clear previous fields
+                    container.innerHTML = '';
+
+                    if (!isNaN(count) && count > 0) {
+                        wrapper.style.display = 'block';
+                        const paymentEventsOptions = getPaymentEventsOptions();
+
+                        for (let i = 1; i <= count; i++) {
+                            const div = document.createElement('div');
+                            div.className = 'form-group row mb-3 border-bottom pb-3';
+                            
+                            // Generate options HTML
+                            let optionsHtml = '<option value="">Select Payment Event</option>';
+                            paymentEventsOptions.forEach(option => {
+                                optionsHtml += `<option value="${option.value}">${option.text}</option>`;
+                            });
+
+                            div.innerHTML = `
+                                <div class="col-md-4">
+                                    <label for="installment_date_${i}" class="form-label"><b>Payment ${i} Date:</b></label>
+                                    <input type="date" name="installment_date_${i}" id="installment_date_${i}" 
+                                        class="form-control" required />
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="percentage_${i}" class="form-label"><b>Percentage (%):<span class="text-danger ms-1">*</span></b></label>
+                                    <input type="number" name="percentage_${i}" id="percentage_${i}" 
+                                        class="form-control" required min="1" max="100" step="0.01" 
+                                        placeholder="Enter percentage" />
+                                </div>
+                                <div class="col-md-5">
+                                    <label for="payment_events_${i}" class="form-label"><b>Payment Event:<span class="text-danger ms-1">*</span></b></label>
+                                    <select name="payment_events_${i}" id="payment_events_${i}" 
+                                            class="form-select installment-payment-event" required>
+                                        ${optionsHtml}
+                                    </select>
+                                </div>
+                            `;
+                            container.appendChild(div);
+                        }
+                    } else {
+                        wrapper.style.display = 'none';
+                    }
+                });
+                
+                
+                // Handle saving the entire CST form
+                $(document).on('click', '.saveCSTButton', function () {
+
+                    const procurementId = prId;
+                    const additionalInfo = $('#additionalInfo').val();
+                    const role = ''; // Update this if needed
+                    const installmentsVal = $('#installments').val();
+                    console.log(installmentsVal);
+                    const installmentsCount = parseInt(installmentsVal);
+                    console.log(installmentsCount);
+                    
+                    // fetch events from DOM
+                    const paymentEventsVal = $('.installment-payment-event').val();
+            
+                    if (!installmentsVal || isNaN(installmentsCount) || installmentsCount <= 0) {
+                        showAlert("Please enter a valid number of installments.");
+                        $('#installments').focus();
+                        return;
+                    }
+                    let allCellsFilled = true;
+
+                    $('.cst-cell').each(function() {
+                        const inrValue = $(this).attr('data-inr-value');
+                        if (!inrValue) { // You can also check delivery data if needed
+                            allCellsFilled = false;
+                            return false; // break loop
+                        }
+                    });
+
+                    if (!allCellsFilled) {
+                        showAlert("Please fill delivery/item details before submitting.");
+                        hideLoader(); // hide loader if active
+                        return;
+                    }
+            
+            
+                    // Create installments data including payment percentage
+                    let installmentsData = [];
+                    let totalInstallmentsPercentage = 0;  // Variable to track the total sum of installment percentages
+        
+                    for (let i = 1; i <= installmentsCount; i++) {
+                        const dateInput = $(`#installment_date_${i}`);
+                        const percentageInput = $(`#percentage_${i}`);  // Change this to reflect percentage field
+                        const dateVal = dateInput.val();
+                        const percentageVal = percentageInput.val();
+                        let paymentEventsVal = $("#payment_events_"+i).val() 
+                        /*if (!dateVal) {
+                            showAlert(`Please select a date for installment ${i}.`);
+                            dateInput.focus();
+                            return;
+                        }*/
+        
+                        if (!percentageVal || isNaN(percentageVal) || parseFloat(percentageVal) <= 0 || parseFloat(percentageVal) > 100) {
+                            showAlert(`Please enter a valid percentage for payment installment ${i}.`);
+                            percentageInput.focus();
+                            return;
+                        }
+                        if(paymentEventsVal == ''){
+                            showAlert(`Please select Payment Event for payment installment ${i}.`);
+                            paymentEventsVal.focus();
+                            return;
+                        }
+        
+                        // Add to the total installments percentage
+                        totalInstallmentsPercentage += parseFloat(percentageVal);
+        
+                        installmentsData.push({
+                            installment_date: dateVal,
+                            payment_percentage: parseFloat(percentageVal),  // Send percentage instead of amount
+                            payment_events: paymentEventsVal  
+
+                        });
+                        //dpoData[`installment_date_${i}`] = dateVal;
+                        //dpoData[`percentage_${i}`] = percentageVal;  // Update to reflect percentage field
+                    }
+        
+                    // Ensure that the total percentage matches 100%
+                    if (Math.abs(totalInstallmentsPercentage - 100) > 0.01) {
+                        showAlert(`The total percentage of installments (${totalInstallmentsPercentage}%) does not sum to 100%. Please correct the percentages.`);
+                        return;
+                    }
+
+                    if (isSingleVendor) {
+                        $('#sendToContainer').css('display', 'block'); // Show dropdown
+                    } else {
+                        $('#sendToContainer').css('display', 'none'); // Hide dropdown
+                    }
+                    $('#remarks').val('')
+                    // Show remarks modal
+                    $('#recommendModal1').modal('show');
+
+                    // Collect vendor terms
+                    // const vendorTerms = {};
+                    // $('tr[data-field]').each(function() {
+                    //     const field = $(this).data('field');
+                    //     $(this).find('td input, td textarea, td select').each(function() {
+                    //         const vendorId = $(this).data('vendor-id');
+                    //         if (!vendorId || vendorId === 'undefined') return;
+
+                    //         if (!vendorTerms[vendorId]) {
+                    //             vendorTerms[vendorId] = {};
+                    //         }
+
+                    //         vendorTerms[vendorId][field] = $(this).is(':checkbox') ? 
+                    //             $(this).is(':checked') : $(this).val();
+                    //     });
+                    // });
+
+                    //     // Collect items data
+                    //     const itemsData = [];
+                    //     $('.cst-table-body tr[data-particular-id]').each(function() {
+                    //         const particularId = $(this).data('particular-id');
+
+                    //         $(this).find('.cst-cell').each(function() {
+                    //             const $cell = $(this);
+                    //             const vendorId = $cell.data('vendor-id');
+                    //             const deliveryData = JSON.parse($cell.attr('data-delivery-data') || '{}');
+                    //             const inrValue = $cell.data('inr-value');
+                    //             const dollarValue = $cell.data('dollar-value');
+
+                    //             if (inrValue && vendorId && vendorId !== 'undefined') {
+                    //                 itemsData.push({
+                    //                     particular_id: particularId,
+                    //                     vendor_id: vendorId,
+                    //                     value: inrValue,
+                    //                     dollar_value: dollarValue,
+                    //                     delivery_type: deliveryData.delivery_type,  // Include delivery type
+                    //                     delivery_unittypes: deliveryData.delivery_unittypes,  // Include unit types
+                    //                     delivery_data: deliveryData  // Include full delivery data
+                    //                 });
+                    //             }
+                    //         });
+                    //     });
+
+                    //     // Prepare and store FormData for later
+                    //     pendingFormData = new FormData();
+
+                    //     pendingFormData.append('procurement_id', procurementId);
+                    //     pendingFormData.append('action', 'save');
+                        
+                    //     pendingFormData.append('vendor_terms', JSON.stringify(vendorTerms));
+                    //     pendingFormData.append('items', JSON.stringify(itemsData));
+                    //     console.log(itemsData,'naveennnnnnnnnnnnnnnn');
+                    //     pendingFormData.append('additional_info', additionalInfo);
+                    
+                    //     pendingFormData.append('installments', installmentsCount);
+                        
+                    //     pendingFormData.append('installments_data', JSON.stringify(installmentsData));
+                        
+                    //     pendingFormData.append('role', role);
+                        
+                });
+    
+                // Prevent invalid characters and reset for non-positive values
+                const installmentInput = document.getElementById('installments');
+                console.log(installmentInput);
+            
+                installmentInput.addEventListener('input', function () {
+                    if (this.value < 1) this.value = '';
+                });
+            
+                installmentInput.addEventListener('keydown', function (e) {
+                    if (e.key === '-' || e.key === 'e' || e.key === '+') {
+                        e.preventDefault();
+                    }
+                });
+    
+                function submitCSTData() {
+                    debugger;
+                    
+                    const procurementId = prId;
+                    const additionalInfo = $('#additionalInfo').val();
+                    const role = ''; // Set appropriately
+                    const remarks = $('#remarks').val().trim();
+                    const installmentsVal = $('#installments').val();
+                    const installmentsCount = parseInt(installmentsVal);
+                    const venddropdown=$('#send_to').val();
+                    // fetch events from DOM
+                    // const paymentEventsVal = $('.installment-payment-event').val();
+            
+                    if (!installmentsVal || isNaN(installmentsCount) || installmentsCount <= 0) {
+                        showAlert("Please enter a valid number of installments.");
+                        $('#installments').focus();
+                        hideLoader();
+                        return;
+                    }
+            
+            
+                    // Create installments data including payment percentage
+                    let installmentsData = [];
+                    let totalInstallmentsPercentage = 0;  // Variable to track the total sum of installment percentages
+        
+                    for (let i = 1; i <= installmentsCount; i++) {
+                        const dateInput = $(`#installment_date_${i}`);
+                        const percentageInput = $(`#percentage_${i}`);  // Change this to reflect percentage field
+                        let paymentEventsVal = $("#payment_events_"+i).val() 
+                        const dateVal = dateInput.val();
+                        const percentageVal = percentageInput.val();
+        
+                        /*if (!dateVal) {
+                            showAlert(`Please select a date for installment ${i}.`);
+                            dateInput.focus();
+                            return;
+                        }*/
+        
+                        if (!percentageVal || isNaN(percentageVal) || parseFloat(percentageVal) <= 0 || parseFloat(percentageVal) > 100) {
+                            showAlert(`Please enter a valid percentage for payment installment ${i}.`);
+                            percentageInput.focus();
+                            hideLoader();
+                            return;
+                        }
+                        if(paymentEventsVal == ""){
+                            showAlert(`Please select Payment Event for payment installment ${i}.`);
+                            paymentEventsVal.focus();
+                            hideLoader();
+                            return;
+                        }
+        
+                        // Add to the total installments percentage
+                        totalInstallmentsPercentage += parseFloat(percentageVal);
+        
+                        installmentsData.push({
+                            installment_date: dateVal,
+                            payment_percentage: parseFloat(percentageVal),  // Send percentage instead of amount
+                            payment_events: paymentEventsVal  
+
+                        });
+        
+                        //dpoData[`installment_date_${i}`] = dateVal;
+                        //dpoData[`percentage_${i}`] = percentageVal;  // Update to reflect percentage field
+                    }
+        
+                        // Ensure that the total percentage matches 100%
+                    if (Math.abs(totalInstallmentsPercentage - 100) > 0.01) {
+                        showAlert(`The total percentage of installments (${totalInstallmentsPercentage}%) does not sum to 100%. Please correct the percentages.`);
+                        hideLoader();
+                        return;
+                    }
+
+                    if (!remarks) {
+                        showAlert('Remarks cannot be empty');
+                        $('#remarks').focus();
+                        hideLoader();
+                        return;
+                    }
+
+                    // Collect vendor terms
+                    const vendorTerms = {};
+                    $('tr[data-field]').each(function() {
+                        const field = $(this).data('field');
+                        $(this).find('td input, td textarea, td select').each(function() {
+                            const vendorId = $(this).data('vendor-id');
+                            if (!vendorId || vendorId === 'undefined') return;
+
+                            if (!vendorTerms[vendorId]) {
+                                vendorTerms[vendorId] = {};
+                            }
+
+                            vendorTerms[vendorId][field] = $(this).is(':checkbox') ? 
+                                $(this).is(':checked') : $(this).val();
+                        });
+                    });
+
+                    // Collect items data
+                    // const itemsData = [];
+                    // $('.cst-table-body tr[data-particular-id]').each(function() {
+                    //     const particularId = $(this).data('particular-id');
+
+                    //     $(this).find('.cst-cell').each(function() {
+                    //         const $cell = $(this);
+                    //         const vendorId = $cell.data('vendor-id');
+                    //         const deliveryData = $cell.data('delivery-data');
+                    //         const inrValue = $cell.data('inr-value');
+                    //         const dollarValue = $cell.data('dollar-value');
+
+                    //         if (inrValue && vendorId && vendorId !== 'undefined') {
+                    //             itemsData.push({
+                    //                 particular_id: particularId,
+                    //                 vendor_id: vendorId,
+                    //                 value: inrValue,
+                    //                 dollar_value: dollarValue,
+                    //                 delivery_data: deliveryData
+                    //             });
+                    //         }
+                    //     });
+                    // });
+
+
+                    // Prepare FormData
+                    showLoader();
+                    const formData = new FormData();
+                    formData.append('procurement_id', procurementId);
+                    formData.append('action', 'save');
+                    formData.append('send_to', $('#send_to').val());
+                    formData.append('vendor_terms', JSON.stringify(vendorTerms));
+                    console.log(vendorTerms,'vendorterms');
+                    formData.append('items', JSON.stringify(item_details));
+                    console.log(item_details,'item_details');
+                    formData.append('additional_info', additionalInfo);
+                    formData.append('remarks', remarks);
+                    formData.append('role', role);
+                    formData.append('installments', installmentsCount);
+                    console.log(installmentsCount,'naveeeeeeeeeeeeeeeeeeeeeeeeeeeeen');
+                    formData.append('installments_data', JSON.stringify(installmentsData));
+                    console.log(installmentsData,'vaamsiiiiiiiiiiiiiiiiiiiiiiii');
+
+                    
+                    $.ajax({
+                        url: '/ims/comparative/',
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        headers: {
+                            'X-CSRFToken': csrfToken
+                        },
+                        success: function (response) {
+                        
+                         
+                            if (response.status === 'success') {
+                                hideLoader();
+                                showSuccessAlert('CST saved successfully!');
+                                
+                                $('#recommendModal1').modal('hide');
+                                // updateCSTDisplayCells(); 
+                                showComparativeStatement(prId, projectName, user);
+                            } else {
+                                console.log(response.message)
+                                showAlert('Error in CST saving. Please try again');
+                            }
+                        },
+                        error: function (xhr) {
+                            hideLoader();
+                            console.log(xhr.responseText)
+                            showAlert('Error in CST saving. Please try again');
+                        }
+                    });
+                }
+
+
+                function updateCSTDisplayCells() {
+                    $('.cst-table-body tr[data-particular-id]').each(function () {
+                        debugger;
+                        const particularId = $(this).data('particular-id');
+
+                        $(this).find('.cst-cell').each(function () {
+                            const $cell = $(this);
+                            const vendorId = $cell.data('vendor-id');
+                            const deliveryData = $cell.data('delivery-data');
+                            const inrValue = $cell.data('inr-value');
+                            const dollarValue = $cell.data('dollar-value');
+
+                            if (!inrValue || !vendorId || vendorId === 'undefined') return;
+
+                            let displayText = '';
+
+                            if (deliveryData?.delivery_type === 'Full Quantity') {
+                                const qty = deliveryData.total_qty || '-';
+                                const timeline = deliveryData.deliverytimeline || '-';
+                                const unit = deliveryData.delivery_unittypes || '';
+                                displayText = `${source_type === 'Import' ? `${dollarValue || '-'} USD / ` : ''}${inrValue} INR / ${qty} Qty in ${timeline} ${unit}`;
+                            } else if (deliveryData?.delivery_type === 'Staggered') {
+                                const rows = deliveryData.delivery_rows || [];
+                                const totalQty = rows.reduce((sum, row) => sum + parseInt(row.qty || 0), 0);
+                                displayText = `${source_type === 'Import' ? `${dollarValue || '-'} USD / ` : ''}${inrValue} INR / ${totalQty} Qty in ${rows.length} deliveries`;
+                            }
+
+                            $cell.html(displayText);
+                        });
+                    });
+                }
+
+                // Function to check if form is complete and enable save button
+                function checkFormCompletion() {
+                    let isComplete = true;
+                    
+                    // Check all required fields are filled
+                    $('.required-field').each(function() {
+                        if (!$(this).val()) {
+                            isComplete = false;
+                            return false; // break loop
+                        }
+                    });
+                    
+                    // Check all items have prices
+                    $('.cst-cell').each(function() {
+                        if ($(this).find('span.text-muted').length > 0) {
+                            isComplete = false;
+                            return false; // break loop
+                        }
+                    });
+                    
+                    // Enable/disable save button
+                    //$('#saveCSTButton').prop('disabled', !isComplete);
+                }
+                
+                // Set up event listeners for form validation
+                function setupFormValidation() {
+                    $('.required-field').on('input change', checkFormCompletion);
+                    $('.percentage-field').on('input', function() {
+                        const value = parseFloat($(this).val());
+                        if (value < 0 || value > 100) {
+                            $(this).val('');
+                            showAlert('Percentage must be between 0 and 100');
+                        }
+                    });
+                    $('.future-date').on('change', function() {
+                        const today = new Date();
+                        const selectedDate = new Date($(this).val());
+                        if (selectedDate < today) {
+                            $(this).val('');
+                            showAlert('Please select a future date');
+                        }
+                    });
+                }
+                
+                // Initialize form validation
+                setupFormValidation();
+                checkFormCompletion();
+            },
+            error: function(xhr, status, error) {
+                console.log('Error:', error);
+                previewContent.html('<div class="showAlert showAlert-danger">Error loading comparative statement data</div>');
+                hideLoader();
+            }
+        });
+    }
+
+
+    // Function to set up form validation
+    function setupFormValidation() {
+        // Validate all required fields
+        $(document).on('blur', '.required-field', function() {
+            const $field = $(this);
+            const value = $field.val().trim();
+            const isCheckbox = $field.attr('type') === 'checkbox';
+            const isValid = isCheckbox ? $field.is(':checked') : value !== '';
+            
+            if (!isValid) {
+                $field.addClass('is-invalid');
+                //$field.after('<div class="invalid-feedback">This field is required</div>');
+            } else {
+                $field.removeClass('is-invalid');
+                $field.next('.invalid-feedback').remove();
+            
+                // Additional validation for specific fields
+                if ($field.attr('type') === 'number') {
+                    const min = parseFloat($field.attr('min')) || 0;
+                    const max = parseFloat($field.attr('max')) || Infinity;
+                    const numValue = parseFloat(value);
+            
+                    if (isNaN(numValue)) {  // <-- Missing closing parenthesis was here
+                        $field.addClass('is-invalid');
+                        $field.after('<div class="invalid-feedback">Please enter a valid number</div>');
+                    } else if (numValue < min || numValue > max) {
+                        $field.addClass('is-invalid');
+                        $field.after(`<div class="invalid-feedback">Value must be between ${min} and ${max}</div>`);
+                    }
+                }
+            }
+            
+            validateForm();
+            
+        });
+    }
+    // Validate on any input change
+    $(document).on('input', '.price-input, .terms-input', function() {
+        validateForm();
+    });
+    // Function to validate the form and enable/disable the Save button
+    function validateForm() {
+        let isValid = true;
+        
+        
+        $('.required-field').each(function() {
+            const $field = $(this);
+            const value = $field.val().trim();
+            const isCheckbox = $field.attr('type') === 'checkbox';
+            
+            if ((isCheckbox && !$field.is(':checked')) || (!isCheckbox && value === '')) {
+                isValid = false;
+                return false; 
+            }
+            
+            if ($field.hasClass('is-invalid')) {
+                isValid = false;
+                return false;
+            }
+        });
+        
+        
+        $('.price-input').each(function() {
+            if ($(this).val().trim() === '') {
+                isValid = false;
+                return false; 
+            }
+        });
+        
+        
+        /*if (isValid) {
+            $('#saveCSTButton').prop('disabled', false).removeClass('disabled').addClass('enabled');
+        } else {
+            $('#saveCSTButton').prop('disabled', true).addClass('disabled').removeClass('enabled');
+        }*/
+        
+        //return isValid;
+    }
+    //function to display levels in the comparative statement
+    function displayLevels(levels) {
+
+        levels.sort((a, b) => a.total - b.total);
+
+        levels.forEach((vendor, index) => {
+            vendor.level = `Lowest${index + 1}`;
+        });
+        const timeRankedVendors = [...levels].sort((a, b) => {
+            const timeA = parseFloat(a.delivery_timeline) || Infinity;
+            const timeB = parseFloat(b.delivery_timeline) || Infinity;
+            return timeA - timeB;
+        });
+
+        
+        levels.forEach(vendor => {
+            const timeRankIndex = timeRankedVendors.findIndex(v => v.company_name === vendor.company_name);
+            vendor.timeRank = timeRankIndex >= 0 ? `T${timeRankIndex + 1}` : 'N/A';
+        });
+
+        return `
+            <div class="levels-container">
+                <h4 style="text-align: center; margin-bottom: 15px; color: #333;">Status of Vendors</h4>
+                <table class="cst-table" style="width: 100%; margin-bottom: 0;">
+                    <thead>
+                        <tr>
+                            <th style="width: 15%; text-align: center;">Rank</th>
+                            <th style="width: 30%;">Vendor Name</th>
+                            <th style="width: 20%; text-align: right;">Total Amount (₹)</th>
+                            <th style="width: 20%; text-align: center;">Delivery (weeks)</th>
+                            <th style="width: 15%; text-align: center;">Time Rank</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${levels.map(level => `
+                            <tr style="background-color: ${(level.level)};">
+                                <td style="font-weight: bold; text-align: center;">${level.level}</td>
+                                <td>${level.company_name}</td>
+                                <td style="text-align: right;">₹${level.total.toLocaleString('en-IN')}</td>
+                                <td style="text-align: center;">${level.delivery_timeline || 'N/A'}</td>
+                                <td style="text-align: center;">${level.timeRank}</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+     // Add this new helper function
+    function updateCSTDisplay(savedData) {
+        debugger;
+        $('.cst-cell').each(function() {
+            const vendorId = $(this).data('vendor-id');
+            const particularId = $(this).data('particular-id');
+            const vendorTerms = savedData?.[vendorId]?.terms || {};
+            const savedItemInr = savedData?.[vendorId]?.items?.[particularId] || '';
+            const savedItemUsd = savedData?.[vendorId]?.dollar_items?.[particularId] || '';
+            const source_type = $('#sourceType').val();
+
+            if (savedItemInr || savedItemUsd) {
+                const pricePart = source_type === 'Import' 
+                    ? `${savedItemUsd || '-'} USD / ${savedItemInr || '-'} INR`
+                    : `${savedItemInr || '-'} INR`;
+                
+                let displayText = pricePart;
+                
+                if (vendorTerms.delivery_type === 'Full Quantity') {
+                    const qty = vendorTerms.total_qty || '';
+                    const timeline = vendorTerms.deliverytimeline || '';
+                    const unit = vendorTerms.delivery_unittypes || 'days';
+                    displayText = `${pricePart} / ${qty} Qty in ${timeline} ${unit}`;
+                } else if (vendorTerms.delivery_type === 'Staggered' && vendorTerms.delivery_rows) {
+                    const totalQty = vendorTerms.delivery_rows.reduce((sum, row) => sum + parseInt(row.qty || 0), 0);
+                    displayText = `${pricePart} / ${totalQty} Qty in ${vendorTerms.delivery_rows.length} deliveries`;
+                }
+                
+                $(this).html(displayText);
+            }
+        });
+    }
+    
+    // Add this new helper function
+    // function updateCSTDisplay(savedData) {
+    //     debugger;
+    //     $('.cst-cell').each(function() {
+    //         const vendorId = $(this).data('vendor-id');
+    //         const particularId = $(this).data('particular-id');
+    //         const vendorTerms = savedData?.[vendorId]?.terms || {};
+    //         const savedItemInr = savedData?.[vendorId]?.items?.[particularId] || '';
+    //         const savedItemUsd = savedData?.[vendorId]?.dollar_items?.[particularId] || '';
+    //         const source_type = $('#sourceType').val();
+
+    //         if (savedItemInr || savedItemUsd) {
+    //             const pricePart = source_type === 'Import' 
+    //                 ? `${savedItemUsd || '-'} USD / ${savedItemInr || '-'} INR`
+    //                 : `${savedItemInr || '-'} INR`;
+                
+    //             let displayText = pricePart;
+                
+    //             if (vendorTerms.delivery_type === 'Full Quantity') {
+    //                 const qty = vendorTerms.total_qty || '';
+    //                 const timeline = vendorTerms.deliverytimeline || '';
+    //                 const unit = vendorTerms.delivery_unittypes || 'days';
+    //                 displayText = `${pricePart} / ${qty} Qty in ${timeline} ${unit}`;
+    //             } else if (vendorTerms.delivery_type === 'Staggered' && vendorTerms.delivery_rows) {
+    //                 const totalQty = vendorTerms.delivery_rows.reduce((sum, row) => sum + parseInt(row.qty || 0), 0);
+    //                 displayText = `${pricePart} / ${totalQty} Qty in ${vendorTerms.delivery_rows.length} deliveries`;
+    //             }
+                
+    //             $(this).html(displayText);
+    //         }
+    //     });
+    // }
+
+    $('#approveCloseModalBtn').click(function() {
+        $("#rejectremarks").val('')
+        $('#rejectModal').modal('hide');
+    });
+    $('#approveCloseModalBtn').click(function() {
+        $('#approveremarks').val('')
+        $('#approveModal').modal('hide');
+    });
+    $('#saveCloseModalBtn').click(function() {
+        $('#remarks').val('')
+        $('#recommendModal1').modal('hide');
+    });
+
+    $(document).on("click", ".approve-btn", function (e) {
+        e.preventDefault();
+        var procurementId = $(this).data('procurement-id');
+        console.log("Procurement ID:", procurementId); // <-- Debug here
+        $('#approveProcurementId').val(procurementId);
+        $('#approveremarks').val('')
+        $('#approveModal').modal('show');
+        
+    });
+
+
+    $('#approveCST').click(function() {
+        debugger;
+        const remarks = $('#approveremarks').val();
+        const procurementId = $('#approveProcurementId').val();
+        const stage_action = 'recommend';
+        const isSingleVendor = $(this).data('isSingleVendor') === true;
+        const send_to=$(this).data('send_to')
+        console.log(send_to, 'send_to in send_to');
+        
+        
+        // const role = $("#purchaseassistant").val(); // Get selected role
+        // Check if role is empty
+        if (!remarks) {
+            showAlert("Remarks cannot be empty.")
+            hideLoader();
+        }
+        
+        showConfirmAlert('Are you sure,want to submit?').then((result) => {
+            if (result.isConfirmed) {
+
+                showLoader();
+                let formData = new FormData();
+            
+                formData.append('id', procurementId);
+                formData.append('remarks', remarks);
+                formData.append('isSingleVendor', isSingleVendor);
+                formData.append('send_to', send_to);
+                formData.append('stage_action', stage_action);
+                
+                //formData.append('role', role);
+                
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+                if (remarks) {
+                    $.ajax({
+                        url: '/ims/comparative/', 
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            debugger;
+                            console.log('Response:', response);
+                            if (response && response.status === 'success') {
+    
+                                $('#purchaseassistant').val('');
+                                 $(".saveCSTButton").hide()
+                                $(".approve-btn").hide();
+                                $(".reject-btn").hide();
+                                
+                                $(`#procurement-${response.stage_list[0].procurement_id}`).css("background-color", "#CCE5F0");
+                                hideLoader();
+                                
+                                
+                                const stageDatetime = response.stage_list[0].datetime;
+                                let formattedDate = '';
+                                if (stageDatetime) {
+                                    const dateObj = new Date(stageDatetime);
+                                    const options = {
+                                        timeZone: 'Asia/Kolkata',  // Timezone set to IST
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: false
+                                    };
+                                    formattedDate = dateObj.toLocaleString('en-IN', options);
+                                } else {
+                                    formattedDate = 'Not Provided';
+                                }
+    
+                                
+                                showSuccessAlert('Procurement successfully recommended')
+                                $('#purchaseassistant').val(''); // Clear role selection
+                                $('#remarks').val('');
+                                
+                                $('#approveModal').modal('hide'); 
+                                updateNotificationCount(procurementId);
+                                var recommendremarks = `
+                                    <div class="note-header">
+                                        <h4 class="card-title" style="text-align:center;color:#800000;"><strong>NOTE ${response.stagecount}</strong></h4>
+                                    </div>
+                                    <div class="stage-note">
+                                        <p>
+                                            <span class="status-user" style="text-align:center; margin-top: 10px;">
+                                                <strong>Status:</strong> ${rstatus}
+                                            </span>
+                                        </p>
+                                        <p><strong>Remarks:</strong> ${response.stage_list[0].remarks || '_________________________'}</p>
+    
+                                        
+                                        <p><strong>Date and Time:</strong> ${formattedDate}</p>
+                        
+                                        ${response.stage_list[0].forwarded_to__username ? `
+                                            <p><strong>Forwarded To:</strong> 
+                                                ${response.stage_list[0].forwarded_to__first_name || 'Unknown'} 
+                                                (${response.stage_list[0].forwarded_to__username})
+                                                ${response.stage_list[0].forwarded_to__userreg__role__role ? 
+                                                    `[${response.stage_list[0].forwarded_to__userreg__role__role}]` : ''}
+                                            </p>
+                                        ` : ''}
+    
+                                        <span class="status-user" style="text-align:right; margin-bottom: 10px;">
+                                            <div>
+                                                <strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Name:</strong>
+                                                ${(() => {
+                                                    const first = response.stage_list[0].user__first_name || '';
+                                                    const last = response.stage_list[0].user__last_name || '';
+                                                    const fullName = `${first} ${last}`.trim();
+                                                    return fullName || 'Not Provided';
+                                                })()}
+                                            </div>
+
+                                            <div><strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Emp id:</strong> ${response.stage_list[0].user__username || 'Not Provided'}</div>
+                                            <div><strong>Department:</strong> ${response.stage_list[0].user__userreg__user_dept__dept_name || 'Not Provided'}</div>
+                                        </span>
+                                    </div>
+                                `;
+                                
+                                $("#tracking-list").append(recommendremarks);
+    
+                            } else {
+                    
+                                showWarningshowAlert(response.message || "Something went wrong!")
+                                hideLoader();
+                            }
+                        },
+                        error: function() {
+                            showWarningshowAlert('Something went wrong')
+                            hideLoader();
+                        }
+                    });
+                } else {
+                    showAlert('Remarks cannot be empty');
+                    hideLoader();
+                }
+            }
+        });
+    });
+    
+        
+    $(document).on("click", ".reject-btn", function (e) {
+        e.preventDefault();
+    
+        // Get procurement ID from the button
+        var procurementId = $(this).data('procurement-id');
+    
+        // Set procurement ID in the hidden input inside the modal form
+        $('#rejectProcurementId').val(procurementId);
+        $("#rejectremarks").val('')
+        // Open the modal
+        $('#rejectModal').modal('show');
+    });
+    
+    
+    $('#rejectCST').click(function() {
+        debugger;
+        const remarks = $('#rejectremarks').val();
+        const procurementId = $('#rejectProcurementId').val();
+        const stage_action = 'Reject';
+        const rejectStage = $('#rejectstage').val();  
+        // const role = $("#purchaseassistant").val(); // Get selected role
+        
+    
+        // Check if role is empty
+        if (!remarks) {
+            showAlert("Remarks cannot be empty.")
+            hideLoader();
+        }
+        
+        showConfirmAlert('Are you sure,want to submit?').then((result) => {
+            if (result.isConfirmed) {
+
+                showLoader();
+                let formData = new FormData();
+            
+                formData.append('id', procurementId);
+                formData.append('remarks', remarks);
+                formData.append('stage_action', stage_action);
+                formData.append('rejectstage', rejectStage);
+                //formData.append('role', role);
+                
+                formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+    
+                if (remarks) {
+                    $.ajax({
+                        url: '', 
+                        type: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        success: function(response) {
+                            debugger;
+                            console.log('Response:', response);
+                            if (response && response.status === 'success') {
+    
+                                $('#purchaseassistant').val('');
+                                // $(".approve-btn").hide();
+                                // $(".reject-btn").hide();
+                                $(`#procurement-${response.stage_list[0].procurement_id}`).css("background-color", "#CCE5F0");
+                                hideLoader();
+                                
+                                
+                                const stageDatetime = response.stage_list[0].datetime;
+                                let formattedDate = '';
+                                if (stageDatetime) {
+                                    const dateObj = new Date(stageDatetime);
+                                    const options = {
+                                        timeZone: 'Asia/Kolkata',  // Timezone set to IST
+                                        year: 'numeric',
+                                        month: '2-digit',
+                                        day: '2-digit',
+                                        hour: '2-digit',
+                                        minute: '2-digit',
+                                        second: '2-digit',
+                                        hour12: false
+                                    };
+                                    formattedDate = dateObj.toLocaleString('en-IN', options);
+                                } else {
+                                    formattedDate = 'Not Provided';
+                                }
+    
+                                
+                                showSuccessAlert('Procurement successfully rejected to Purchase Assistant.')
+                                $('#purchaseassistant').val(''); // Clear role selection
+                                $('#remarks').val('');
+                                $('#rejectModal').modal('hide'); 
+                                updateNotificationCount(procurementId);
+                                var recommendremarks = `
+                                    <div class="note-header">
+                                        <h4 class="card-title" style="text-align:center;color:#800000;"><strong>NOTE ${response.stagecount}</strong></h4>
+                                    </div>
+                                    <div class="stage-note">
+                                        <p>
+                                            <span class="status-user" style="text-align:center; margin-top: 10px;">
+                                                <strong>Status:</strong> ${rstatus}
+                                            </span>
+                                        </p>
+                                        <p><strong>Remarks:</strong> ${response.stage_list[0].remarks || '_________________________'}</p>
+    
+                                        
+                                        <p><strong>Date and Time:</strong> ${formattedDate}</p>
+                        
+    
+                                        <span class="status-user" style="text-align:right; margin-bottom: 10px;">
+                                            <div>
+                                                <strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Name:</strong>
+                                                ${(() => {
+                                                    const first = response.stage_list[0].user__first_name || '';
+                                                    const last = response.stage_list[0].user__last_name || '';
+                                                    const fullName = `${first} ${last}`.trim();
+                                                    return fullName || 'Not Provided';
+                                                })()}
+                                            </div>
+
+                                            <div><strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Emp id:</strong> ${response.stage_list[0].user__username || 'Not Provided'}</div>
+                                            <div><strong>Department:</strong> ${response.stage_list[0].user__userreg__user_dept__dept_name || 'Not Provided'}</div>
+                                        </span>
+                                    </div>
+                                `;
+                                
+                                $("#tracking-list").append(recommendremarks);
+    
+                            } else {
+                    
+                                showWarningshowAlert(response.message || "Something went wrong!")
+                                hideLoader();
+                            }
+                        },
+                        error: function() {
+                            showWarningshowAlert('Something went wrong')
+                            hideLoader();
+                        }
+                    });
+                } else {
+                    showAlert('Remarks cannot be empty');
+                    hideLoader();
+                }
+            }
+        });
+    });
+    
+        
+    // $(document).on('click', '#editCSTButton', function () {
+    //     // Enable all inputs including the additional info textarea
+    //     $('#previewContent').find('input, textarea,select').prop('disabled', false);
+    //     // Hide Edit button and show Save button
+    //     $(this).hide();
+    //     //$('#saveCSTButton').show().prop('disabled', true).addClass('disabled').removeClass('enabled');
+    //     $('#recommendCSTButton').hide();
+    // });
+        
+    // $(document).on('click', '#cancelBtn', function() {
+    //     $('#previewContent').hide();
+    // });
+
+        // function getLevelColor(level) {
+        //     const levelNum = parseInt(level.replace('Level', ''));
+            
+        //     if (levelNum === 1) return '#d4edda';  
+        //     if (levelNum === 2) return '#fff3cd';  
+        //     if (levelNum === 3) return '#f8d7da';  
+        //     return '#ffffff';                      
+        // }
+        
+        // function getLevelBadgeClass(level) {
+        //     const levelNum = parseInt(level.replace('Level', ''));
+        //     if (levelNum === 1) return 'level-1';
+        //     if (levelNum === 2) return 'level-2';
+        //     if (levelNum === 3) return 'level-3';
+        //     return 'level-other';
+        // }
+        // function updateLevelsDisplay(levels) {
+        //     const levelsContainer = $('.levels-container');
+        //     if (levelsContainer.length) {
+        //         levelsContainer.replaceWith(displayLevels(levels));
+        //     } else {
+                
+        //         $('#previewContent .cst-form-container').append(displayLevels(levels));
+        //     }
+        // }
+        
+        // function updateModalVendorLevels(levels) {
+        //     const modalLevelsContainer = $('#modalVendorLevels');
+        //     modalLevelsContainer.empty();
+            
+            
+        //     const sortedLevels = [...levels].sort((a, b) => {
+        //         const levelA = parseInt(a.level.replace('Level', ''));
+        //         const levelB = parseInt(b.level.replace('Level', ''));
+        //         return levelA - levelB;
+        //     });
+            
+        //     sortedLevels.forEach(level => {
+        //         const badgeClass = getLevelBadgeClass(level.level);
+                
+        //         modalLevelsContainer.append(`
+        //             <tr>
+        //                 <td><span class="level-badge ${badgeClass}">${level.level}</span></td>
+        //                 <td>${level.company_name}</td>
+        //                 <td class="total-amount">₹${level.total.toLocaleString('en-IN')}</td>
+        //             </tr>
+        //         `);
+        //     });
+        // }
+
+        // /*$(document).on('click', '#recommendCSTButton', function() {
+        //     submitCSTData();
+        // });*/
+        // //function to show vendor ranking modal
+        // function showVendorRankingModal() {
+        //     // Calculate vendor totals for display in modal
+        //     const vendorTotals = {};
+        //     const vendorNames = {};
+            
+        //     // Get vendor IDs and names from table headers
+        //     $('.cst-table thead th[data-vendor-id]').each(function() {
+        //         const vendorId = $(this).data('vendor-id');
+        //         const vendorName = $(this).text().replace('M/s ', '');
+        //         vendorNames[vendorId] = vendorName;
+        //         vendorTotals[vendorId] = 0;
+        //     });
+            
+        //     // Calculate totals for each vendor
+        //     $('.cst-table tbody tr[data-particular-id]').each(function() {
+        //         $(this).find('td input.price-input').each(function(index) {
+        //             const vendorId = Object.keys(vendorTotals)[index];
+        //             const value = parseFloat($(this).val()) || 0;
+        //             vendorTotals[vendorId] += value;
+        //         });
+        //     });
+            
+        //     // Sort vendors by total amount (ascending - lower price is better)
+        //     const sortedVendors = Object.keys(vendorTotals).sort((a, b) => vendorTotals[a] - vendorTotals[b]);
+            
+        //     // Create levels array for modal display
+        //     const levels = sortedVendors.map((vendorId, index) => ({
+        //         level: `Level${index + 1}`,
+        //         company_name: vendorNames[vendorId],
+        //         total: vendorTotals[vendorId]
+        //     }));
+            
+        //     // Update modal with vendor levels
+        //     updateModalVendorLevels(levels);
+            
+        //     // Show the modal
+        //     $('#recommendModal1').modal('show');
+        // }
+        
+      
+    
+        /*$(document).on('click', '#saveCSTDATA', function () {
+            const remarks = $('#remarks').val().trim();
+            if (!remarks) {
+                showAlert('Remarks cannot be empty');
+                
+                $('#remarks').focus();
+                return false;
+            }
+
+            // Submit the CST data with remarks
+            submitCSTData();
+        });*/
+       
+        // Function to show confirmation showAlert before saving
+        /*$(document).on('click', '#saveCSTButton', function () {
+            if (!validateForm()) {
+                showAlert('Please fill all the required fields');
+                return false;
+            }
+
+            // Assuming showConfirmshowAlert returns a Promise
+            showConfirmshowAlert('Are you sure you want to submit the Comparative Statement')
+                .then((result) => {
+                    if (result.isConfirmed) { // For example, SweetshowAlert2 returns `isConfirmed`
+                        showRemarksModal();
+                    }
+                })
+                .catch((error) => {
+                    console.error('Confirmation showAlert error:', error);
+            });
+        });*/
+
+        // function showRemarksModal() {
+        //     // Calculate vendor totals for display in modal
+            
+            
+        //     // Set the procurement ID in the hidden field
+        //     const prId = $('.view-pr-id.active[data-id]').data('id');
+        //     $('#recommendProcurementId').val(prId);
+            
+        //     // Show the modal
+        //     $('#recommendModal1').modal('show');
+            
+        //     // Clear any previous remarks
+        //     $('#remarks').val('');
+        // }
+
+        
+        /*function submitCSTData() {
+            connectWebSocket();
+            debugger;
+            const prId = $('.view-pr-id.active[data-id]').data('id');
+            const remarks = $('#remarks').val().trim();
+            const quoteReference = $('#quoteReference').val();
+            const source_type = $('#sourceType').val(); // Make sure you have this defined
+            
+            // Helper function to format display text consistently
+            function formatDisplayText(source_type, dollarValue, inrValue, deliveryData) {
+                const pricePart = source_type === 'Import' 
+                    ? `${dollarValue || '-'} USD / ${inrValue || '-'} INR`
+                    : `${inrValue || '-'} INR`;
+                
+                if (deliveryData && deliveryData.delivery_type === 'fullquantity') {
+                    const qty = deliveryData.total_qty || '';
+                    const timeline = deliveryData.deliverytimeline || '';
+                    const unit = deliveryData.delivery_unittypes || 'days';
+                    return `${pricePart} / ${qty} Qty in ${timeline} ${unit}`;
+                } else if (deliveryData && deliveryData.delivery_type === 'staggered' && deliveryData.delivery_rows) {
+                    const totalQty = deliveryData.delivery_rows.reduce((sum, row) => sum + parseInt(row.qty || 0), 0);
+                    return `${pricePart} / ${totalQty} Qty in ${deliveryData.delivery_rows.length} deliveries`;
+                }
+                return pricePart;
+            }
+
+            // Get all vendor IDs from table headers
+            const vendorIds = [];
+            $('.cst-table thead th[data-vendor-id]').each(function() {
+                vendorIds.push($(this).data('vendor-id'));
+            });
+            console.log(vendorIds,'vendorids')
+            // Collect vendor terms and items data
+            const vendorTerms = {};
+            const vendorItems = {};
+            const vendorNames = {};
+            const vendorTotals = {};
+            
+            // Initialize vendor data objects
+            //dict_items([('54', {'quotation_reference': '', 'validityoffer': '', 'discount': '', 'gst': '', 
+            //'deliveryterms': '', 'paymentterms': '', 'packaging_charges': ''}),
+            //('undefined', {'insurance_charges': '', 'coc': False, 'material_test_report': False})])
+            vendorIds.forEach(vendorId => {
+                   if (!vendorId || vendorId === 'undefined') {
+        console.log('Skipping invalid vendorId in vendorTerms:', vendorId);
+        return;
+    }
+                vendorTerms[vendorId] = {
+                    quotation_reference: quoteReference,
+                    validityoffer: '',
+                    discount: '',
+                    gst: '',
+                    deliveryterms: '',
+                    paymentterms: '',
+                    coc: false,
+                    packaging_charges: '',
+                    insurance_charges: '',
+                    customs_duty: '',
+                    material_test_report: false,
+                    additional_info: $('#additionalInfo').val()
+                };
+                vendorItems[vendorId] = [];
+                vendorTotals[vendorId] = 0;
+                vendorNames[vendorId] = $(`.cst-table thead th[data-vendor-id="${vendorId}"]`).text().replace('M/s ', '');
+            });
+
+            // Process terms rows (vendor-specific terms)
+            $('.cst-table tbody tr[data-field]').each(function() {
+                const field = $(this).data('field');
+                $(this).find('td').each(function(colIndex) {
+                    if (colIndex === 0) return; // Skip label column
+                    
+                    const vendorId = vendorIds[colIndex - 1];
+                    if (!vendorId) return;
+                    
+                    const input = $(this).find('input');
+                    const textarea = $(this).find('textarea');
+                    let value;
+
+                    if (input.length) {
+                        value = input.attr('type') === 'checkbox' ? input.is(':checked') : input.val();
+                    } else if (textarea.length) {
+                        value = textarea.val();
+                    }
+
+                    if (field === 'deliverytimeline') {
+                        vendorTerms[vendorId].deliverytimeline = value;
+                    } else if (field === 'delivery_unittypes') {
+                        vendorTerms[vendorId].delivery_unittypes = value;
+                    } else {
+                        vendorTerms[vendorId][field] = value;
+                    }
+                });
+            });
+
+            // Process items data (particulars)
+            $('.cst-table tbody tr[data-particular-id]').each(function() {
+                const particularId = $(this).data('particular-id');
+                
+                $(this).find('.cst-cell').each(function() {
+                    const vendorId = $(this).data('vendor-id');
+                    if (!vendorId) return;
+                    
+                    const deliveryData = $(this).data('delivery-data') || {};
+                    const inrValue = $(this).data('inr-value');
+                    const dollarValue = $(this).data('dollar-value');
+                    
+                    if (inrValue) {
+                        // Update the display text in the cell before saving
+                        const displayText = formatDisplayText(source_type, dollarValue, inrValue, deliveryData);
+                        $(this).html(displayText);
+                        
+                        vendorItems[vendorId].push({
+                            particular_id: particularId,
+                            value: inrValue,
+                            dollar_value: dollarValue,
+                            delivery_data: deliveryData
+                        });
+                        
+                        // Calculate total for vendor (simple sum for now)
+                        vendorTotals[vendorId] += parseFloat(inrValue) || 0;
+                    }
+                });
+            });
+
+            // Prepare items data in the required format
+            const itemsData = [];
+            for (const vendorId in vendorItems) {
+                vendorItems[vendorId].forEach(item => {
+                    itemsData.push({
+                        vendor_id: vendorId,
+                        particular_id: item.particular_id,
+                        value: item.value,
+                        dollar_value: item.dollar_value,
+                        delivery_data: item.delivery_data
+                    });
+                });
+            }
+
+            // Sort vendors by total amount (ascending - lower price is better)
+            const sortedVendors = Object.keys(vendorTotals).sort((a, b) => vendorTotals[a] - vendorTotals[b]);
+            
+            // Create levels array for display
+            const levels = sortedVendors.map((vendorId, index) => ({
+                level: `Level${index + 1}`,
+                company_name: vendorNames[vendorId],
+                total: vendorTotals[vendorId],
+                delivery_timeline: vendorTerms[vendorId].deliverytimeline
+            }));
+
+            showLoader();
+            const csrfToken = $("meta[name='csrf-token']").attr("content");
+            const formData = new FormData();
+            
+            formData.append('action', 'save');
+            formData.append('procurement_id', prId);
+            formData.append('vendor_terms', JSON.stringify(vendorTerms));
+            formData.append('items', JSON.stringify(itemsData));
+            formData.append('additional_info', $('#additionalInfo').val());
+            formData.append('stage_action', 'recommend');
+            formData.append('remarks', remarks);
+
+            $.ajax({
+                url: '/comparative/',
+                type: 'POST',
+                data: formData,
+                headers: {
+                    'X-CSRFToken': csrfToken,
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    debugger;
+                    if (response.success || response.status === 'success') {
+                        var procurementDomId = response.procurement_id;
+                        
+                        if (typeof procurementDomId === 'undefined') {
+                            showAlert("procurement_id is undefined in response!");
+                        }
+                        
+                        $(`#procurement-${procurementDomId}`).css("background-color", "#CCE5F0");
+                        hideLoader();
+                        
+                        // Show success message
+                        showSuccessshowAlert(`CST Saved successfully!`);
+                        
+                        // Disable form inputs after successful submission
+                        $('#previewContent').find('input, textarea, select').prop('disabled', true);
+                        $('#editCSTButton').show();
+                        //$('#saveCSTButton').hide();
+                        $('#recommendCSTButton').hide();
+                        $('#recommendModal1').modal('hide');
+                        
+                        // Update levels display if available
+                        if (response.levels && response.levels.length > 0) {
+                            updateLevelsDisplay(response.levels);
+                        }
+                        updateCSTDisplay(response.saved_cst);
+                        console.log(updateCSTDisplay);
+                        // Refresh the view
+                        showComparativeStatement(prId, projectName, user);
+                    } else {
+                        showAlert('Error: ' + response.message);
+                        hideLoader();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    showWarningshowAlert('Error submitting comparative statement: ' + (xhr.responseJSON?.message || error));
+                    hideLoader();
+                }
+            });
+        }*/
+
+
+   
+        
+          
+    
+</script>
+{% endblock scripts %}

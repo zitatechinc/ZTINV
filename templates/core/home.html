@@ -1,0 +1,36 @@
+
+{% extends 'core/base.html' %}
+
+{% block title %}Home - My Inventory App{% endblock %}
+
+{% block content %}
+<div class="app-card alert alert-dismissible shadow-sm mb-4 mt-4 border-left-decoration" role="alert">
+    <div class="inner">
+        <div class="app-card-body p-1 p-lg-2 mt-6">
+            <h3 class="mb-3">Hi {{request.user.first_name | title}}, Welcome to {{app.name}} !</h3>
+            <div class="row gx-5 gy-3">
+                <div class="col-12 col-lg-9">
+                    
+                    <div>At Strote, managing your inventory products is easy, fast, and efficient. Dive in and take control of your stock!</div> 
+                </div><!--//col-->
+                <div class="col-12 col-lg-3">
+                    
+                </div><!--//col-->
+            </div><!--//row-->
+            <div class="row">
+
+                <p class="pt-2" >The {{app.name}} App is designed to manage products, vendors, and associated business information in a structured and scalable way.
+                It provides centralized management of master data, vendor details, users, and application settings.</p>
+
+                <p>The app supports Role-Based Access Control (RBAC) to ensure secure data handling and proper authorization.</p>
+            </div>
+
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        
+
+        </div><!--//app-card-body-->
+        
+    </div><!--//inner-->
+</div><!--//app-card-->
+    
+{% endblock %}

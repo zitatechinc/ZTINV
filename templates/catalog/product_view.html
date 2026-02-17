@@ -1,0 +1,238 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<form method="post" action="{{ form_action_url }}" novalidate>
+    {% csrf_token %}
+
+    <!-- Edit Button Top-Right with SweetAlert2 -->
+    <div class="row mb-2 mt-2">
+        <div class="col-12 text-end">
+            {% if object %}
+                <button type="button" title="Edit" 
+                        class="btn btn-sm app-btn-primary edit-link"
+                        data-url="{% url 'product-update' object.pk %}">
+                    <i class="fa fa-edit fa-lg"></i> Edit
+                </button>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-md-12">
+            <div class="app-card app-card-settings shadow-md">
+                <!-- Navigation Tabs -->
+                <nav id="orders-table-tab" class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row">
+                    <a class="flex-sm-fill text-sm-center nav-link active" id="orders-all-tab" 
+                       href="{% if object %}{% url 'product-view' object.pk %}{% else %}#{% endif %}">Product Details</a>
+
+                    {% if object %}
+                        <a class="flex-sm-fill text-sm-center nav-link" href="{% url 'product-attribute-list' object.pk %}">Product Attributes Details</a>
+                        <a class="flex-sm-fill text-sm-center nav-link" href="{% url 'product-vendor-list' object.pk %}">Product Vendor Details</a>
+                    {% else %}
+                        <a class="flex-sm-fill text-sm-center nav-link disabled" href="#">Product Attributes Details</a>
+                        <a class="flex-sm-fill text-sm-center nav-link disabled" href="#">Product Vendor Details</a>
+                    {% endif %}
+                </nav>
+
+                <!-- Product Details Card -->
+                <div class="col-12 col-md-12">
+                    <div class="app-card app-card-settings shadow-md">
+                        <div class="app-card-body p-4">
+                            <!-- Product Image & Created Info -->
+                            <div class="row">
+                                <div class="col-md-3" style="border:1px #eee solid;">
+                                    {% if object.image %}
+                                        <a href="/media/{{ object.image }}" target="_blank">
+                                            <img class="float-start img-responsive" width="230" src="/media/{{ object.image }}" alt="Product Image" 
+                                                 onerror="this.onerror=null; this.src='/static/default/img/no-image.png'; this.width=200;">
+                                        </a>
+                                    {% else %}
+                                        <img class="float-start img-responsive" width="230" src="/static/default/img/no-image.png" alt="No Image">
+                                    {% endif %}
+                                    <div class="py-4">
+                                        <div><label>Created Date:</label> {{ object.created_date }}</div>
+                                        <div><label>Created User:</label> {% if object.created_user %}{{ object.created_user.first_name }}{% else %}N/A{% endif %}</div>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-9">
+                                    <h6>General Information</h6>
+
+                                    <div class="row mb-2">
+                                        <div class="col-md-3">{{ form.name.label_tag }}</div>
+                                        <div class="col-md-9">{{ object.name }}</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-md-3">{{ form.code.label_tag }}</div>
+                                        <div class="col-md-9"><span class="{{ object.status_name }}">{{ object.code }}</span></div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-md-3">{{ form.search_keyword.label_tag }}</div>
+                                        <div class="col-md-9">{{ object.search_keyword }}</div>
+                                    </div>
+                                    <div class="row mb-2">
+                                        <div class="col-md-3">{{ form.status.label_tag }}</div>
+                                        <div class="col-md-9">
+                                            <span class="badge 
+                                                {% if object.status == 1 %}
+                                                    bg-success
+                                                {% elif object.status == 0 %}
+                                                    bg-warning
+                                                {% else %}
+                                                    bg-danger
+                                                {% endif %}
+                                            ">
+                                                {{ object.status_name }}
+                                            </span>
+                                        </div>
+
+                                        <div class="col-md-3 mt-2">{{ form.unit_of_measure.label_tag }}</div>
+                                        <div class="col-md-9 mt-2">{{ object.unit_of_measure }}</div>
+
+                                        <div class="col-md-3 mt-2">{{ form.short_description.label_tag }}</div>
+                                        <div class="col-md-9 mt-2">{{ object.short_description }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Masters Information -->
+                            <div class="row mt-4">
+                                <div class="col-md-12 mb-2"><h6>Masters Information</h6></div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-4">
+                                    <strong>{{ form.category.label_tag }} :</strong> 
+                                    {% if object.category %}{{ object.category.name }}{% else %}N/A{% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>{{ form.product_type.label_tag }} :</strong> 
+                                    {% if object.product_type %}{{ object.product_type.name }}{% else %}N/A{% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>{{ form.product_group.label_tag }} :</strong> 
+                                    {% if object.product_group %}{{ object.product_group.name }}{% else %}N/A{% endif %}
+                                </div>
+
+                                <div class="col-md-4">
+                                    <strong>{{ form.manufacturer.label_tag }} :</strong> 
+                                    {% if object.manufacturer %}{{ object.manufacturer.name }}{% else %}N/A{% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>{{ form.brand.label_tag }} :</strong> 
+                                    {% if object.brand %}{{ object.brand.name }}{% else %}N/A{% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>{{ form.language.label_tag }} :</strong> 
+                                    {% if object.language %}{{ object.language.name }}{% else %}N/A{% endif %}
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>{{ form.country.label_tag }} :</strong> 
+                                    {% if object.country %}{{ object.country.name }}{% else %}N/A{% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Additional Information -->
+                            <div class="row mt-4"><div class="col-md-12 mb-2"><h6>Additional Information</h6></div></div>
+                            <div class="row">
+                                <div class="col-md-4"><strong>{{ form.mpin.label_tag }} :</strong> {{ object.mpin }}</div>
+                                <div class="col-md-4"><strong>{{ form.upc.label_tag }} :</strong> {{ object.upc }}</div>
+                                <div class="col-md-4"><strong>{{ form.isbn.label_tag }} :</strong> {{ object.isbn }}</div>
+                                <div class="col-md-4"><strong>{{ form.ean.label_tag }} :</strong> {{ object.ean }}</div>
+                                <div class="col-md-4"><strong>{{ form.model_number.label_tag }}:</strong> {{ object.model_number }}</div>
+                                <div class="col-md-4"><strong>{{ form.source_of_make.label_tag }}:</strong> {{ object.source_of_make }}</div>
+                                <div class="col-md-4"><strong>{{ form.material_code.label_tag }}:</strong> {{ object.material_code }}</div>
+                                <div class="col-md-4"><strong>{{ form.notes.label_tag }} : </strong>{{ object.notes }}</div>
+                                <div class="col-md-4"><strong>{{ form.long_description.label_tag }} : </strong>{{ object.long_description }}</div>
+                            </div>
+
+                            <!-- Include Audit Log Information -->
+                            {% include 'core/auditlog.html' %}
+
+                            <!-- Attachments -->
+                            {% if object.pk %}
+                                <div class="row mt-4">
+                                    <div class="col-md-12 mb-2"><h6>Attachments Information</h6></div>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if object.getProductLinks %}
+                                        {% for eachUrlObj in object.getProductLinks %}
+                                            <p><a href="{{ eachUrlObj.url }}" target="_blank">{{ eachUrlObj.url }}</a></p>
+                                        {% endfor %}
+                                    {% else %}
+                                        <a class="btn btn-sm btn-default" href="{% url 'product-update' object.pk %}">
+                                            <i class="fa fa-plus-circle"></i> Add Attachments
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block pagecss %}
+<style type="text/css">
+    label.required::after { display: none !important; }
+    label, strong { font-weight: bold !important; }
+</style>
+{% endblock %}
+
+{% block pagejs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="text/javascript">
+    // ===== Dynamic URL Fields =====
+    var room = 1;
+    function product_url_fields() {
+        room++;
+        var objTo = document.getElementById('product_url_fields');
+        var divtest = document.createElement("div");
+        divtest.setAttribute("class", "form-group removeclass-" + room);
+        divtest.innerHTML = `
+            <div class="row">
+                <div class="form-floating mb-2 col-md-11">
+                    <input placeholder="Specify URL" type="text" name="url" value="" maxlength="100" class="form-control">
+                    <label for="floatingName" class="form-label"><label for="id_url">URL</label></label>
+                </div>
+                <div class="col-md-1 mt-3">
+                    <button class="btn btn-danger btn-sm" type="button" onclick="remove_product_url_fields(${room});">
+                        <span class="fa fa-minus" aria-hidden="true"></span>
+                    </button>
+                </div>
+            </div>`;
+        objTo.appendChild(divtest);
+    }
+
+    function remove_product_url_fields(rid) {
+        $('.removeclass-' + rid).remove();
+    }
+
+    // ===== SweetAlert2 Edit Button =====
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.edit-link').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                const url = e.currentTarget.dataset.url;
+
+                Swal.fire({
+                    title: 'Edit Product?',
+                    text: "Do you want to edit this entry?",
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, Edit',
+                    cancelButtonText: 'Cancel',
+                    allowOutsideClick: false,
+                    width: 350
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        window.location.href = url;
+                    }
+                });
+            });
+        });
+    });
+</script>
+{% endblock %}

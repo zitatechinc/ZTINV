@@ -1,0 +1,52 @@
+<div class="row p-1">
+    <div class="col-md-12">
+        <h3>Customer Information</h3>
+    </div>
+    <!-- Customer Information Fields -->
+    <div class="col-md-4">
+        <strong>{{ form.company_name1.label_tag }} :</strong>  
+        {{ object.company_name1 }}
+    </div>
+    <div class="col-md-4">
+        <strong>{{ form.company_name2.label_tag }} :</strong>  
+        {{ object.company_name2 }}
+    </div>
+    <div class="col-md-4">
+        <strong>Status:</strong>
+        <span class="badge 
+            {% if object.status == 1 %}
+                bg-success
+            {% elif object.status == 0 %}
+                bg-warning
+            {% else %}
+                bg-danger
+            {% endif %}
+        ">
+            {{ object.status_name }}
+        </span>
+    </div>
+    <div class="col-md-4">
+        <strong>Customer Number :</strong>  
+        {{ object.code }}
+    </div>
+    <div class="col-md-4">
+        <strong>{{ form.customer_type.label_tag }} :</strong>  
+        {{ object.customer_type }}
+    </div>
+    <div class="col-md-4">
+        <strong>{{ form.dba.label_tag }} :</strong>  
+        {{ object.dba }}
+    </div>
+    <div class="col-md-4">
+        <strong>{{ form.language.label_tag }} :</strong>  
+        {{ object.language }}
+    </div>
+    <div class="col-md-4">
+        <strong>{{ form.notes.label_tag }} :</strong>
+        {{ object.notes|default:"-" }}
+    </div>
+    <div class="col-md-4">
+        <strong>{{ form.search_keywords.label_tag }} :</strong>  
+        {{ object.search_keywords }}
+    </div>
+</div>

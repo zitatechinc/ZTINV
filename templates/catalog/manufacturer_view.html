@@ -1,0 +1,98 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<form method="post" action="{{ form_action_url }}" novalidate>
+    {% csrf_token %}
+
+    <!-- Edit Button (small, top-right) -->
+    <div class="row mb-1 mt-1">
+        <div class="col-12 text-end">
+            <button type="button" title="Edit" 
+                    class="btn btn-sm app-btn-primary edit-link"
+                    data-url="{% url 'manufacturer-update' object.pk %}">
+                <i class="fa fa-edit fa-lg"></i> Edit
+            </button>
+        </div>
+    </div>
+
+    <!-- Manufacturer Information -->
+    <div class="row">
+        <div class="col-12">
+            <div class="app-card app-card-settings shadow-sm p-4 rounded-3">                
+                <div class="row p-1">
+                    <h3>Manufacturer Information</h3><br>
+                    <!-- Manufacturer Fields -->
+                    <div class="col-md-4">
+                        <strong>Name:</strong> {{ object.name }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Code:</strong> {{ object.code }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Status:</strong>
+                        <span class="badge 
+                            {% if object.status == 1 %}
+                                bg-success
+                            {% elif object.status == 0 %}
+                                bg-warning
+                            {% else %}
+                                bg-danger
+                            {% endif %}
+                        ">
+                            {{ object.status_name }}
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Include Audit Log Information inside the same app-card -->
+                {% include 'core/auditlog.html' %}
+
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block pagecss %}
+<style>
+/* Make all strong tags bold */
+strong { font-weight: 700 !important; }
+
+/* Adjust margins for better layout */
+.mb-1 {
+    margin-bottom: 0.5rem !important;
+}
+
+/* Reduce padding within rows */
+.p-1 {
+    padding: 0.5rem !important;
+}
+</style>
+{% endblock %}
+
+{% block pagejs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    document.querySelectorAll('.edit-link').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            const url = e.currentTarget.dataset.url;
+
+            Swal.fire({
+                text: "Do you want to edit this entry?",
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Edit',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                width: 350
+            }).then(result => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

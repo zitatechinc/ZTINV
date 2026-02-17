@@ -1,0 +1,121 @@
+
+<form method="post" action = "{{form_action_url}}" novalidate>
+    {% csrf_token %}
+
+    <div class="row mt-2">
+        <div class="col-12 col-md-12 ">
+            <div class="row">
+                <div class="col-md-12 mb-2 mt-2">
+                    <h6>Tax Details Form</h6>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-floating mb-3">
+                        {{ form.name }}
+                        <label for="floatingCode" class="form-label" >{{ form.name.label_tag }}</label>
+                        {% if form.name.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                            {% for error in form.name.errors %}
+                            <li class="text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {%endif%}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating mb-3">
+                        {{ form.tax_number }}
+                        <label for="floatingName" class="form-label">{{ form.tax_number.label_tag }}</label>
+                        {% if form.tax_number.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                            {% for error in form.tax_number.errors %}
+                            <li class="text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {%endif%}
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="form-floating mb-3">
+                        {{ form.tax_rate }}
+                        <label for="floatingName" class="form-label">{{ form.tax_rate.label_tag }}</label>
+                        {% if form.tax_rate.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                            {% for error in form.tax_rate.errors %}
+                            <li class="text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {%endif%}
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="form-floating mb-3">
+                        <div class="form-floating mb-3">
+                            {{ form.category }}
+                            <label for="floatingParent" class="form-label" id="">{{ form.category.label_tag }}</label>
+                            {% if form.category.errors %}
+                            <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                                {% for error in form.category.errors %}
+                                <li class="text-danger">{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            {%endif%}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="form-floating mb-3">
+                        <div class="form-floating mb-3">
+                            {{ form.country }}
+                            <label for="floatingParent" class="form-label" id="">{{ form.country.label_tag }}</label>
+                            {% if form.country.errors %}
+                            <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                                {% for error in form.country.errors %}
+                                <li class="text-danger">{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            {%endif%}
+                        </div>
+                    </div>
+                </div>
+            
+                <div class="col-md-4">
+                    <div class="form-floating mb-3">
+                        {{ form.other_tax_details }}
+                        <label for="floatingStatus" class="form-label">{{ form.other_tax_details.label_tag }}</label>
+                        {% if form.other_tax_details.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                            {% for error in form.other_tax_details.errors %}
+                            <li class="text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {%endif%}
+                    </div>
+                </div>
+            
+                <div class="col-md-4">
+                    <div class="form-floating mb-3">
+                        {{ form.status }}
+                        <label for="floatingMetaKeyword" class="form-label">{{ form.status.label_tag }}</label>
+                        {% if form.status.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                            {% for error in form.status.errors %}
+                            <li class="text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {%endif%}
+                    </div>
+                </div>
+            
+                <div class="col-md-4">
+                    <button type="button" id="openSaveModal" class="btn btn-sm app-btn-primary mt-2" ><i class="fa fa-save"></i> Save Tax Details</button>
+                </div>
+            </div> 
+        </div>
+    </div>
+</form>
+    

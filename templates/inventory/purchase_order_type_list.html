@@ -1,0 +1,121 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+
+<div class="col-12 col-md-12">
+  <div class="app-card app-card-settings shadow-md">
+    <div class="app-card-body p-4">
+
+      {% include 'core/search_form.html' with add_url='purchase_order_type-create' model_name=model_name %}
+
+      <div class="table-responsive">
+        <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
+          <thead>
+            <tr>
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'name' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=name&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Name
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'name' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=name&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Name
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=name&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Name
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'code' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=code&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Code
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'code' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=code&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Code
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=code&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Code
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'status' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=status&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Status
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'status' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=status&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Status
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=status&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Status
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'updated_at' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=updated_at&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Last Modified
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'updated_at' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=updated_at&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Last Modified
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=updated_at&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Last Modified
+                  </a>
+                {% endif %}
+              </th>
+              <th class="cell">Modified User</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% if page_obj.object_list %}
+              {% for eachRow in page_obj.object_list %}
+                <tr>
+                  <td class="cell">
+                      <span class="truncate">
+                          <a href="{% url 'purchase_order_type-view' eachRow.pk %}">{{ eachRow.name }}</a>
+                      </span>
+                  </td>
+                  <td class="cell"><span class="truncate">{{ eachRow.code }}</span></td>
+                  <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td>
+                  <td class="cell">{{ eachRow.last_modified_at }}</td>
+                  <td class="cell">{{ eachRow.last_modified_user }}</td>
+                  <td class="cell">
+                    <a href="{% url 'purchase_order_type-view' eachRow.pk %}">
+                      <span class="badge app-btn-primary"><i class="fa fa-eye"></i> View</span>
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="5"><h6 class="text-center">No Records found</h6></td>
+              </tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      {% include 'core/pagination.html' %}
+
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block pagejs %}{% endblock %}

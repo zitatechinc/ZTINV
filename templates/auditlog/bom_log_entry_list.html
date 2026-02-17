@@ -1,0 +1,77 @@
+{% extends 'core/base.html' %}
+{% block content %}
+
+   
+<div class="row mb-2 mt-2">
+<div class="col-6 col-md-6">
+   <h1 class="app-page-title"><i class="fa fa-table"></i> {{page_title}}</h1>
+</div>
+<div class="col-6 col-md-6">
+   <div class="button-group" style="float:right;">
+      <a href="/" class="btn btn-sm btn-default" ><i class="fa fa-arrow-circle-left fa-lg"></i> Home</a>
+   </div>
+</div>
+</div>
+   
+          <div class="col-12 col-md-12">
+             <div class="app-card app-card-settings shadow-md" >
+            
+            <div class="app-card-body p-4">
+                  <div class="table-responsive">
+                      <table class="table app-table-hover mb-0 text-left table-bordered app-table-stripped" id="app_table_data">
+                    <thead>
+                      <tr>
+                        <th>EntityName</th>
+                        <th>RowID</th>
+                        <th>ColumName</th>
+                        <th>NewValue</th>
+                        <th>OldValue</th>                        
+                        <th>Action</th>
+                        <th>User</th>
+                        <th>Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                    {% for log in object_list %}
+                        {% for column, change in log.changes_dict.items %}
+                    <tr>
+                      <td>{{ entry.content_type.model }}</td>
+            <td>{{ entry.object_id }}</td>
+            <td>{{ column }}</td>
+            <td>{{ change.0|resolve_fk:entry:column }}</td>
+            <td>{{ change.1|resolve_fk:entry:column }}</td>
+            <td>{{ entry.get_action_display }}</td>
+            <td>{{ entry.actor.username if entry.actor }}</td>
+            <td>{{ entry.timestamp }}</td>
+                    </tr>
+                        {% endfor %}
+                    {% empty %}
+          <tr>
+            <td colspan="8" class="text-center">No records found</td>
+          </tr>
+                    {% endfor %}
+                  </tbody>
+                  </table>
+
+                    </div>
+                    {% include 'core/pagination.html' %}
+                   
+                </div>
+            </div>
+          </div>
+
+          
+            
+             
+  
+  
+
+{% endblock %}
+
+{% block pagejs %}
+<script type="text/javascript">
+  
+
+</script>
+
+{% endblock %}

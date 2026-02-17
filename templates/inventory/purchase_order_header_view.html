@@ -1,0 +1,213 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+{% block content %}
+    {% csrf_token %}
+    <div class="row mb-2 mt-2">
+        <div class="col-6 col-md-6">
+            <h1 class="app-page-title">{{page_title}}</h1>
+        </div>
+        <div class="col-6 col-md-6">
+            <div class="button-group" style="float:right;">
+               
+             <a title="Edit" href="{% url 'purchase_order_header-update' vendor_obj.pk object.pk %}" class="btn btn-sm app-btn-secondary" ><i class="fa fa-edit"></i></a>
+             <a title="Delete" href="{% url 'purchase_order_header-delete' vendor_obj.pk object.pk %}?next={% url 'purchase_order_header-view' vendor_obj.pk object.pk %}" class="btn btn-sm app-btn-secondary" ><i class="fa fa-trash "></i></a>
+            <a title="Back to Home " href="{{CancelURL}}" class="btn btn-sm app-btn-secondary" ><i class="fa fa-arrow-circle-left fa-lg"></i> Home</a>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-12 col-md-12">
+            <div class="app-card app-card-settings shadow-md" >
+                {% include 'vendor/vendor_menu.html' %}
+               
+                <div class="col-12 col-md-12">
+         
+            
+            <div class="app-card-body p-4">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h6>Purchase Order Details</h6>
+                        <div class="row" style="font-size: 13px !important;">
+                            <div class="col-md-6">
+                                <span><strong>{{form.code.label}} :&nbsp;&nbsp;&nbsp; </strong>{{object.code}} </span><br/>
+                                <span ><strong>Record Status :&nbsp;&nbsp;&nbsp; </strong><span class="{{object.status_name}}">{{object.status_name}}</span></span>
+
+
+                            </div>
+                            <div class="col-md-6 text-right" style="text-align: right !important;">
+                                
+                                <span><strong>Record Created On :&nbsp;</strong><small>{{object.created_at}}</small></span><br/>
+                                <span><strong>Record Created By :&nbsp;</strong><small>{{object.created_user.first_name}}</small></span>
+
+                            
+                        </div>
+                    </div>
+                    
+                        
+                        <table class="table table-bordered mt-3">
+                            <tbody>
+                                <tr>
+                                    <td class="td-1">{{form.vendor.label}}</td>
+                                    <td class="td-2">{{object.vendor.code}}</td>
+                                    <td class="td-1">{{form.po_date.label}}</td>
+                                    <td class="td-2">{{object.po_date}}</td>
+                                </tr>
+                                <tr>
+                                    <td class="td-1">{{form.po_requested_by.label}}</td>
+                                    <td class="td-2">{{object.po_requested_by.first_name}}</td>
+                                    <td class="td-1">{{form.po_status.label}}</td>
+                                    <td class="td-2">{{object.po_status.name}}</td>
+                                </tr>
+                                <tr>
+                                    <td class="td-1">{{form.po_type.label}}</td>
+                                    <td class="td-2">{{object.po_type.name}}</td>
+                                    <td class="td-1">{{form.requested_delivery_date.label}}</td>
+                                    <td class="td-2">{{object.requested_delivery_date}}</td>
+                                </tr>
+                                 <tr>
+                                    <td class="td-1">{{form.header_notes.label}}</td>
+                                    <td class="td-2" colspan="3">{{object.header_notes}}</td>
+                                    
+                                </tr>
+                            </tbody>
+                        </table>
+
+                         <div class="row mt-1">
+                            <div class="col-md-12">
+                                <h6>Items</h6>
+
+                                 <table class="table table-bordered mt-2">
+                                   <thead>
+                                       <tr class="td-3">
+                                           <th class="td-3" width="10%">POLineNumber</th>
+                                           <th class="td-3" width="10%">ProductNumber</th>
+                                           <th class="td-3" width="25%">Product Name</th>
+                                           <th class="td-3" width="5%">Quantity</th>
+                                           <th class="td-3 " width="7%">UOM</th>
+                                           <th class="td-3" width="7%">Unit Price</th>
+                                           <th class="td-3" width="12%">Total Price</th>
+                                           <th class="td-3" width="10%">Item Status</th>
+                                           <th class="td-3" width="15%">Item Notes</th>
+                                       </tr>
+                                   </thead>
+                                   <tbody>
+                                    {% for eachItem in object.getItems %}
+                                       <tr>
+                                           <td class="td-4"><a href="{% url 'purchase_order_item-update' object.pk eachItem.pk %}">{{eachItem.code}}</a></td>
+                                           <td class="td-4">{{eachItem.item.code}}</td>
+                                           <td class="td-4">{{eachItem.item.name}}</td>
+                                           <td class="td-4">{{eachItem.quantity}}</td>
+                                           <td class="td-4">{{eachItem.uom}}</td>
+                                           <td class="td-4">{{eachItem.unit_price}}</td>
+                                           <td class="td-4">{{eachItem.total_price}}</td>
+                                           <td class="td-4">{{eachItem.item_status}}</td>
+                                           <td class="td-4">{{eachItem.notes}}</td>
+                                       </tr>
+                                       {%endfor%}
+                                   </tbody>
+                                </table>
+
+                                
+                            </div>
+                          <div class="col-md-6 mt-4">
+                            
+                          </div>
+                         <div class="col-md-6 text-right mt-4" style="text-align: right !important;">
+                                <a href="{%  url 'purchase_order_item-create' object.pk %}" class="btn app-btn-secondary"><i class="fa fa-plus-circle"></i> Add Item</a>
+
+                            
+                        </div>
+                    </div>
+                     <div class="row mt-1">
+                          <div class="col-md-6 mt-4">
+                            <h6>Schedules</h6>
+                          </div>
+                         <div class="col-md-6 text-right mt-4" style="text-align: right !important;">
+                                <a href="" class="btn app-btn-secondary"><i class="fa fa-plus-circle"></i> Add Schedule</a>
+
+                            
+                        </div>
+                    </div>
+                       
+
+                        <div class="row mt-4">
+                          <div class="col-md-6 mt-4">
+                          </div>
+                         <div class="col-md-6 text-right mt-4" style="text-align: right !important;">
+                                <span><strong>Record Modified On :&nbsp;</strong><small>{{object.updated_at}}</small></span><br/>
+                                <span><strong>Record Modified By :&nbsp;</strong><small>{{object.updated_user.first_name}}</small></span>
+
+                            
+                        </div>
+                    </div>
+
+
+
+
+
+                    </div>
+                    
+                </div>
+                
+
+                         
+            </div>
+        </div>
+       
+                </div>
+            </div>
+        </div>
+    
+{% endblock %}
+
+{% block pagecss %}
+<style type="text/css">
+   label.required::after {display: none !important;}
+   label{font-weight: bold !important;}
+   .td-1{
+    background-color: #eee !important;
+    width:15%;
+    font-weight: bold; !important;
+    
+    font-size: 13px;
+   }
+   .td-2{
+    width: 35%;
+    
+    
+    font-size: 13px;
+   }
+   .td-3{font-size: 13px !important; background-color: #eee !important;}
+   .td-4{font-size: 13px !important;}
+</style>
+{% endblock %}
+
+
+
+
+
+
+
+
+
+{% block pagejs %}
+<script type="text/javascript">
+   var room = 1;
+function product_url_fields() {
+    room++;
+    var objTo = document.getElementById('product_url_fields')
+    var divtest = document.createElement("div");
+   divtest.setAttribute("class", "form-group removeclass-"+room);
+   var rdiv = 'removeclass'+room;
+   divtest.innerHTML = '<div class="row"><div class="form-floating mb-2 col-md-11"><input placeholder="Specify URL" type="text" name="url" value="" maxlength="100" class="form-control" ><label for="floatingName" class="form-label"><label for="id_url" >URL</label></label></div><div class="col-md-1 mt-3"><button class="btn btn-danger btn-sm" type="button"  onclick="remove_product_url_fields('+ room +');"> <span class="fa fa-minus" aria-hidden="true"></span></button></div></div>'
+
+objTo.appendChild(divtest)
+
+}
+   function remove_product_url_fields(rid) {
+      $('.removeclass-'+rid).remove();
+   }
+</script>
+{% endblock %}
+
+

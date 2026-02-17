@@ -1,0 +1,132 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+    <form method="post" action="{{ form_action_url }}" novalidate>
+        {% csrf_token %}
+        
+        <div class="row mb-1 mt-1">
+            <div class="col-12 text-end">
+                <button type="button" title="Edit" class="btn btn-sm app-btn-primary edit-link" data-url="{% url 'customer-update' object.pk %}">
+                    <i class="fa fa-edit fa-lg"></i> Edit
+                </button>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-12 col-md-12">
+                <div class="app-card app-card-settings shadow-sm p-4 rounded-3">
+                    {% include 'customer/customer_menu.html' %}
+                    {% include 'core/auditlog.html' %}
+                    
+                    <div class="app-card-body">
+                        
+                        <div class="row p-1">
+                            <h3>Address Information</h3>
+                            <div class="col-md-4">
+                                <strong>{{ form.house_number.label_tag }} :</strong> {{ object.house_number }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.street_name.label_tag }} :</strong> {{ object.street_name }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.building_name.label_tag }} :</strong> {{ object.building_name }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.landmark.label_tag }} :</strong> {{ object.landmark }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.country.label_tag }} :</strong> {{ object.country }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.state.label_tag }} :</strong> {{ object.state }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.sublocation.label_tag }} :</strong> {{ object.sublocation }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.zipcode.label_tag }} :</strong> {{ object.zipcode }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.maps_url.label_tag }} :</strong>
+                                <a href="{{ object.maps_url }}" target="_blank"><i class="fa-solid fa-location-dot"></i></a>
+                            </div>
+                        </div>
+                        
+                        <div class="row p-1">
+                            <h3>Contact Information</h3>
+                            <div class="col-md-4">
+                                <strong>{{ form.phone_number_1.label_tag }} :</strong> {{ object.phone_number_1 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.phone_number_2.label_tag }} :</strong> {{ object.phone_number_2 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.phone_number_3.label_tag }} :</strong> {{ object.phone_number_3 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.fax.label_tag }} :</strong> {{ object.fax }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.email_1.label_tag }} :</strong> {{ object.email_1 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.email_2.label_tag }} :</strong> {{ object.email_2 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.email_3.label_tag }} :</strong> {{ object.email_3 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.website.label_tag }} :</strong> {{ object.website }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock %}
+
+{% block pagecss %}
+    <style type="text/css">
+        label.required::after {
+            display: none !important;
+        }
+        label, strong {
+            font-weight: bold !important;
+        }
+        .mb-1 {
+            margin-bottom: 0.5rem;
+        }
+        .p-1 {
+            padding: 0.5rem;
+        }
+    </style>
+{% endblock %}
+
+{% block pagejs %}
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.edit-link').forEach(function (btn) {
+                btn.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const url = btn.getAttribute('data-url');
+                    
+                    Swal.fire({
+                        title: 'Edit Customer?',
+                        text: "Do you want to edit this entry?",
+                        showCancelButton: true,
+                        confirmButtonText: 'Yes, Edit',
+                        cancelButtonText: 'Cancel',
+                        allowOutsideClick: false,
+                        width: 350
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            window.location.href = url;
+                        }
+                    });
+                });
+            });
+        });
+    </script>
+{% endblock %}

@@ -1,0 +1,189 @@
+
+
+{% block content %}
+<form id="bomAttachmentForm" method="post" action="{{ form_action_url }}/" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- Card -->
+    <div class="row">
+        <div class="col-12">
+            <div class="app-card app-card-settings shadow-md">
+                <div class="app-card-body p-1">
+
+                    <!-- Row 1: BOM & Title -->
+                    <div class="row">
+                       
+
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.title }}
+                                <label class="form-label">{{ form.title.label_tag }}</label>
+                                {% if form.title.errors %}
+                                <ul class="errorlist text-danger">
+                                    {% for error in form.title.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                         <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.attachment_type }}
+                                <label class="form-label">{{ form.attachment_type.label_tag }}</label>
+                                {% if form.attachment_type.errors %}
+                                <ul class="errorlist text-danger">
+                                    {% for error in form.attachment_type.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                         <div class="col-md-4" id="url_field">
+                            <div class="form-floating mb-3">
+                                {{ form.url }}
+                                <label class="form-label">{{ form.url.label_tag }}</label>
+                                {% if form.url.errors %}
+                                <ul class="errorlist text-danger">
+                                    {% for error in form.url.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!-- Row 2: Attachment Type & URL -->
+                    <div class="row file-fields" style="align-items: flex-end;" >
+                       
+
+                       
+                         <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input type="file" name="file_upload" class="form-control" id="id_file_upload">
+                                <label class="form-label">{{ form.file_upload.label_tag }}</label>
+
+                                {% if form.file_upload.errors %}
+                                <ul class="errorlist text-danger">
+                                    {% for error in form.file_upload.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+
+                                {% if form.instance.file_upload %}
+                                <small class="text-muted">
+                                    Current File:
+                                    <a href="{{ form.instance.file_upload.url }}" target="_blank">
+                                        {{ form.instance.file_name }}
+                                    </a>
+                                </small>
+                                
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- File Size -->
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                <input type="text" class="form-control" value="{{ form.instance.file_size|default:'' }}" disabled>
+                                <label class="form-label">File Size (bytes)</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Row 3: File Upload & Size side by side -->
+                    <div class="row">
+                       <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.status }}
+                                <label class="form-label">{{ form.status.label_tag }}</label>
+                                {% if form.status.errors %}
+                                <ul class="errorlist text-danger">
+                                    {% for error in form.status.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-floating mb-3">
+                                {{ form.description }}
+                                <label class="form-label">{{ form.description.label_tag }}</label>
+                                {% if form.description.errors %}
+                                <ul class="errorlist text-danger">
+                                    {% for error in form.description.errors %}<li>{{ error }}</li>{% endfor %}
+                                </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+        
+            <button type="button" id="openSaveModal" class="btn btn-sm app-btn-primary mt-2" ><i class="fa fa-save"></i> Save Attachment</button>
+            
+        
+    </div>
+                        
+                    </div>
+
+                   
+
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const form = document.getElementById("bomAttachmentForm");
+    const attachmentType = document.getElementById("id_attachment_type");
+    const urlField = document.getElementById("url_field");
+    const fileRow = document.querySelector('.file-fields');
+    const fileUpload = document.getElementById("id_file_upload");
+    const fileSizeField = fileRow.querySelector('input[disabled]');
+
+    function toggleFields() {
+        if (attachmentType.value === 'URL') {
+            urlField.style.display = 'block';
+            fileRow.style.display = 'none';
+        } else if (attachmentType.value === 'FILE') {
+            urlField.style.display = 'none';
+            fileRow.style.display = 'flex';
+        }
+    }
+
+    // Show file size on file select
+    fileUpload.addEventListener('change', function() {
+        if (fileUpload.files.length > 0) {
+            fileSizeField.value = fileUpload.files[0].size;
+        } else {
+            fileSizeField.value = '';
+        }
+    });
+
+    // Form-level validation
+    form.addEventListener('submit', function(e) {
+        let errors = [];
+        if (attachmentType.value === 'FILE' && !fileUpload.value) {
+            errors.push("File upload is required for FILE attachments.");
+        }
+        if (attachmentType.value === 'URL') {
+            const urlValue = document.getElementById("id_url").value.trim();
+            if (!urlValue) errors.push("URL is required for URL attachments.");
+        }
+        if (errors.length > 0) {
+            e.preventDefault();
+            alert(errors.join("\n"));
+        }
+    });
+
+    attachmentType.addEventListener('change', toggleFields);
+    toggleFields();
+});
+</script>
+
+<style>
+/* Hide Django "Currently" text & clear checkbox if any */
+input[type=file] + span { display: none; }
+input[type=checkbox] { display: none; }
+
+small.text-muted a { text-decoration: underline; }
+</style>
+
+{% endblock %}

@@ -1,0 +1,381 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% block content %}
+<div class="row mb-2 mt-0">
+<div class="col-6 col-md-6">
+   
+</div>
+<div class="col-6 col-md-6">
+   <div class="button-group" style="float:right;">
+
+
+  <a href="{% if can_add_component %}{% url 'project-component-create' object.pk %}{% else %}#{% endif %}"
+   class="btn btn-sm app-btn-primary"
+   {% if not can_add_component %}onclick="showBudgetAlert(); return false;"{% endif %}>
+   <i class="fa fa-plus"></i> Add {{model_name}}
+</a>
+
+   </div>
+</div>
+</div>
+<div class="col-12 col-md-12">
+  <div class="app-card app-card-settings shadow-md">
+     {% include 'project/project_menu.html' %}
+     <div class="app-card-body p-1">
+
+       {% if not form_status %}
+
+    
+      <!-- Table -->
+      <div class="table-responsive">
+        <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
+          <thead>
+            <tr>
+              <!-- <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'project' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=project&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Project
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'project' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=project&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Project
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=project&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Project
+                  </a>
+                {% endif %}
+              </th> -->
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'code' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=codes&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Code
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'code' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=code&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Code
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=code&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Code
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'component_type' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=component_type&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Component Type
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'component_type' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=component_type&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Component Type
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=component_type&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Component Type
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'bom' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=bom&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;ID
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'bom' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=bom&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;ID
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=bom&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;ID
+                  </a>
+                {% endif %}
+              </th>
+
+              <!-- <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'product' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=product&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Product
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'product' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=product&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Product
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=product&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Product
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'service' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=service&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Service
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'service' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=service&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Service
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=service&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Service
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'miscellaneous_component' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=miscellaneous_component&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Miscellaneous
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'miscellaneous_component' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=miscellaneous_component&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Miscellaneous
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=miscellaneous_component&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Miscellaneous
+                  </a>
+                {% endif %}
+              </th> -->
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'component_qty' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=component_qty&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Quantity
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'component_qty' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=component_qty&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Quantity
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=component_qty&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Quantity
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'component_cost' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=component_cost&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Cost
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'component_cost' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=component_cost&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Cost
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=component_cost&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Cost
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'status' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=status&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Status
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'status' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=status&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Status
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=status&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Status
+                  </a>
+                {% endif %}
+              </th>
+
+              <!-- Date Updated -->
+              <th>
+                {% if SortByColumn == 'ASC' and OrderByColumn == 'updated_at' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=updated_at&SortByColumn=DESC">
+                    <i class="fa fa-sort-down"></i>&nbsp;Date Updated
+                  </a>
+                {% elif SortByColumn == 'DESC' and OrderByColumn == 'updated_at' %}
+                  <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=updated_at&SortByColumn=ASC">
+                    <i class="fa fa-sort-up"></i>&nbsp;Date Updated
+                  </a>
+                {% else %}
+                  <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=updated_at&SortByColumn=ASC">
+                    <i class="fa fa-sort"></i>&nbsp;Date Updated
+                  </a>
+                {% endif %}
+              </th>
+
+              <th>Modified By</th> 
+
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% if object_list %}
+              {% for eachRow in object_list %}
+              <tr>
+                <!-- <td class="cell">
+                    <span class="truncate">
+                        <a href="{% url 'project-component-view' eachRow.project.id eachRow.pk %}">{{ eachRow.project.project.name }}</a>
+                    </span>
+                </td> -->
+
+                <td class="cell">
+                    <span class="truncate">
+                        <a href="{% url 'project-component-view' eachRow.project.id eachRow.pk %}">{{ eachRow.code }}</a>
+                    </span>
+                </td>
+                <!-- <td>{{ eachRow.code }}</td> -->
+                <td>{{ eachRow.component_type }}</td>
+                
+                {% if eachRow.component_type == 'BOM' %}
+                    <td>{{ eachRow.bom }}</td>
+                {% elif eachRow.component_type == 'SERVICE' %}
+                    <td>{{ eachRow.service }}</td>   
+                {% elif eachRow.component_type == 'MISCELLANEOUS' %}
+                    <td>{{ eachRow.miscellaneous_component }}</td>
+                {% else %}
+                    <td>{{ eachRow.product }}</td>
+                {% endif %}
+
+                <!-- <td>{{ eachRow.bom }}</td>
+                <td>{{ eachRow.product }}</td>
+                <td>{{ eachRow.service }}</td>
+                <td>{{ eachRow.miscellaneous_component }}</td> -->
+
+
+                <td>{{ eachRow.component_qty }}</td>
+                <td>{{ eachRow.component_cost }}</td>
+                <!-- <td>{{ eachRow.status_name }}</td> -->
+                <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td>
+                <td>{{ eachRow.last_modified_at }}</td>
+                <td>{{ eachRow.last_modified_user }}</td>
+                <td class="cell">
+                    <!-- View button as icon -->
+                    <a href="{% url 'project-component-view' eachRow.project.id eachRow.pk %}">
+                        <span class="badge app-btn-primary"><i class="fa fa-eye"></i> View</span>
+                    </a>
+                      <a href="{% url 'project-component-audit' eachRow.project.id eachRow.pk %}">
+                      <span class="badge app-btn-primary"><i class="fa fa-history"></i> Audit</span>
+                    </a>
+                </td>
+              </tr>
+              {% endfor %}
+            {% else %}
+              <tr><td colspan="11" class="text-center">No records found</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      {% include 'core/pagination.html' %}
+       {%endif%}
+          {% if form_status %}
+              <div class="row">
+                <div class="col-md-12">
+              {% include 'project/project_component_form.html' %}
+            </div>
+            </div>
+          {%endif%}
+
+    </div>
+  </div>
+</div>
+
+
+{% endblock content %}
+
+{% block pagecss %}
+
+<link href="{% static 'default/css/select2.min.css' %}" rel="stylesheet" />
+<style>
+	.select2-container .select2-selection--single {
+		height: 58px;
+		padding-top: 1.625rem;
+		padding-bottom: .625rem;
+		border-color: #e0e0e0 !important;
+	}
+	.select2-selection__rendered {
+		line-height: 26px !important;
+	}
+	.select2-selection__arrow {
+		height: 36px !important;
+	}
+</style>
+
+{% endblock pagecss %}
+
+{% block pagejs %}
+
+<!-- JS to toggle component fields based on selected component_type -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const select = document.getElementById("id_component_type");
+
+    const fieldMap = {
+        "BOM": ["BOM-field"],
+        "PRODUCT": ["Product-field"],
+        "SERVICE": ["Service-field"],
+        "MISCELLANEOUS": ["Miscellaneous-field"]
+    };
+
+    function toggleFields(selectedValue) {
+        // Hide all component fields first
+        document.querySelectorAll(".component-field").forEach(el => {
+            el.style.display = "none";
+        });
+
+        // Show the field(s) corresponding to the selected value
+        if (fieldMap[selectedValue]) {
+            fieldMap[selectedValue].forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = "block";
+            });
+        }
+    }
+
+    // Initial display based on current value
+    toggleFields(select.value);
+
+    // Update display on change
+    select.addEventListener("change", function() {
+        toggleFields(this.value);
+    });
+});
+</script>
+
+<script>
+    $(document).ready(function () {
+	
+	$('#id_bom').select2({
+			placeholder: "Select a bom",
+			allowClear: false ,// Optional: enables a clear button
+			width: '100%'
+		});
+  
+		$('#id_product').select2({
+			placeholder: "Select a product",
+			allowClear: false ,// Optional: enables a clear button
+			width: '100%'
+		});
+	
+		$('#id_service').select2({
+			placeholder: "Select a service",
+			allowClear: false ,// Optional: enables a clear button
+			width: '100%'
+		});
+	});
+</script>
+<script>
+function showBudgetAlert() {
+    alert("Budget exhausted. You cannot add more components.");
+}
+</script>
+
+
+{% endblock pagejs %}

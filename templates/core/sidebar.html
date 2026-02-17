@@ -1,0 +1,19 @@
+{% load static %}
+   <div id="sidepanel-drop" class="sidepanel-drop"></div>
+   <div class="sidepanel-inner d-flex flex-column">
+      <a href="#" id="sidepanel-close" class="sidepanel-close d-xl-none">&times;</a>
+      <div class="app-branding">
+         <a class="app-logo" href="/"><img class="img-resposinve" src="/media/{{app.logo}}" width="130px" alt="" ><span class="logo-text"></span></a>
+      </div>
+      <!--app-menu-->
+      {% include 'core/menu.html' %}
+      <!--//app-menu-->
+      <div class="app-sidepanel-footer">
+         <nav class="app-nav app-nav-footer">
+            
+            <!--//footer-menu-->
+         </nav>
+      </div>
+      <!--//app-sidepanel-footer-->
+   </div>
+   <!--//sidepanel-inner-->

@@ -1,0 +1,111 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<div class="row mb-2 mt-0">
+  <div class="col-12">
+    <!-- Edit Button at the top right -->
+    <div class="button-group" style="float:right;">
+      <a href="#" class="btn btn-sm app-btn-primary edit-link"
+         data-url="{% url 'bom-attachment-update' object.pk bi_obj.pk %}">
+        <i class="fa fa-edit"></i> Edit
+      </a>
+    </div>
+  </div>
+</div>
+
+<div class="col-12 col-md-12">
+  <div class="app-card app-card-settings shadow-md">
+    {% include 'project/bom_menu.html' %}
+    <div class="app-card-body p-1">
+      <div class="row">
+        <div class="col-md-12">
+          <h3>Attachment Details</h3>
+        </div>
+      </div>
+      
+      <!-- Attachment Details Table -->
+      <table class="table">
+        <tbody>
+          <tr>
+            <th>Attachment Type:</th>
+            <td>
+              {% if bi_obj.attachment_type == 'URL' %}
+                <i class="fa fa-link" title="URL"></i> URL
+              {% elif bi_obj.attachment_type == 'FILE' %}
+                <i class="fa fa-file" title="File"></i> File
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th>Title:</th>
+            <td>{{ bi_obj.title }}</td>
+          </tr>
+          <tr>
+            <th>BOM:</th>
+            <td>{{ bi_obj.bom }}</td>
+          </tr>
+          <tr>
+            <th>File Name / URL:</th>
+            <td>
+              {% if bi_obj.attachment_type == 'URL' %}
+                <a href="{{ bi_obj.url }}" target="_blank">{{ bi_obj.url }}</a>
+              {% elif bi_obj.file_name %}
+                <a href="{% url 'bom-attachment-download' object.pk bi_obj.pk %}" target="_blank">{{ bi_obj.file_name }}</a>
+              {% else %}
+                -
+              {% endif %}
+            </td>
+          </tr>
+          <tr>
+            <th>File Size (bytes):</th>
+            <td>{{ bi_obj.file_size|default:"-" }}</td>
+          </tr>
+          <tr>
+            <th>Status:</th>
+            <td class="cell {{ object.status_name }}">{{ bi_obj.status_name }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <!-- Include Audit Log Information -->
+      {% include 'core/auditlog.html' with object=bi_obj %}
+    </div>
+  </div>
+</div>
+
+{% block pagecss %}
+<style type="text/css">
+   label.required::after { display: none !important; }
+   label, strong { font-weight: bold !important; }
+</style>
+{% endblock %}
+
+{% block pagejs %}
+<!-- <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script> -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.edit-link').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const url = btn.getAttribute('data-url');
+
+            Swal.fire({
+                text: 'Do you want to edit this attachment record?',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Edit',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                width: 350
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock %}

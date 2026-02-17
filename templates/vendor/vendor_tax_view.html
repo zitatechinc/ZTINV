@@ -1,0 +1,124 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<form method="post" novalidate>
+    {% csrf_token %}
+
+    <!-- Edit Button -->
+    <div class="row mb-2 mt-2">
+        <div class="col-12 text-end">
+            <button type="button"
+                    class="btn btn-sm app-btn-primary edit-link"
+                    data-url="{% url 'vendor-tax-update' vendor_obj.pk object.pk %}">
+                <i class="fa fa-edit"></i> Edit
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-md-12">
+            <div class="app-card app-card-settings shadow-md">
+
+                {% include 'vendor/vendor_menu.html' %}
+
+                <div class="app-card-body p-4">
+                    <!-- Tax Information -->
+                    <div class="row mb-4">
+                        <h6 class="mb-3">Tax Information</h6> 
+
+                        <div class="col-md-4"><strong>Name :</strong> {{ object.name }}</div>
+                        <div class="col-md-4"><strong>Tax Number :</strong> {{ object.tax_number }}</div>
+                        <div class="col-md-4"><strong>Tax Rate :</strong> {{ object.tax_rate }}</div>
+
+                        <div class="col-md-4"><strong>Vendor :</strong> {{ object.vendor.company_name1 }}</div>
+                        <div class="col-md-4"><strong>Country :</strong> {% if object.country %}{{ object.country.name }}{% endif %}</div>
+                        <div class="col-md-4"><strong>Category :</strong> {{ object.category }}</div>
+
+                        <div class="col-md-4">
+                        <strong>Status :</strong>
+                        <span class="badge 
+                            {% if object.status == 1 %}
+                                bg-success
+                            {% elif object.status == 0 %}
+                                bg-warning
+                            {% else %}
+                                bg-danger
+                            {% endif %}
+                        ">
+                            {{ object.status_name }}
+                        </span>
+                    </div>
+                        <div class="col-md-4">
+                            <strong>Other Tax Details :</strong>
+                            {{ object.other_tax_details|default:"—" }}
+                        </div>
+                    </div>
+
+                    {% include 'core/auditlog.html' %}
+
+                    <!-- Audit Log Information - Now aligned properly -->
+                    <!-- <div class="row mb-4">
+                        <h6 class="mb-3">Audit Information</h6>
+
+                        <div class="col-md-4">
+                            <strong>Created:</strong> {{ object.created_at }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Created User:</strong> {{ object.created_user }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Modified User:</strong> {{ object.last_modified_user }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Last Modified:</strong> {{ object.last_modified_at }}
+                        </div>
+                    </div> -->
+
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block pagecss %}
+<style type="text/css">
+   label.required::after { display: none !important; }
+   label, strong { font-weight: bold !important; }
+</style>
+{% endblock %}
+
+{% block pagejs %}
+
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.edit-link').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+
+            const url = btn.dataset.url;
+
+            if (!url) {
+                console.error('Edit URL missing');
+                return;
+            }
+
+            Swal.fire({
+                text: 'Do you want to edit this tax record?',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Edit',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                width: 350
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

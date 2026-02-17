@@ -1,0 +1,88 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+<div class="row mb-2 mt-2">
+    <div class="col-6 col-md-6">
+        <!-- Page title removed -->
+    </div>
+
+    <div class="col-6 col-md-6">
+        <div class="button-group" style="float:right;">
+            {% if not object_list %}
+            <a href="{% url 'app-create' %}" class="btn btn-sm app-btn-primary">
+                <i class="fa fa-circle-plus fa-lg"></i> Add New Theme
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+        <div class="app-card-body p-4">
+
+            <div class="table-responsive">
+                <table class="table app-table-hover mb-0 text-left table-bordered app-table-stripped"
+                       id="app_table_data">
+                    <thead>
+                        <tr>
+                            <th class="cell">Name</th>
+                            <th class="cell">Logo</th>
+                            <th class="cell">Favicon</th>
+                            <th class="cell">Company Name</th>
+                            <th class="cell">Website</th>
+                            <th class="cell">Phone</th>
+                            <th class="cell">Last Modified</th>
+                            <th class="cell">Modified User</th>
+                            <th class="cell">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for eachRow in page_obj.object_list %}
+                        <tr>
+                            <td class="cell">{{ eachRow.name }}</td>
+
+                            <td class="cell">
+                                <img class="img-responsive"
+                                     width="80"
+                                     src="/media/{{ eachRow.logo }}"
+                                     onerror="this.onerror=null; this.src='/static/default/img/no-image.png'; this.width=40;">
+                            </td>
+
+                            <td class="cell">
+                                <img class="img-responsive"
+                                     width="30"
+                                     src="/media/{{ eachRow.favicon }}"
+                                     onerror="this.onerror=null; this.src='/static/default/img/no-image.png'; this.width=40;">
+                            </td>
+
+                            <td class="cell">{{ eachRow.company_name }}</td>
+                            <td class="cell">{{ eachRow.website }}</td>
+                            <td class="cell">{{ eachRow.phone }}</td>
+                            <td class="cell">{{ eachRow.last_modified_at }}</td>
+                            <td class="cell">{{ eachRow.last_modified_user }}</td>
+                            <td class="cell">
+                                <!-- View Button -->
+                                <a href="{% url 'app-view' eachRow.pk %}">
+                                    <span class="badge app-btn-primary">
+                                        <i class="fa fa-eye"></i> View
+                                    </span>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            {% include 'core/pagination.html' %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block pagejs %}
+{% endblock %}

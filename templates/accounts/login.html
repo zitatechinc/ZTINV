@@ -1,0 +1,79 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+   <head>
+      <title>{% if page_title %}{{page_title}} | {%endif%} {{ app.name }}</title>
+      <!-- Meta -->
+      <meta charset="utf-8">
+      <meta http-equiv="X-UA-Compatible" content="IE=edge">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="description" content="{{app.name}}">
+      <meta name="author" content="User">
+      <link rel="shortcut icon" href="/media/{{app.favicon}}">
+      <link id="theme-style" rel="stylesheet" href="{% static 'default/css/bootstrap.min.css' %}">
+      <style>
+         .errorlist, .text-error{list-style: none !important; text-align: left !important; color: #f00 !important}
+      </style>
+   </head>
+   <body style="background: #f1f1f1;">
+      <main>
+         <section class="py-3 text-center container" style="margin-top: 120px;">
+
+            <div class="row" >
+               <div class="col-md-3"></div>
+               <div class="col-md-6 py-4" style="background:#fff;">
+                  <div class="row mb-2">
+                     <div class="col-md-12">
+                        <a class="app-logo" href="/"><img class="img-responsive" src="/media/{{app.logo}}" width="200px" alt="" ><span class="logo-text"></span></a> 
+                     </div>
+                     <div class="row mt-2">
+                        <div class="col-md-12" >
+                          <small style="font-size:20px !important; text-align: center;color: #666;">&nbsp;&nbsp;&nbsp;&nbsp;<b>Inventory Management System</b></small>
+                        </div>
+                     </div>
+                  </div>
+
+            <div class="row mb-2">
+               <div class="col-lg-10 col-md-4 mx-auto">
+               <!--   <h5 style="text-align: left !important;color: #666 !important;" ><i class="fa fa-lock"></i> Login</h5> -->
+               </div>
+            </div>
+
+            
+               <div class="col-lg-10 col-md-12 mx-auto">
+                  <form method="post" action="." novalidate>
+                     {% csrf_token %}
+                         <input type="hidden" name="next" value="{% if request.GET.next %}{{ request.GET.next }}{%endif%}">
+                     <div class="form-floating mb-3">
+                        {{ form.username }}
+                        {{ form.username.label_tag }}
+                        {{ form.password.errors }}
+                     </div>
+                     <div class="form-floating mb-3">
+                        {{ form.password }}
+                        {{ form.password.label_tag }}
+                        {{ form.password.errors }}
+                     </div>
+               {% for eachmsg in messages  %}
+                           
+                             <div class="text-{{eachmsg.tags}}">{{eachmsg}}</div>
+                          
+                          {%endfor%}
+                          
+               
+                     <div class="form-group">
+                        <button type="submit" class="btn btn-primary mt-1"><i class="fa fa-sign-in"></i>&nbsp;&nbsp;Login</button>
+                     </div>
+                  </form>
+               </div>
+            </div>
+            <div class="col-md-3"></div>
+         </div>
+      
+         </section>
+      </main>
+      <script src="{% static 'default/theme/assets/plugins/popper.min.js' %}"></script>
+      <script src="{% static 'default/theme/assets/plugins/bootstrap/js/bootstrap.min.js' %}"></script>
+      <script defer src="{% static 'default/theme/assets/plugins/fontawesome/js/all.min.js' %}"></script>  
+      <script src="{% static 'default/js/jquery-3.7.1.js' %}"></script> 
+   </body>

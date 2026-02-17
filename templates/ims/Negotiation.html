@@ -1,0 +1,2390 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+{% block styleblock%}
+
+
+<head>
+    <meta name="csrf-token" content="{{ csrf_token }}">
+    <!-- Other head elements -->
+</head>
+<style>
+    .list-group-item.active {
+        color: rgb(204, 60, 60);
+        background-color: rgb(223, 234, 64);
+    }
+    .search-box {
+        position: relative;
+        width: 100%;
+    }
+    .search-box i {
+        position: absolute;
+        left: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #888;
+    }
+    .search-box input {
+        width: 100%;
+        padding: 8px 10px 8px 35px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        font-size: 0.9rem;
+        transition: all 0.3s;
+    }
+    .form-container {
+        background: #fff;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        padding: 20px;
+        margin-top: 20px;
+    }
+    .form-container h4 {
+        text-align: center;
+        font-weight: bold;
+    }
+    .form-table {
+        width: 100%;
+        margin-top: 20px;
+    }
+    .form-table th, .form-table td {
+        padding: 10px;
+        border: 1px solid #ccc;
+    }
+    .form-table th {
+        background-color: #f0f0f0;
+        text-align: left;
+    }
+    .members-inputs {
+        margin-bottom: -1%;
+        overflow-x: auto;  /* Allows horizontal scrolling */
+        overflow-y: hidden;  /* Optional: hides vertical scrolling */
+        width: 100%;  /* Ensures it takes up the full width of its container */
+    }
+    
+    .members-inputMP{
+        margin-bottom: -1%;
+        overflow-x: auto;  /* Allows horizontal scrolling */
+        overflow-y: hidden;  /* Optional: hides vertical scrolling */
+        width: 100%;  /* Ensures it takes up the full width of its container */
+    }
+     {% comment %} #negotiationPreviewContainer {
+        border: 2px solid #000; /* Black border */
+        padding: 20px; 
+        margin: 20px auto;
+        border-radius: 10px;
+        background-color: #f9f9f9;
+    }  {% endcomment %}
+    {% comment %} .quoted-input[readonly], 
+    .negotiated-input[readonly], 
+    .members-inputs[readonly], 
+    .members-inputMP[readonly], 
+    #file-upload:disabled, 
+    #file-upload-negotiated:disabled {
+        cursor: not-allowed;
+        
+    } {% endcomment %}
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+      }
+    .active-procurement {
+      
+            background-color: #00B2CC !important; /* Light blue for highlighting */
+            border: 3px solid white;
+            position: relative;
+            overflow: hidden;
+            animation: glow-shadow 2s linear infinite;
+          }
+          
+          @keyframes glow-shadow {
+            0% {
+              box-shadow: 0 0 5px 2px white;
+            }
+            50% {
+              box-shadow: 0 0 15px 5px white;
+            }
+            100% {
+              box-shadow: 0 0 5px 2px white;
+            }
+          }
+    .list-group-item.active {
+        border-left: 3px solid #0066c0 !important;
+        background-color: #e6f2ff !important;
+        box-shadow: 0 2px 8px rgba(0, 102, 192, 0.2);
+    }
+    .list-group-item:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    #loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(6px);
+        display: none; /* Hide by default */
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+    }
+    .negotiated-input,.quoted-input{
+        width:50%;
+    }
+    .nav-link.active{
+        background-color: #007080 !important;
+    }
+    {% comment %} .approveWithRemarksBtn{
+        background-color: #007080;
+        width: 79px;
+        height: 40px;
+        border-radius: 6px;
+        color: white !important;
+        outline: none;
+    } {% endcomment %}
+   
+    
+    
+</style>
+{% endblock %}
+{% block previewcontent%}
+<div id="negotiationPreviewContainer" ></div>
+
+
+
+<div class="modal fade myModal" id="recommendModal" tabindex="-1" role="dialog" aria-labelledby="recommendModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="recommendModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="recommendForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="remarks"><b>Remarks:</b></label>
+                        <textarea name="remarks" id="remarks" class="form-control" rows="4" required>Recommended</textarea>
+                    </div>
+
+
+                    <input type="hidden" name="procurement_id" id="recommendProcurementId" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary approveWithRemarksBtn" style="background-color:#007080; ">Submit</button>
+                <button type="button" class="btn btn-secondary closeModalBtn" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade myModal" id="approveModal" tabindex="-1" role="dialog" aria-labelledby="approveModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="approveModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="approveForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="form-group">
+                        <label for="approveremarks"><b>Remarks:</b></label>
+                        <textarea name="approveremarks" id="approveremarks" class="form-control" rows="4" required>Approved</textarea>
+                    </div>
+                    {% comment %} <div class="form-group">
+                        <label for="purchaseassistant"><b>Select Purchase Assistant User:</b></label>
+                        <select id="purchaseassistant" name="purchaseassistant" class="form-control" required>
+                            <option value="">Select User</option>
+                            {% for user in approveusers %}
+                            <option value="{{ user.emp_id }}" data-firstname="{{ user.first_name }}" data-lastname="{{ user.last_name }}">
+                                {{ user.first_name }} {{ user.last_name }} ({{ user.emp_id }})
+                              </option>
+                              
+                        {% endfor %}
+                        </select>
+                    </div> {% endcomment %}
+                    
+
+                    <input type="hidden" name="procurement_id" id="approveProcurementId" />
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="submitbtn btn-primary" id="approveenquiry" style="background-color:#007080; width: 79px; height: 40px; border-radius: 6px;color: white !important; outline: none;">Submit</button>
+                <button type="button" class="btn btn-secondary closeModalBtn" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<div class="modal fade myModal" id="rejectModal" tabindex="-1" role="dialog" aria-labelledby="rejectModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="rejectModalLabel"><b>Add Remarks</b></h5>
+            </div>
+            <div class="modal-body">
+                <form id="rejectForm" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="rejectremarks"><b>Remarks:</b></label>
+                        <textarea name="rejectremarks" id="rejectremarks" class="form-control" rows="4" required>Returned</textarea>
+                    </div>
+
+
+                    <input type="hidden" name="procurement_id" id="rejectProcurementId" />
+                    <input type="hidden" id="rejectstage" value="stage8">  <!-- or whatever stage it is -->
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="submit btn-primary" id="rejectenquiry" style="background-color:#007080; width: 79px; height: 40px; border-radius: 6px;color: white !important; outline: none;">Submit</button>
+                <button type="button" class="btn btn-secondary closeModalBtn" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    var imm_user=''
+    var user = '';
+    var quo_id = '';
+    var stage = '';
+    var savedData='';
+    var particularId='';
+    var vendorIds='';
+    var stage5RejectMap=''
+    var isEditable=''
+    
+    function getLatestCSTAction(stage, user, particularId) {
+        debugger;
+        if (!user || !Array.isArray(user.roles)) return null;
+
+        const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+        if (!isPurchaseAssistant) return null;
+
+        let latestAction = null;
+        let latestTime = null;
+
+        stage.forEach(([stageName, remarktype, datetime, id]) => {
+            if (String(id) !== String(particularId)) return;
+
+            const isStage8 = stageName?.toLowerCase() === 'stage8';
+            if (!isStage8) return;
+
+            const remark = remarktype?.toLowerCase();
+            if (!remark || (remark !== 'negotiation_return' && remark !== 'negotiation_modified')) return;
+
+            console.log(`Checking remark: ${remark} for ID: ${id} at ${datetime}`);
+
+            if (datetime) {
+                const dt = new Date(datetime);
+                if (!isNaN(dt)) {
+                    if (!latestTime || dt > latestTime) {
+                        latestTime = dt;
+                        latestAction = remark;
+                        console.log(`✅ Latest action updated to ${latestAction} at ${latestTime}`);
+                    }
+                } else {
+                    console.warn(`⚠️ Invalid date: ${datetime}`);
+                }
+            }
+        });
+
+        return latestAction;
+    }
+
+
+
+    // === Original helper functions (unchanged) ===
+    function hasCSTApprovalStage(stages, particularId) {
+        return stages.some(([stage, remarktype, , id]) =>
+            stage.toLowerCase() === 'stage8' &&
+            remarktype.toLowerCase() === 'negotiation_approval' &&
+            id === particularId
+        );
+    }
+    
+
+    function hasCSTGenerateStage(stages, user, particularId) {
+        debugger;
+
+        if (!user || !user.roles) return false;
+
+        const roles = user.roles;
+        const isPurchaseAssistant = roles.includes('Purchase Assistant');
+        const isIMM = roles.includes('IMM');
+
+        // ✅ Check for Purchase Assistant condition
+        if (isPurchaseAssistant) {
+            const matchPA = stages.some(([stageName, remarktype, , id]) =>
+                stageName?.toLowerCase() === 'stage8' &&
+                remarktype?.toLowerCase() === 'negotiation' &&
+                id === particularId
+            );
+            if (matchPA) return true;
+        }
+
+        // ✅ Check for IMM condition
+        if (isIMM) {
+            const matchIMM = stages.some(([stageName, remarktype]) =>
+                stageName?.toLowerCase() === 'stage8' &&
+                remarktype?.toLowerCase() === 'negotiation'
+            );
+            if (matchIMM) return true;
+        }
+
+        // ❌ No matching condition
+        return false;
+    }
+
+
+    function hasEnquiryRejectStage(stages, user, particularId) {
+        if (!user || !user.roles) return false;
+
+        const isPurchaseAssistant = user.roles.includes('Purchase Assistant');
+        if (!isPurchaseAssistant) return false;
+
+        return stages.some(([stageName, remarktype, , id]) =>
+            stageName.toLowerCase() === 'stage8' &&
+            remarktype.toLowerCase() === 'negotiation_return' &&
+            id === particularId
+        );
+    }
+
+
+    function hasEnquiryModifyStage(stages, user, particularId) {
+        debugger;
+        if (!user || !user.roles) return false;
+
+         const roles = user.roles;
+        const isPurchaseAssistant = roles.includes('Purchase Assistant');
+        const isIMM = roles.includes('IMM');
+
+        // ✅ Check for Purchase Assistant condition
+        if (isPurchaseAssistant) {
+            const matchPA = stages.some(([stageName, remarktype, , id]) =>
+                stageName?.toLowerCase() === 'stage8' &&
+                remarktype?.toLowerCase() === 'negotiation_modified' &&
+                id === particularId
+            );
+            if (matchPA) return true;
+        }
+
+        // ✅ Check for IMM condition
+        if (isIMM) {
+            const matchIMM = stages.some(([stageName, remarktype]) =>
+                stageName?.toLowerCase() === 'stage8' &&
+                remarktype?.toLowerCase() === 'negotiation_modified'
+            );
+            if (matchIMM) return true;
+        }
+
+        // ❌ No matching condition
+        return false;
+    }
+        function getLatestStageForParticular(stages, particularId) {
+    let latest = null;
+    let latestNegotiationApproval = null;
+
+    stages.forEach(([stageName, remarktype, datetime, id]) => {
+        if (String(id) === String(particularId)) {
+            const time = new Date(datetime);
+            if (isNaN(time)) return;
+
+            const stage = stageName.toLowerCase();
+            const remark = remarktype.toLowerCase();
+
+            // Track latest negotiation_approval
+            if (remark === 'negotiation_approval') {
+                if (!latestNegotiationApproval || time > latestNegotiationApproval.time) {
+                    latestNegotiationApproval = {
+                        stageName: stage,
+                        remarktype: remark,
+                        time
+                    };
+                }
+            }
+
+            // Track latest of all stages
+            if (!latest || time > latest.time) {
+                latest = {
+                    stageName: stage,
+                    remarktype: remark,
+                    time
+                };
+            }
+        }
+    });
+
+    // Final decision logic
+    if (
+        latest?.stageName === 'stage5' &&
+        latest?.remarktype === 'approval' &&
+        latestNegotiationApproval &&
+        latest.time > latestNegotiationApproval.time
+    ) {
+        // Ignore stage5 approval if it came after negotiation_approval
+        return latestNegotiationApproval;
+    }
+
+    return latest;
+}
+
+
+
+
+        
+
+    
+    $(document).ready(function() {
+        $('#prSearch').on('keyup', function() {
+          const searchText = $(this).val().toLowerCase();
+          let matchFound = false;
+      
+          $('#procurementSidebar .list-group-item').each(function() {
+            const prId = $(this).find('.view-pr-id').text().trim().toLowerCase();
+            if (prId.includes(searchText)) {
+              $(this).show();
+              matchFound = true;
+            } else {
+              $(this).hide();
+            }
+          });
+      
+          if (!matchFound && searchText !== '') {
+            showAlert("PR ID is not available");
+            $(this).val('');   // Clear the search input
+            $('#procurementSidebar .list-group-item').show();  // Show all items again
+          }
+        });
+      });
+    
+    document.addEventListener("DOMContentLoaded", function () {
+        const sidebarItems = document.querySelectorAll(".view-pr-id");
+
+        sidebarItems.forEach(item => {
+            item.addEventListener("click", function (e) {
+                e.preventDefault();
+
+                // Remove highlight from all items
+                sidebarItems.forEach(i => i.closest("li").classList.remove("active-procurement"));
+
+                // Add highlight to the clicked item
+                this.closest("li").classList.add("active-procurement");
+        
+            });
+        });
+    });
+   function getLatestStageRecordForParticular(stages, particularId) {
+    let latestRecord = null;
+
+    stages.forEach(([stageName, remarktype, datetime, id]) => {
+        if (String(id) !== String(particularId)) return;
+
+        const time = new Date(datetime);
+        if (!isNaN(time)) {
+            if (!latestRecord || time > new Date(latestRecord[2])) {
+                latestRecord = [stageName.toLowerCase(), remarktype.toLowerCase(), datetime, id];
+            }
+        }
+    });
+
+    return latestRecord; // e.g. ['stage8', 'negotiation_modified', '2025-09-28 22:35:28', 500]
+}
+
+    
+    $(document).on("click", ".view-pr-id", function (e) {
+        e.preventDefault();
+        let isFormSubmitted = false; 
+        showLoader();
+        const procurementId = $(this).data("id");
+        const csrfToken = $("meta[name='csrf-token']").attr("content");
+
+        $.ajax({
+            url: "{% url 'negotiation' %}",
+            type: "POST",
+            headers: { 'X-CSRFToken': csrfToken },
+            data: { 'procurement_id': procurementId },
+            success: function (response) {
+                debugger;
+                console.log(response,'response')
+                
+                const vendors = response.vendors;
+              
+                const particulars = response.particulars;
+                console.log(particulars,'particulars')
+                console.log(particularId,'particularId')
+                quo_id = $(this).attr("quotation_id");
+                savedData = particulars
+                    .map(item => item.saved_negotiation_data)
+                    .filter(data => data && Object.keys(data).length > 0);
+                const nego_id = savedData[0]?.nego_id;
+               
+                var showSubmit = true;
+                
+                const negotiatedPrices = savedData.map(data => data.negotiated_price);
+                
+                const nego_part_id=response.stage5_reject_after_stage8
+                
+                console.log(nego_part_id,'nego_part_id')
+                user = response.users;
+                
+                imm_user = response.imm_user.id
+                
+                let productNames = [];
+                let totalQtys = [];
+                let valueList = [];
+                let totalValue = 0;
+
+                particulars.forEach(particular => {
+                    productNames.push(particular.item_name);
+                    totalQtys.push(particular.total_qty_required);
+                    if (particular.value) {
+                        valueList.push(particular.value);
+                        totalValue += parseFloat(particular.value);
+                    }
+                });
+                vendorIds = particulars.map(p => p.vendor_id);
+                
+                const quotedProducts = productNames.join(', ');
+                const totalQuantities = totalQtys.join(', ');
+                const quotedValues = valueList.join(', ');
+                const firstParticular = particulars[0] || {};
+                const quotedPaymentTerms = firstParticular.paymentterms || '';
+                const quotedDeliverySchedule = firstParticular.deliverytimeline || '';
+                const quotedDeliveryTerms = firstParticular.deliveryterms || '';
+                const now = new Date();
+                const formattedDate = now.toLocaleDateString('en-GB').replace(/\//g, '/');
+                const hours = now.getHours().toString().padStart(2, '0');  // 24-hour format
+                const minutes = now.getMinutes().toString().padStart(2, '0');
+                const seconds = now.getSeconds().toString().padStart(2, '0');  // Add seconds
+                const formattedTime = `${hours}:${minutes}:${seconds}`;  // Format time as HH:mm:ss  
+                stage=response.stages; 
+                console.log(stage,'stages')
+                
+                $('.openApproveModal').attr('quotation_id', quo_id);  
+                $('.openRejectModal').attr('quotation_id', quo_id);  
+                
+                // Create tab navigation
+                let tabNavHtml = `
+                    <div class="card">
+                        <div class="card-header">
+                            <ul class="nav nav-tabs card-header-tabs" id="particularTabs" role="tablist">`;
+
+                particulars.forEach((particular, index) => {
+                    const isActive = index === 0 ? 'active' : '';
+                    tabNavHtml += `
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link naveen ${isActive}" id="tab-${index}" data-bs-toggle="tab" 
+                                    data-bs-target="#particular-${index}" type="button" role="tab" quotation_id="${particular.quotation_particular_id}" 
+                                    aria-controls="particular-${index}" aria-selected="${index === 0 ? 'true' : 'false'}">
+                                ${particular.item_name || `Particular ${index+1}`}
+                            </button>
+                        </li>`;
+                });
+
+                tabNavHtml += `</ul></div><div class="card-body"><div class="tab-content" id="particularTabsContent">`;
+                const stage5RejectMap = response.stage5_reject_after_stage8;
+                particulars.forEach((particular, index) => {
+                    
+                debugger
+                    const qp_id = particular.quotation_particular_id;
+                    console.log(qp_id,'qp_id')
+
+                    // Check if this particular has Stage 5 reject after Stage 8
+                    isEditable = stage5RejectMap[qp_id] === true;
+                    console.log(isEditable,'isEditable')
+                    const particularSavedData = particular.saved_negotiation_data || {};
+                    console.log(particularSavedData,'yummy');
+            
+                    const isActive = index === 0 ? 'show active' : '';
+                    vendor_id=particular.vendor_id;
+                    console.log(vendor_id,'ramvendor')
+                    tabNavHtml += `
+<div class="tab-pane fade ${isActive}" id="particular-${index}" role="tabpanel" aria-labelledby="tab-${index}">
+    <div style="border: 1px solid #000; padding:20px;margin: 20px auto;border-radius: 10px;">
+        <h4 style="text-align:center;"><strong><u>Techno Commercial Negotiation</u></strong></h4>
+        <div style="text-align: right;">
+            <div><strong>Date:</strong> ${particularSavedData.formatted_date || formattedDate}</div>
+            <div><strong>Time:</strong> ${particularSavedData.formatted_time || formattedTime}</div>
+        </div>
+
+        <p>
+            <strong>Procurement ID:</strong> ${procurementId} &nbsp;&nbsp;
+            <strong>Place:</strong> MSPL Gowra Palladium Hyd &nbsp;
+            <strong>Quotation Ref & Date:</strong>
+            ${isEditable
+                ? `<input type="text" class="quotation-ref-date members-input" data-tab-index="${index}"
+                          quotation_id="${particular.quotation_particular_id}"
+                          value="${particularSavedData.quotation_ref_date || ''}" />`
+                : `<span class="quot_ref" data-tab-index="${index}"
+                         quotation_id="${particular.quotation_particular_id}">
+                        ${particularSavedData.quotation_ref_date || ''}
+                   </span>`
+            }
+        </p>
+
+        <table class="table table-bordered">
+            <thead>
+                <tr><th></th><th>Quoted</th><th style="width:42%;">Negotiated</th></tr>
+            </thead>
+            <tbody>
+
+                <!-- PRODUCT -->
+                <tr>
+                    <td><b>Product</b></td>
+
+                    <!-- Quoted -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="quoted-input" data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.quoted_item_name || particular.item_name || ''}" readonly />`
+                                : `<span class="item" data-tab-index="${index}" quotation_id="${particular.quotation_particular_id}">
+                                        ${particularSavedData.quoted_item_name || particular.item_name || ''}
+                                   </span>`
+                        }
+                    </td>
+
+                    <!-- Negotiated -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="negotiated-input" data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.negotiated_product || ''}" />`
+                                : `<span class="item_name" data-tab-index="${index}" quotation_id="${particular.quotation_particular_id}">
+                                        ${particularSavedData.negotiated_product || ''}
+                                   </span>`
+                        }
+                    </td>
+                </tr>
+
+                <!-- QUANTITY -->
+                <tr>
+                    <td><b>Qty <span style="color:red;">*</span></b></td>
+
+                    <!-- Quoted -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="quoted-input" readonly
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.quoted_quantity || particular.total_qty_required || ''}" />`
+                                : `<span class="quantity">${particularSavedData.quoted_quantity || particular.total_qty_required || ''}</span>`
+                        }
+                    </td>
+
+                    <!-- Negotiated -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="negotiated-input negotiated-quantity"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.negotiated_quantity || ''}"
+                                          oninput="this.value=this.value.replace(/[^0-9.,]/g,'')" />`
+                                : `<span class="nego_quantity">${particularSavedData.negotiated_quantity || ''}</span>`
+                        }
+                    </td>
+                </tr>
+
+                <!-- PRICE -->
+                <tr>
+                    <td><b>Price <span style="color:red;">*</span></b></td>
+
+                    <!-- Quoted -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="quoted-input" readonly
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.quoted_price || particular.quoted_value || ''}" />`
+                                : `<span class="price">${particularSavedData.quoted_price || ''}</span>`
+                        }
+                    </td>
+
+                    <!-- Negotiated -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="negotiated-input negotiation-input-price"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.negotiated_price || ''}"
+                                          oninput="this.value=this.value.replace(/[^0-9.,]/g,'')" />`
+                                : `<span class="negotiated_price">${particularSavedData.negotiated_price || ''}</span>`
+                        }
+                    </td>
+                </tr>
+
+                <!-- TAXES -->
+                <tr>
+                    <td><b>Taxes(%)</b></td>
+
+                    <!-- Quoted -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="number" class="quoted-input"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.quoted_taxes || ''}"
+                                          min="0" max="100" step="0.01" />`
+                                : `<span class="taxe">${particularSavedData.quoted_taxes || ''}</span>`
+                        }
+                    </td>
+
+                    <!-- Negotiated -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="number" class="negotiated-input negotiated-taxes"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.negotiated_taxes || ''}"
+                                          min="0" max="100" step="0.01" />`
+                                : `<span class="taxes">${particularSavedData.negotiated_taxes || ''}</span>`
+                        }
+                    </td>
+                </tr>
+
+                <!-- WARRANTY -->
+                <tr>
+                    <td><b>Warranty / Guarantee</b></td>
+
+                    <!-- Quoted -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="quoted-input"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.quoted_warranty || ''}" />`
+                                : `<span class="warrant">${particularSavedData.quoted_warranty || ''}</span>`
+                        }
+                    </td>
+
+                    <!-- Negotiated -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="negotiated-input"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.negotiated_warranty || ''}" />`
+                                : `<span class="warranty">${particularSavedData.negotiated_warranty || ''}</span>`
+                        }
+                    </td>
+                </tr>
+
+                <!-- PAYMENT TERMS -->
+                <tr>
+                    <td><b>Payment terms</b></td>
+
+                    <!-- Quoted -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="quoted-input" readonly
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.quoted_paymentterms || particular.paymentterms || ''}" />`
+                                : `<span class="payterms">${particularSavedData.quoted_paymentterms || ''}</span>`
+                        }
+                    </td>
+
+                    <!-- Negotiated -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="negotiated-input negotiated-paymentterms"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.negotiated_paymentterms || ''}" />`
+                                : `<span class="paymentterms">${particularSavedData.negotiated_paymentterms || ''}</span>`
+                        }
+                    </td>
+                </tr>
+
+                <!-- DELIVERY SCHEDULE -->
+                <tr>
+                    <td><b>Delivery Schedule</b></td>
+
+                    <!-- Quoted -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="quoted-input" readonly
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.quoted_deliveryschedule || particular.deliverytimeline || ''}" />`
+                                : `<span class="schedule">${particularSavedData.quoted_deliveryschedule || ''}</span>`
+                        }
+                    </td>
+
+                    <!-- Negotiated -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="negotiated-input negotiated-deliveryschedule"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.negotiateddeliveryschedule || ''}" />`
+                                : `<span class="deliveryschedule">${particularSavedData.negotiateddeliveryschedule || ''}</span>`
+                        }
+                    </td>
+                </tr>
+
+                <!-- DELIVERY TERMS -->
+                <tr>
+                    <td><b>Delivery terms</b></td>
+
+                    <!-- Quoted -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="quoted-input" readonly
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.quoted_deliveryterms || particular.deliveryterms || ''}" />`
+                                : `<span class="terms">${particularSavedData.quoted_deliveryterms || ''}</span>`
+                        }
+                    </td>
+
+                    <!-- Negotiated -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="negotiated-input negotiated-deliveryterms"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.negotiateddeliveryterms || ''}" />`
+                                : `<span class="deliveryterms">${particularSavedData.negotiateddeliveryterms || ''}</span>`
+                        }
+                    </td>
+                </tr>
+
+                <!-- AFTER SALES SUPPORT -->
+                <tr>
+                    <td><b>After Sales support</b></td>
+
+                    <!-- Quoted -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="quoted-input"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.quoted_aftersalessupport || ''}" />`
+                                : `<span class="support">${particularSavedData.quoted_aftersalessupport || ''}</span>`
+                        }
+                    </td>
+
+                    <!-- Negotiated -->
+                    <td>
+                        ${
+                            isEditable
+                                ? `<input type="text" class="negotiated-input"
+                                          data-tab-index="${index}"
+                                          quotation_id="${particular.quotation_particular_id}"
+                                          value="${particularSavedData.negotiated_aftersalessupport || ''}" />`
+                                : `<span class="salessupport">${particularSavedData.negotiated_aftersalessupport || ''}</span>`
+                        }
+                    </td>
+                </tr>
+                                    <tr>
+    <td><b>Documentation</b></td>
+
+    <!-- Quoted Documentation Column -->
+    <td>
+        ${isEditable
+            ? `<div style="display: flex; flex-direction: column; gap: 4px;">
+                    <input type="file" id="file-upload-${index}" />
+                    <input type="hidden" class="quoted-file-path" value="${particularSavedData.quoted_documentation || ''}" />
+                    ${particularSavedData.quoted_documentation
+                        ? `<span>
+                               <a href="${particularSavedData.quoted_documentation}" target="_blank" rel="noopener noreferrer">
+                               ${particularSavedData.quoted_documentation.split('/').pop()}
+                               </a>
+                           </span>`
+                        : ''}
+               </div>`
+            : `${particularSavedData.quoted_documentation
+                ? `<span>
+                       <a href="${particularSavedData.quoted_documentation}" target="_blank" rel="noopener noreferrer">
+                       ${particularSavedData.quoted_documentation.split('/').pop()}
+                       </a>
+                   </span>`
+                : 'No file'}`
+        }
+    </td>
+
+    <!-- Negotiated Documentation Column -->
+    <td>
+        ${isEditable
+            ? `<div style="display: flex; flex-direction: column; gap: 4px;">
+                    <input type="file" id="file-upload-negotiated-${index}" />
+                    <input type="hidden" class="negotiated-file-path" value="${particularSavedData.negotiated_documentation || ''}" />
+                    ${particularSavedData.negotiated_documentation
+                        ? `<span>
+                               <a href="${particularSavedData.negotiated_documentation}" target="_blank" rel="noopener noreferrer">
+                               ${particularSavedData.negotiated_documentation.split('/').pop()}
+                               </a>
+                           </span>`
+                        : ''}
+               </div>`
+            : `${particularSavedData.negotiated_documentation
+                ? `<span>
+                       <a href="${particularSavedData.negotiated_documentation}" target="_blank" rel="noopener noreferrer">
+                       ${particularSavedData.negotiated_documentation.split('/').pop()}
+                       </a>
+                   </span>`
+                : 'No file'}`
+        }
+    </td>
+</tr>
+
+
+                                </tbody>
+                            </table>`;
+
+
+                            // Add Vendor Name per particular
+                            tabNavHtml += `
+                                <p>
+                                    <strong>Supplier:</strong> 
+                                    ${isEditable
+                                        ? `<input type="text" class="supplier-name " data-tab-index="${index}"  quotation_id="${particular.quotation_particular_id}" value="${particular.vendor_name || ''}" style="margin-left: 10px;" />`
+                                        : `<input type="text" class="supplier-name " data-tab-index="${index}"  quotation_id="${particular.quotation_particular_id}" value="${particular.vendor_name || ''}" readonly style="margin-left: 10px;" />`}
+                                    <input type="text" class="vendor-id " data-tab-index="${index}"  quotation_id="${particular.quotation_particular_id}" value="${particular.vendor_id || ''}" readonly style="margin-left: 10px; display:none;" />
+                                </p>
+
+                                <p>
+                                    <strong>Any other point not covered:</strong>
+                                    ${isEditable
+                                        ? `<textarea class="any-other " data-tab-index="${index}"  style="overflow:auto; max-height:500px;" quotation_id="${particular.quotation_particular_id}">${particularSavedData.quoted_anyotherpointnotcovered || ''}</textarea>`
+                                        : `<textarea class="any-other " data-tab-index="${index}"  readonly style="overflow:auto; max-height:500px;" quotation_id="${particular.quotation_particular_id}">${particularSavedData.quoted_anyotherpointnotcovered || ''}</textarea>`}
+                                </p>
+
+                                <p>
+                                    <strong>Remarks Of IMM:</strong>
+                                    ${isEditable
+                                        ? `<textarea class="remarks" data-tab-index="${index}"  style="overflow:auto; max-height:500px;" quotation_id="${particular.quotation_particular_id}">${particularSavedData.quoted_memberspresent || ''}</textarea>`
+                                        : `<textarea class="remarks" data-tab-index="${index}"  readonly style="overflow:auto; max-height:500px;" quotation_id="${particular.quotation_particular_id}">${particularSavedData.quoted_memberspresent || ''}</textarea>`}
+                                </p>
+
+                                <div style="text-align: right;">
+                                    <p><strong>Rep from Finance:</strong> ${isEditable
+                                        ? `<input type="text" class="rep-from-finance" data-tab-index="${index}"  quotation_id="${particular.quotation_particular_id}" value="${particularSavedData.rep_from_finance || ''}" style="margin-left: 10px;" />`
+                                        : `<input type="text" class="rep-from-finance" data-tab-index="${index}"  quotation_id="${particular.quotation_particular_id}" value="${particularSavedData.rep_from_finance || ''}" readonly style="margin-left: 10px;" />`}</p>
+
+                                    <p><strong>Head IMM:</strong> ${isEditable
+                                        ? `<input type="text" class="head-imm" data-tab-index="${index}"  quotation_id="${particular.quotation_particular_id}" value="${particularSavedData.head_imm || ''}" style="margin-left: 10px;" />`
+                                        : `<input type="text" class="head-imm"  data-tab-index="${index}" quotation_id="${particular.quotation_particular_id}" value="${particularSavedData.head_imm || ''}" readonly style="margin-left: 10px;" />`}</p>
+
+                                    <p><strong>Director Project Delivery:</strong> ${isEditable
+                                        ? `<input type="text" class="director-project-delivery" data-tab-index="${index}"  quotation_id="${particular.quotation_particular_id}" value="${particularSavedData.director_project_delivery || ''}" style="margin-left: 10px;" />`
+                                        : `<input type="text" class="director-project-delivery" data-tab-index="${index}"  quotation_id="${particular.quotation_particular_id}" value="${particularSavedData.director_project_delivery || ''}" readonly style="margin-left: 10px;" />`}</p>
+
+                                    <p><strong>Chairman PNC:</strong> ${isEditable
+                                        ? `<input type="text" class="chairman-pnc"  data-tab-index="${index}" quotation_id="${particular.quotation_particular_id}" value="${particularSavedData.chairman_pnc || ''}" style="margin-left: 10px;" />`
+                                        : `<input type="text" class="chairman-pnc" data-tab-index="${index}"  quotation_id="${particular.quotation_particular_id}" value="${particularSavedData.chairman_pnc || ''}" readonly style="margin-left: 10px;" />`}</p>
+                                </div>
+
+
+
+
+                                <!-- ✅ Per-tab Submit and Download buttons -->
+                            <div class="button-group d-flex gap-2 align-items-center mt-3" style="flex-wrap: wrap;">
+
+                                <!-- Submit Button -->
+                                <button class="submit-btn btn btn-primary" 
+                                        data-tab-index="${index}" 
+                                        quotation_id="${particular.quotation_particular_id}" 
+                                        style="background-color:#007080;border-color:#007080;">
+                                    Submit
+                                </button>
+
+                                <!-- Approve & Reject Buttons (conditionally shown) -->
+                                ${
+                                    response.users.roles.includes('IMM')
+                                    ? `
+                                        <button 
+                                            type="button" 
+                                            class="approve-btn btn btn-success openApproveModal" 
+                                            quotation_id="${particular.quotation_particular_id}" 
+                                            nego_id="${particularSavedData.nego_id}" 
+                                            data-tab-index="${index}" 
+                                            style="display:none;">
+                                            Approve
+                                        </button>
+
+                                        <button 
+                                            type="button" 
+                                            class="reject-btn btn btn-danger openRejectModal" 
+                                            quotation_id="${particular.quotation_particular_id}" 
+                                            nego_id="${particularSavedData.nego_id}" 
+                                            data-tab-index="${index}" 
+                                            style="display:none;">
+                                            Reject
+                                        </button>
+                                    `
+                                    : ''
+                                }
+
+                            <!-- Download Button -->
+                            <button 
+                                class="btn btn-primary download" 
+                                type="button"
+                                data-tab-index="${index}"
+                                data-quotation-id="${particular.quotation_particular_id}"
+                                data-nego-id="${particularSavedData?.nego_id || ''}"
+                                style="background-color:#007080;border-color:#007080; display: none;">
+                                Download
+                             </button>
+
+                            </div>
+
+
+                            </div> <!-- End of .tab-pane -->
+                        </div>
+                    `;
+                }); // END FOR EACH
+
+                tabNavHtml += `</div></div>`; // Close tab-content, card-body, card
+
+                
+                // Add buttons at the bottom
+                
+
+                $("#negotiationPreviewContainer").html(tabNavHtml);
+            // CST Generated check (applies globally, if needed)
+                const cstGeneratedExists = stage.some(
+                    ([stageName, remarktype]) =>
+                        stageName.toLowerCase() === 'stage8' &&
+                        remarktype.toLowerCase() === 'negotiation'
+                );
+
+              
+                debugger;
+                particulars.forEach((particular, index) => {
+    particularId = particular.quotation_particular_id;
+    const savedNegotiationData = particular.saved_negotiation_data;
+    const roles = user.roles || [];
+
+    const buttonSelector = `.submit-btn[data-tab-index="${index}"][quotation_id="${particularId}"]`;
+    const $downloadBtn = $(`.download[data-quotation-id="${particularId}"][data-tab-index="${index}"]`);
+
+    const approveBtn = $(`.approve-btn[quotation_id="${particularId}"][data-tab-index="${index}"]`);
+    const rejectBtn = $(`.reject-btn[quotation_id="${particularId}"][data-tab-index="${index}"]`);
+
+    const hasNoSavedData = !savedNegotiationData || Object.keys(savedNegotiationData).length === 0;
+
+    let showSubmit = false;
+    let showApproveReject = false;
+    let downloadbtnVisible = false;
+
+    // -----------------------
+    // 🧠 GET IMPORTANT STAGE INFO
+    // -----------------------
+    const latestAction = getLatestCSTAction(stage, user, particularId);
+    const approvalExists = hasCSTApprovalStage(stage, particularId);
+    const modifiedExists = hasEnquiryModifyStage(stage, user, particularId);
+    const generatedExists = hasCSTGenerateStage(stage, user, particularId);
+    const latestStage = getLatestStageForParticular(stage, particularId);
+
+    const stage5RejectExists =
+        latestStage?.stageName === "stage5" &&
+        latestStage?.remarktype === "reject";
+
+    // ============================================================
+    // 🔴 HARD STOP RULE — NO SUBMIT / NO APPROVE AFTER APPROVAL
+    // ============================================================
+    if (
+        latestStage &&
+        latestStage.stageName === "stage8" &&
+        latestStage.remarktype === "negotiation_approval"
+    ) {
+        showSubmit = false;
+        showApproveReject = false;
+        downloadbtnVisible = true;
+
+        console.log(`🛑 HardStop: Approval is latest for ${particularId} — buttons hidden`);
+    }
+    // ============================================================
+
+    else if (hasNoSavedData) {
+        // No negotiation saved yet
+        if (roles.includes("IMM") || roles.includes("Purchase Assistant")) {
+            showSubmit = true;
+            showApproveReject = false;
+        }
+    }
+
+    else if (latestAction === "negotiation_return") {
+        showSubmit = true;
+        showApproveReject = true;
+    }
+
+    else if (stage5RejectExists) {
+        showSubmit = true;
+        showApproveReject = true;
+        downloadbtnVisible = true;
+    }
+
+    else if (approvalExists) {
+        // Approval exists but not latest
+        showSubmit = true;
+        showApproveReject = true;
+    }
+
+    else if (modifiedExists) {
+        if (roles.includes("IMM")) {
+            showSubmit = true;
+            showApproveReject = true;
+            downloadbtnVisible = true;
+        } else {
+            showSubmit = false;
+            showApproveReject = false;
+        }
+    }
+
+    else if (generatedExists) {
+        showSubmit = true;
+        showApproveReject = true;
+        downloadbtnVisible = true;
+    }
+
+    else {
+        showSubmit = true;
+        showApproveReject = true;
+    }
+
+    // -----------------------
+    // BUTTON VISIBILITY FINAL
+    // -----------------------
+
+    if (showSubmit) {
+        $(buttonSelector).show();
+        console.log(`Submit SHOWN for ${particularId}`);
+    } else {
+        $(buttonSelector).hide();
+        console.log(`Submit HIDDEN for ${particularId}`);
+    }
+
+    if (showApproveReject) {
+        approveBtn.show();
+        rejectBtn.show();
+        
+    } else {
+        approveBtn.hide();
+        rejectBtn.hide();
+    }
+
+    if (downloadbtnVisible) {
+        $downloadBtn.css("display", "block");
+    } else {
+        $downloadBtn.css("display", "none");
+    }
+});
+
+
+
+
+            
+            // Initialize Bootstrap tabs if available
+            if (typeof bootstrap !== 'undefined') {
+                const tabEl = document.querySelector('#particularTabs');
+                if (tabEl) {
+                    new bootstrap.Tab(tabEl.querySelector('.nav-link.active'));
+                }
+            }
+            
+            
+
+                $(document).on("click", ".submit-btn", function () {
+                    debugger;
+                    const quo_id = $(this).attr("quotation_id");
+                    const tabIndex = $(this).attr("data-tab-index");
+
+                    // Store these values on the modal's button
+                    $(".approveWithRemarksBtn").attr("quotation_id", quo_id);
+                    $(".approveWithRemarksBtn").attr("data-tab-index", tabIndex);
+
+                    $("#recommendModal").modal('show');
+                });
+                
+                $(document).on('click', '.closeModalBtn', function() {
+                    $("#recommendModal").modal('hide');
+                    $('#approveModal').modal('hide');
+                    $('#rejectModal').modal('hide');
+                });
+                $(document).on("click", ".openApproveModal", function (e) {
+                    debugger;
+                    e.preventDefault();
+                    //var procurementId = $(this).data('procurement-id');
+                    //var procurementId = $(this).attr('quotation_id');
+                    const quo_id = $(this).attr("quotation_id");
+                    const tabIndex = $(this).attr("data-tab-index");
+
+                    // Store these values on the modal's button
+                    $(".submitbtn").attr("quotation_id", quo_id);
+                    $(".submitbtn").attr("data-tab-index", tabIndex);
+                    
+                    //console.log("Tab Index:", tabIndex);
+                    //console.log("Quotation ID:", procurementId);
+                    //console.log("Procurement ID:", procurementId); // <-- Debug here
+                    $('#approveProcurementId').val(procurementId);
+                    $('#approveModal').modal('show');
+                });
+
+
+                $(document).on("click", ".openRejectModal", function (e) {
+                    debugger;
+                    e.preventDefault();
+                    //var procurementId = $(this).data('procurement-id');
+                    //var procurementId = $(this).attr('quotation_id');
+                    const quo_id = $(this).attr("quotation_id");
+                    const tabIndex = $(this).attr("data-tab-index");
+
+                    // Store these values on the modal's button
+                    $(".submit").attr("quotation_id", quo_id);
+                    $(".submit").attr("data-tab-index", tabIndex);
+                    //console.log("Tab Index:", tabIndex);
+                    //console.log("Quotation ID:", procurementId);
+                    //console.log("Procurement ID:", procurementId); // <-- Debug here
+                    $('#rejectProcurementId').val(procurementId);
+                    $('#rejectModal').modal('show');
+                });
+
+                    // Submit handler and Validations
+                 
+                    $(document).on('click', '.approveWithRemarksBtn', function (e) {
+                        debugger;
+                        const submitBtn = $(this);
+                        const submit=$(this);
+                        const tabIndex = $(this).attr("data-tab-index");
+                        const quo_id = $(this).attr("quotation_id");
+
+                        const tab = $(`.tab-pane[id='particular-${tabIndex}']`);
+                        debugger
+                       const remarks = $('#remarks').val().trim();
+                        const memberspresent = tab.find('.remarks').val();
+                        //const remarks = tab.find('.remarks').val().trim();
+                        const anyotherpointnotcovered = tab.find('.any-other').val();
+
+                        const rep_from_finance = tab.find('.rep-from-finance').val();
+                        const head_imm = tab.find('.head-imm').val();
+                        const director_project_delivery = tab.find('.director-project-delivery').val();
+                        const chairman_pnc = tab.find('.chairman-pnc').val();
+                        const quotation_ref_date = tab.find('.quotation-ref-date members-input').val();
+                        const vendor_id = tab.find('.vendor-id').val();
+                        console.log(vendor_id,'varrr')
+                        if (!remarks) {
+                            showAlert('Remarks cannot be empty');
+                            hideLoader();
+                            $('#remarks').focus();
+                            
+                            return;
+                        }
+
+                        
+                        let allNegotiatedQuantityValid = true;
+                        let allNegotiatedPriceValid = true;
+                        tab.find(".negotiated-quantity").each(function () {
+                            const val = $(this).val().trim();
+                            const inputEl = $(this);
+                            const quantities = val.split(',').map(q => q.trim());
+
+                            const isValid = quantities.length > 0 && quantities.every(q => q !== "" && !isNaN(q) && parseFloat(q) > 0);
+
+                            if (!isValid) {
+                                inputEl.addClass("input-error");
+                                allNegotiatedQuantityValid = false;
+                            } else {
+                                inputEl.removeClass("input-error");
+                            }
+                        });
+                        tab.find(".negotiation-input-price").each(function () {
+                            const val = $(this).val().trim();
+                            const inputEl = $(this);
+
+                            if (val === "" || isNaN(val) || parseFloat(val) <= 0) {
+                                inputEl.addClass("input-error");
+                                allNegotiatedPriceValid = false;
+                            } else {
+                                inputEl.removeClass("input-error");
+                            }
+                        });
+                        
+
+                      
+                         if (!allNegotiatedPriceValid) {
+                            showAlert("Please enter a valid Price.");
+                            hideLoader();
+                            return;
+                        }
+
+
+                            // Validate Negotiated Price
+                            let allNegotiatedFilled = true;
+                            tab.find(".negotiation-input-price").each(function () {
+                                let val = $(this).val().trim();
+                                if (val === "" || val === "0" || parseFloat(val) === 0) {
+                                    allNegotiatedFilled = false;
+                                    return false;
+                                }
+                            });
+
+                            /*if (!allNegotiatedFilled) {
+                                showAlert("Please fill the Negotiated Price details for all particulars (zero is not allowed).");
+                                hideLoader();
+                                return;
+                            }*/
+
+                            // Validate Negotiated Taxes
+                            let taxesValid = true;
+                            tab.find(".negotiated-taxes").each(function () {
+                                const taxVal = $(this).val().trim();
+                                if (taxVal === "" || isNaN(taxVal) || parseFloat(taxVal) <= 0) {
+                                    taxesValid = false;
+                                    return false;
+                                }
+                            });
+
+                            /*if (!taxesValid) {
+                                showAlert("Please fill in valid values for Negotiated Taxes for all particulars (must be greater than 0).");
+                                hideLoader();
+                                return;
+                            }*/
+
+                            // Validate Negotiated Payment Terms
+                            let paymentTermsValid = true;
+                            tab.find(".negotiated-paymentterms").each(function () {
+                                if ($(this).val().trim() === "") {
+                                    $(this).addClass("input-error");
+                                    paymentTermsValid = false;
+                                } else {
+                                    $(this).removeClass("input-error");
+                                }
+                            });
+
+                            // Validate Negotiated Delivery Schedule
+                            let deliveryScheduleValid = true;
+                            tab.find(".negotiated-deliveryschedule").each(function () {
+                                if ($(this).val().trim() === "") {
+                                    $(this).addClass("input-error");
+                                    deliveryScheduleValid = false;
+                                } else {
+                                    $(this).removeClass("input-error");
+                                }
+                            });
+
+                            // Validate Negotiated Delivery Terms
+                            let deliveryTermsValid = true;
+                            tab.find(".negotiated-deliveryterms").each(function () {
+                                if ($(this).val().trim() === "") {
+                                    $(this).addClass("input-error");
+                                    deliveryTermsValid = false;
+                                } else {
+                                    $(this).removeClass("input-error");
+                                }
+                            });
+
+                            // Validate Negotiated Quantity
+                            const negotiatedQuantityInputs = tab.find(".negotiated-quantity");
+                            let quantitiesValid = true;
+                            negotiatedQuantityInputs.each(function () {
+                                const negotiatedQuantityInput = $(this).val().trim();
+                                const quantities = negotiatedQuantityInput.split(",").map(q => q.trim());
+
+                                const isValid = quantities.length > 0 && quantities.every(q => q !== "" && !isNaN(q) && parseFloat(q) > 0);
+
+                                if (!isValid) {
+                                    $(this).addClass("input-error");
+                                    quantitiesValid = false;
+                                } else {
+                                    $(this).removeClass("input-error");
+                                }
+                            });
+
+                            // Prepare form data
+                            const formData = new FormData();
+
+                            // Collect quoted inputs
+                            tab.find(".quoted-input").each(function () {
+                                formData.append(`quoted_values_${tabIndex}[]`, this.value);
+                            });
+
+
+                            // Collect negotiated inputs
+                            tab.find(".negotiated-input").each(function () {
+                                const inputVal = this.value;
+                                const nameAttr = $(this).attr("name") || '';
+                                const isPriceField = nameAttr.toLowerCase().includes("price") || $(this).closest("tr").find("td:first").text().toLowerCase().includes("price");
+
+                                if (isPriceField) {
+                                    const formatted = inputVal
+                                        .split(',')
+                                        .map(v => parseFloat(v.trim()))
+                                        .filter(n => !isNaN(n))
+                                        .map(n => n.toFixed(2))
+                                        .join(', ');
+                                    formData.append(`negotiated_values_${tabIndex}[]`, formatted);
+                                } else {
+                                    formData.append(`negotiated_values_${tabIndex}[]`, inputVal);
+                                }
+                            });
+
+                            showConfirmAlert("Are you sure you want to Submit?")
+                            .then((result) => {
+                                
+                                if (!result.isConfirmed) return;
+                                showLoader();
+                                // Collect file uploads
+                                const file1 = document.getElementById(`file-upload-${tabIndex}`);
+                                console.log(file1,'file1')
+                                
+                                const file2 = document.getElementById(`file-upload-negotiated-${tabIndex}`);
+                               // if (file1?.files[0]) formData.append(`file-upload-${tabIndex}`, file1.files[0]);
+                               // if (file2?.files[0]) formData.append(`file-upload-negotiated-${tabIndex}`, file2.files[0]);
+                                if (file1?.files[0]) {
+                                        formData.append(`file-upload-${tabIndex}`, file1.files[0]);
+                                    } else {
+                                        const savedQuotedPath = tab.find('.quoted-file-path').val();
+                                        if (savedQuotedPath) {
+                                            formData.append(`file-upload-path-${tabIndex}`, savedQuotedPath);
+                                        }
+                                    }
+
+                                    if (file2?.files[0]) {
+                                        formData.append(`file-upload-negotiated-${tabIndex}`, file2.files[0]);
+                                    } else {
+                                        const savedNegotiatedPath = tab.find('.negotiated-file-path').val();
+                                        if (savedNegotiatedPath) {
+                                            formData.append(`file-upload-negotiated-path-${tabIndex}`, savedNegotiatedPath);
+                                        }
+                                    }
+
+                                // Add common fields
+                                formData.append("procurement_id", procurementId);
+                                formData.append("particular_index", tabIndex);
+                                formData.append("place", "MSPL Gowra Palladium Hyd");
+                                formData.append(`memberspresent_${tabIndex}`,memberspresent );
+                                formData.append(`anyotherpointnotcovered_${tabIndex}` ,anyotherpointnotcovered);
+                                formData.append(`rep_from_finance_${tabIndex}`,rep_from_finance);
+                                formData.append(`head_imm_${tabIndex}`,head_imm);
+                                formData.append(`director_project_delivery_${tabIndex}`,director_project_delivery);
+                                formData.append(`chairman_pnc_${tabIndex}`, chairman_pnc);
+                                formData.append(`quotation_ref_date_${tabIndex}`,quotation_ref_date);
+                                formData.append(`remarks_${tabIndex}`, remarks);
+                                formData.append(`vendor_id_${tabIndex}`, vendor_id);
+                                formData.append(`cst_particular_id_${tabIndex}`, quo_id);
+                                formData.append(`negotiated_deliveryschedule_${tabIndex}`,
+    tab.find('.negotiated-deliveryschedule').val()
+);
+
+formData.append(`negotiated_deliveryterms_${tabIndex}`,
+    tab.find('.negotiated-deliveryterms').val()
+);
+
+formData.append(`quotation_ref_date_${tabIndex}`,
+    tab.find('.quotation-ref-date').val()
+);
+                                // Send via AJAX
+                                $.ajax({
+                                    url: "{% url 'negotiation' %}",
+                                    type: "POST",
+                                    headers: { 'X-CSRFToken': csrfToken },
+                                    data: formData,
+                                    processData: false,
+                                    contentType: false,
+                                    success: function (response) {
+                                        debugger;
+                                        console.log("Negotiation response:", response);
+                                        showSuccessAlert("Negotiation Saved successfully!");
+                                        hideLoader();
+                                    // $(`.submit-btn[data-tab-index='${tabIndex}']`).hide();
+                                       $("#recommendModal").modal('hide');
+                                        $('.modal-backdrop').remove();
+                                        $('body').removeClass('modal-open');
+                                        $('body').css('padding-right', '');
+                                        $("#remarks").val('');
+
+
+
+
+                                        
+
+                                        // Optionally hide Approve/Reject buttons for Purchase Assistant
+                                    /* if (response.users && response.users.roles.includes('Purchase Assistant')) {
+                                            $(`.approve-btn[data-tab-index='${tabIndex}']`).hide();
+                                            $(`.reject-btn[data-tab-index='${tabIndex}']`).hide();
+                                        }*/
+
+                                        $(`.view-pr-id[data-id='${procurementId}']`).closest("li").css("background-color", "#CCE5F0");
+                                        
+                                        const negoId = response.stage_list[0].nego_quota_particular__quoted_vendors__id;
+
+                                        // Log to make sure we're getting the expected ID
+                                        console.log("Trying to hide buttons for nego_id:", negoId);
+
+                                        // Find and log approve buttons
+                                        const approveBtn = $(".approve-btn").filter(function () {
+                                            const attr = $(this).attr("quotation_id");
+                                            console.log("Checking approve button with nego_id:", attr);
+                                            return attr == negoId;
+                                        });
+
+                                        // Find and log reject buttons
+                                        const rejectBtn = $(".reject-btn").filter(function () {
+                                            const attr = $(this).attr("quotation_id");
+                                            console.log("Checking reject button with nego_id:", attr);
+                                            return attr == negoId;
+                                        });
+
+                                        
+                                        // Force hide using !important (bypassing CSS conflicts)
+                                        approveBtn.each(function () {
+                                            this.style.setProperty('display', 'flex', 'important');
+                                        });
+
+                                        rejectBtn.each(function () {
+                                            this.style.setProperty('display', 'flex', 'important');
+                                        });
+
+                                      
+
+                                        // Disable current tab's inputs
+                                        //tab.find(".quoted-input, .negotiated-input, .members-inputMP, .members-inputs, .rep-from-finance, .head-imm, .director-project-delivery, .chairman-pnc, .quotation-ref-date, .supplier-name").attr("readonly", true);
+                                        //tab.find("[id^='file-upload-']").prop("disabled", true);
+
+                                        // Format price fields
+                                        tab.find(".negotiated-input").each(function () {
+                                            const isPriceField = $(this).closest("tr").find("td:first").text().toLowerCase().includes("price");
+                                            if (isPriceField) {
+                                                const cleaned = $(this).val()
+                                                    .split(',')
+                                                    .map(v => parseFloat(v.trim()))
+                                                    .filter(n => !isNaN(n))
+                                                    .map(n => n.toFixed(2))
+                                                    .join(', ');
+                                                $(this).val(cleaned);
+                                            }
+                                        });
+
+                                        
+                                        //submitBtn.hide();
+
+                                    },
+                                    error: function (xhr) {
+                                        console.error("Save error:", xhr);
+                                        hideLoader();
+                                    },
+                                });
+                            });
+                        });
+
+                        particulars.forEach((particular, index) => {
+                            $(document).on('click','#approveenquiry', function(e) {
+                                e.preventDefault();
+                                //alert("Approve button clicked");
+                                debugger;
+                                const remarks = $('#approveremarks').val();
+                                console.log('Approve Remarks:', remarks);
+                                const tabIndex = $(this).attr("data-tab-index");
+                                const quo_id = $(this).attr("quotation_id");
+                                const procurementId = $('#approveProcurementId').val();
+                                console.log('Procurement ID:', procurementId);
+                                const stage_action = 'recommend';
+                                if (!remarks) {
+                                    showAlert("Remarks cannot be empty.")
+                                    hideLoader();
+                                }
+
+
+            
+                                showConfirmAlert('Are you sure,want to submit?').then((result) => {
+                                    if (result.isConfirmed) {
+                                        debugger;
+                                        showLoader();
+                                        let formData = new FormData();
+                                
+                                        formData.append('procurement_id', procurementId);
+                                        formData.append('nego_particular_id', quo_id); // ✅ take from current particular
+                                        formData.append('remarks', remarks);
+                                        formData.append('stage_action', stage_action);
+                                                    
+                                        //formData.append('role', role);
+                                    
+                                        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                            
+                                        if (remarks) {
+                                            $.ajax({
+                                                url: "{% url 'negotiation' %}",
+                                                type: 'POST',
+                                                data: formData,
+                                                processData: false,
+                                                contentType: false,
+                                                success: function(response) {
+                                                    debugger;
+                                                    console.log('Response:', response);
+                                                    if (response && response.status === 'success') {
+                            
+                                                        $('#purchaseassistant').val('');
+                                                    
+                                                        $(`#recommendModal-${tabIndex}`).hide();
+                                                        $('.modal-backdrop').remove();
+                                                        $('body').removeClass('modal-open');
+                                                        $('body').css('padding-right', '');
+                                        
+                                                        $("#remarks").val('');
+                                                        
+                                                        $(`#procurement-${response.stage_list[0].procurement_id}`).css("background-color", "#CCE5F0");
+                                                        const negoId = response.stage_list[0].nego_quota_particular__quoted_vendors__id;
+                                                        // --- Check for tab container ---
+    let currentTab = $(`.tab-pane[id='particular-${tabIndex}']`);
+    if (!currentTab || currentTab.length === 0) {
+        console.warn('⚠️ currentTab not found — applying globally instead.');
+        currentTab = $(document); // fallback to entire page
+    }
+
+    if (negoId) {
+        console.log('✅ Negotiation ID found:', negoId);
+
+        // 1️⃣ Replace Quotation Ref inputs
+        currentTab.find('.quotation-ref-date').each(function () {
+            const $input = $(this);
+            const value = $input.val() || '';
+            const attrs = getAllAttributes($input);
+            $input.replaceWith(`<span class="quotation-ref-span" ${attrs}>${value}</span>`);
+        });
+
+        // 2️⃣ Replace all Quoted fields
+        currentTab.find('.quoted-input').each(function () {
+            const $input = $(this);
+            const value = $input.val() || '';
+            const attrs = getAllAttributes($input);
+            $input.replaceWith(`<span class="quoted-span" ${attrs}>${value}</span>`);
+        });
+
+        // 3️⃣ Replace all Negotiated fields
+        currentTab.find('.negotiated-input').each(function () {
+            const $input = $(this);
+            const value = $input.val() || '';
+            const attrs = getAllAttributes($input);
+            $input.replaceWith(`<span class="negotiated-span" ${attrs}>${value}</span>`);
+        });
+        
+    const nonEditableInputClasses = [
+        '.supplier-name',
+        '.vendor-id',
+        '.rep-from-finance',
+        '.remarks',
+        '.any-other',
+        '.head-imm',
+        '.director-project-delivery',
+        '.chairman-pnc'
+    ];
+
+    // Only make the listed inputs readonly — leave all others editable
+    nonEditableInputClasses.forEach(cls => {
+        currentTab.find(cls).each(function () {
+            const $input = $(this);
+            const value = $input.val() || '';
+            const attrs = getAllAttributes($input);
+            // Replace with readonly input (not span)
+            $input.replaceWith(`<input type="text" value="${value}" readonly ${attrs} />`);
+        });
+    });
+        // 4️⃣ Replace File upload fields
+        currentTab.find('input[type="file"]').each(function () {
+            const $fileInput = $(this);
+            const $hiddenPath = $fileInput.siblings('input[type="hidden"]');
+            const fileUrl = $hiddenPath.val();
+            let fileHtml = '';
+
+            if (fileUrl) {
+                const fileName = fileUrl.split('/').pop();
+                fileHtml = `<a href="${fileUrl}" target="_blank" rel="noopener noreferrer">${fileName}</a>`;
+            } else {
+                fileHtml = `<span style="color:gray;">No file uploaded</span>`;
+            }
+
+            $fileInput.parent().html(fileHtml);
+        });
+
+        console.log('🎯 All quoted & negotiated fields converted to spans for negoId:', negoId);
+    } else {
+        console.log('ℹ️ No negotiation ID found — keeping fields editable.');
+    }
+
+    // Helper function: Copy all attributes from input to span
+    function getAllAttributes($element) {
+        const attrs = [];
+        $.each($element[0].attributes, function (index, attr) {
+            attrs.push(`${attr.name}="${attr.value}"`);
+        });
+        return attrs.join(' ');
+    }
+
+                                                            // Log to make sure we're getting the expected ID
+                                                            console.log("Trying to hide buttons for nego_id:", negoId);
+
+                                                            // Find and log approve buttons
+                                                            const approveBtn = $(".approve-btn").filter(function () {
+                                                                const attr = $(this).attr("quotation_id");
+                                                                console.log("Checking approve button with nego_id:", attr);
+                                                                return attr == negoId;
+                                                            });
+                                                            const submit = $(".submit-btn").filter(function () {
+                                                                const attr = $(this).attr("quotation_id");
+                                                                console.log("Checking approve button with nego_id:", attr);
+                                                                return attr == negoId;
+                                                            });
+
+                                                            // Find and log reject buttons
+                                                            const rejectBtn = $(".reject-btn").filter(function () {
+                                                                const attr = $(this).attr("quotation_id");
+                                                                console.log("Checking reject button with nego_id:", attr);
+                                                                return attr == negoId;
+                                                            });
+
+                                                            // Log the number of buttons found
+                                                            console.log("Approve buttons found:", approveBtn.length);
+                                                            console.log("Reject buttons found:", rejectBtn.length);
+
+                                                            // Force hide using !important (bypassing CSS conflicts)
+                                                            approveBtn.each(function () {
+                                                                this.style.setProperty('display', 'none', 'important');
+                                                            });
+                                                            submit.each(function () {
+                                                                this.style.setProperty('display', 'none', 'important');
+                                                            });
+
+                                                            rejectBtn.each(function () {
+                                                                this.style.setProperty('display', 'none', 'important');
+                                                            });
+                                                        hideLoader();
+                                                    
+                                                        
+                                                        const stageDatetime = response.stage_list[0].datetime;
+                                                        let formattedDate = '';
+                                                        if (stageDatetime) {
+                                                            const dateObj = new Date(stageDatetime);
+                                                            const options = {
+                                                                timeZone: 'Asia/Kolkata',  // Timezone set to IST
+                                                                year: 'numeric',
+                                                                month: '2-digit',
+                                                                day: '2-digit',
+                                                                hour: '2-digit',
+                                                                minute: '2-digit',
+                                                                second: '2-digit',
+                                                                hour12: false
+                                                            };
+                                                            formattedDate = dateObj.toLocaleString('en-IN', options);
+                                                        } else {
+                                                            formattedDate = 'Not Provided';
+                                                        }
+                            
+                                                        
+                                                        showSuccessAlert('Procurement successfully recommended to Approving Authority.')
+                                                        $('#purchaseassistant').val(''); // Clear role selection
+                                                        $('#remarks').val('');
+                                                        
+                                                        $('#approveModal').modal('hide'); 
+                                                        updateNotificationCount(procurementId);
+                                                        var recommendremarks = `
+                                                            <div class="note-header">
+                                                                <h4 class="card-title" style="text-align:center;color:#800000;"><strong>NOTE ${response.stagecount}</strong></h4>
+                                                            </div>
+                                                            <div class="stage-note">
+                                                                <p>
+                                                                    <span class="status-user" style="text-align:center; margin-top: 10px;">
+                                                                        <strong>Status:</strong> ${rstatus}
+                                                                    </span>
+                                                                </p>
+                                                                <p><strong>Remarks:</strong> ${response.stage_list[0].remarks || '_________________________'}</p>
+                            
+                                                                
+                                                                <p><strong>Date and Time:</strong> ${formattedDate}</p>
+                                                
+                                                                ${response.stage_list[0].forwarded_to__username ? `
+                                                                    <p><strong>Forwarded To:</strong> 
+                                                                        ${response.stage_list[0].forwarded_to__first_name || 'Unknown'} 
+                                                                        (${response.stage_list[0].forwarded_to__username})
+                                                                        ${response.stage_list[0].forwarded_to__userreg__role__role ? 
+                                                                            `[${response.stage_list[0].forwarded_to__userreg__role__role}]` : ''}
+                                                                    </p>
+                                                                ` : ''}
+                            
+                                                                <span class="status-user" style="text-align:right; margin-bottom: 10px;">
+                                                                <div>
+                                                                        <strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Name:</strong>
+                                                                        ${(() => {
+                                                                            const first = response.stage_list[0].user__first_name || '';
+                                                                            const last = response.stage_list[0].user__last_name || '';
+                                                                            const fullName = `${first} ${last}`.trim();
+                                                                            return fullName || 'Not Provided';
+                                                                        })()}
+                                                                    </div>
+
+                                                                    <div><strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Emp id:</strong> ${response.stage_list[0].user__username || 'Not Provided'}</div>
+                                                                    <div><strong>Department:</strong> ${response.stage_list[0].user__userreg__user_dept__dept_name || 'Not Provided'}</div>
+                                                                </span>
+                                                            </div>
+                                                        `;
+                                                        
+                                                        $("#tracking-list").append(recommendremarks);
+                            
+                                                    } else {
+                                            
+                                                        showAlert(response.message || "Something went wrong!")
+                                                        hideLoader();
+                                                    }
+                                                },
+                                                error: function() {
+                                                    showWarningAlert('Something went wrong')
+                                                    hideLoader();
+                                                }
+                                            });
+                                        } else {
+                                            showAlert('Remarks cannot be empty');
+                                            hideLoader();
+                                        }
+                                    }
+                                });
+                            });
+                        });
+
+                        particulars.forEach((particular, index) => {
+                            $(document).on('click','#rejectenquiry', function(e) {
+
+                                e.preventDefault();
+                                //alert("Approve button clicked");
+                                debugger;
+                                const remarks = $('#rejectremarks').val();
+                                const tabIndex = $(this).attr("data-tab-index");
+                                const quo_id = $(this).attr("quotation_id");
+                                console.log('Approve Remarks:', remarks);
+                                const procurementId = $('#rejectProcurementId').val();
+                                console.log('Procurement ID:', procurementId);
+                                const stage_action = 'reject';
+                                if (!remarks) {
+                                    showAlert("Remarks cannot be empty.")
+                                    hideLoader();
+                                }
+
+
+            
+                                    showConfirmAlert('Are you sure,want to submit?').then((result) => {
+                                        if (result.isConfirmed) {
+
+                                            showLoader();
+                                            let formData = new FormData();
+                                    
+                                            formData.append('procurement_id', procurementId);
+                                            formData.append('nego_particular_id', quo_id); // ✅ take from current particular
+                                            formData.append('remarks', remarks);
+                                            formData.append('stage_action', stage_action);
+                                                        
+                                            //formData.append('role', role);
+                                        
+                                            formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+                                
+                                            if (remarks) {
+                                                $.ajax({
+                                                    url: "{% url 'negotiation' %}",
+                                                    type: 'POST',
+                                                    data: formData,
+                                                    processData: false,
+                                                    contentType: false,
+                                                    success: function(response) {
+                                                        debugger;
+                                                        console.log('Response:', response);
+                                                        if (response && response.status === 'success') {
+                                
+                                                            $('#purchaseassistant').val('');
+                                                        
+                                                            $('#rejectModal').hide();
+                                                            $('.modal-backdrop').remove();
+                                                            $('body').removeClass('modal-open');
+                                                            $('body').css('padding-right', '');
+                                                            $("#remarks").val('');
+                                                            //$('#recommendModal').hide();
+
+                                                        
+                                                            $(`#procurement-${response.stage_list[0].procurement_id}`).css("background-color", "#CCE5F0");
+                                                            hideLoader();
+                                                            const negoId = response.stage_list[0].nego_quota_particular__quoted_vendors__id;
+
+                                                // Log to make sure we're getting the expected ID
+                                                console.log("Trying to hide buttons for nego_id:", negoId);
+
+                                                // Find and log approve buttons
+                                                const approveBtn = $(".approve-btn").filter(function () {
+                                                    const attr = $(this).attr("quotation_id");
+                                                    console.log("Checking approve button with nego_id:", attr);
+                                                    return attr == negoId;
+                                                });
+
+                                                // Find and log reject buttons
+                                                const rejectBtn = $(".reject-btn").filter(function () {
+                                                    const attr = $(this).attr("quotation_id");
+                                                    console.log("Checking reject button with nego_id:", attr);
+                                                    return attr == negoId;
+                                                });
+
+                                                // Log the number of buttons found
+                                                console.log("Approve buttons found:", approveBtn.length);
+                                                console.log("Reject buttons found:", rejectBtn.length);
+
+                                                // Force hide using !important (bypassing CSS conflicts)
+                                                approveBtn.each(function () {
+                                                    this.style.setProperty('display', 'flex', 'important');
+                                                });
+
+                                                rejectBtn.each(function () {
+                                                    this.style.setProperty('display', 'flex', 'important');
+                                                });
+                                                        
+                                                            
+                                                            const stageDatetime = response.stage_list[0].datetime;
+                                                            let formattedDate = '';
+                                                            if (stageDatetime) {
+                                                                const dateObj = new Date(stageDatetime);
+                                                                const options = {
+                                                                    timeZone: 'Asia/Kolkata',  // Timezone set to IST
+                                                                    year: 'numeric',
+                                                                    month: '2-digit',
+                                                                    day: '2-digit',
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit',
+                                                                    second: '2-digit',
+                                                                    hour12: false
+                                                                };
+                                                                formattedDate = dateObj.toLocaleString('en-IN', options);
+                                                            } else {
+                                                                formattedDate = 'Not Provided';
+                                                            }
+                                
+                                                            
+                                                            showSuccessAlert('Procurement successfully Rejected to Purchase Assistant.')
+                                                            $('#purchaseassistant').val(''); // Clear role selection
+                                                            $('#remarks').val('');
+                                                            
+                                                            //$('#approveModal').modal('hide'); 
+                                                            updateNotificationCount(procurementId);
+                                                            var recommendremarks = `
+                                                                <div class="note-header">
+                                                                    <h4 class="card-title" style="text-align:center;color:#800000;"><strong>NOTE ${response.stagecount}</strong></h4>
+                                                                </div>
+                                                                <div class="stage-note">
+                                                                    <p>
+                                                                        <span class="status-user" style="text-align:center; margin-top: 10px;">
+                                                                            <strong>Status:</strong> ${rstatus}
+                                                                        </span>
+                                                                    </p>
+                                                                    <p><strong>Remarks:</strong> ${response.stage_list[0].remarks || '_________________________'}</p>
+                                
+                                                                    
+                                                                    <p><strong>Date and Time:</strong> ${formattedDate}</p>
+                                                    
+                                                                    ${response.stage_list[0].forwarded_to__username ? `
+                                                                        <p><strong>Forwarded To:</strong> 
+                                                                            ${response.stage_list[0].forwarded_to__first_name || 'Unknown'} 
+                                                                            (${response.stage_list[0].forwarded_to__username})
+                                                                            ${response.stage_list[0].forwarded_to__userreg__role__role ? 
+                                                                                `[${response.stage_list[0].forwarded_to__userreg__role__role}]` : ''}
+                                                                        </p>
+                                                                    ` : ''}
+                                
+                                                                    <span class="status-user" style="text-align:right; margin-bottom: 10px;">
+                                                                    <div>
+                                                                            <strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Name:</strong>
+                                                                            ${(() => {
+                                                                                const first = response.stage_list[0].user__first_name || '';
+                                                                                const last = response.stage_list[0].user__last_name || '';
+                                                                                const fullName = `${first} ${last}`.trim();
+                                                                                return fullName || 'Not Provided';
+                                                                            })()}
+                                                                        </div>
+
+                                                                        <div><strong>${getStageName(response.stage_list[0].stagename__stage) || 'Not Provided'} Emp id:</strong> ${response.stage_list[0].user__username || 'Not Provided'}</div>
+                                                                        <div><strong>Department:</strong> ${response.stage_list[0].user__userreg__user_dept__dept_name || 'Not Provided'}</div>
+                                                                    </span>
+                                                                </div>
+                                                            `;
+                                                            
+                                                            $("#tracking-list").append(recommendremarks);
+                                
+                                                        } else {
+                                                
+                                                            showWarningAlert(response.message || "Something went wrong!")
+                                                            hideLoader();
+                                                        }
+                                                    },
+                                                    error: function() {
+                                                        showWarningAlert('Something went wrong')
+                                                        hideLoader();
+                                                    }
+                                                });
+                                            } else {
+                                                showAlert('Remarks cannot be empty');
+                                                hideLoader();
+                                            }
+                                        }
+                                    });
+
+                            });
+                        });    
+            
+            
+               
+                
+                    //Downlaod PDF
+                    $(".download").on("click", function () {
+
+                        /*if (!isFormSubmitted) {
+                            showAlert("Please submit the negotiation form before downloading the PDF.");
+                            return;
+                        }*/
+
+                        // 1️⃣ Identify particular index & container
+                        const tabIndex = $(this).data("tab-index");
+                        const container = $(`#particular-${tabIndex}`);
+                        const particularName = $(`#tab-${tabIndex}`).text().trim();
+
+                        if (container.length === 0) {
+                            showAlert("Unable to generate PDF. Preview content not found.");
+                            return;
+                        }
+
+                        console.log("User downloaded particular:", particularName);
+
+                        showLoader();
+
+                        // 2️⃣ Insert particular header inside the PDF
+                        const titleDiv = $(`<h3 class="pdf-title"><strong>${particularName}</strong></h3>`).css({
+                            "text-align": "center",
+                            "font-size": "18px",
+                            "margin-bottom": "15px"
+                        });
+                        container.prepend(titleDiv);
+
+                        // 3️⃣ Hide all action buttons before PDF
+                        container.find(".submit-btn, .approve-btn, .reject-btn, .download").hide();
+
+                        // 4️⃣ Save original styles
+                        const originalHeight = container.css("height");
+                        const originalMaxHeight = container.css("max-height");
+                        const originalOverflow = container.css("overflow");
+
+                        container.css({
+                            height: "auto",
+                            maxHeight: "none",
+                            overflow: "visible",
+                        });
+
+                        container
+                            .find("tr, .members-input, .members-inputMP, .members-inputs, table, div")
+                            .css({
+                                "page-break-inside": "avoid",
+                                "break-inside": "avoid",
+                                "box-sizing": "border-box",
+                            });
+
+                        container.find("table, th, td").css({
+                            border: "none",
+                            "border-collapse": "collapse",
+                        });
+
+                        // 5️⃣ Replace input fields visually
+                        container.find("input[type='text'], textarea").each(function () {
+                            const $input = $(this);
+                            if ($input.closest("a").length) return;
+
+                            const value = $input.val() ?? "";
+                            const isInTable = $input.closest("table").length > 0;
+                            const isInline = $input.closest("p").length > 0;
+
+                            const cleanBlock = $(isInline ? "<span></span>" : "<div></div>")
+                                .text(value)
+                                .css({
+                                    display: isInline ? "inline-block" : "block",
+                                    "max-width": isInTable ? "25ch" : "100%",
+                                    "font-size": "13px",
+                                    "line-height": "1.6",
+                                    "white-space": "pre-wrap",
+                                    "word-break": "break-word",
+                                    "overflow-wrap": "break-word",
+                                    "margin-left": isInline ? "10px" : "0",
+                                    "margin-bottom": isInline ? "0" : "6px",
+                                    "box-sizing": "border-box",
+                                    padding: "6px 0",
+                                    "min-height": "20px",
+                                    border: "none",
+                                })
+                                .addClass("pdf-clean");
+
+                            $input.hide().after(cleanBlock);
+                        });
+
+                        // 6️⃣ Replace number inputs (Taxes)
+                        container.find("tr:has(td:contains('Taxes(%)')) input[type='number']").each(function () {
+                            const value = $(this).val() ?? "";
+                            const cleanBlock = $("<div></div>")
+                                .text(value)
+                                .css({
+                                    display: "inline-block",
+                                    width: $(this).css("width") || "45%",
+                                    "font-size": "13px",
+                                    "line-height": "1.6",
+                                    "white-space": "nowrap",
+                                    "margin-bottom": "6px",
+                                    "box-sizing": "border-box",
+                                    padding: "6px 0",
+                                    "min-height": "20px",
+                                    border: "none",
+                                })
+                                .addClass("pdf-clean");
+
+                            $(this).hide().after(cleanBlock);
+                        });
+
+                        // 7️⃣ Replace file inputs with filename only
+                        container.find("input[type='file']").each(function () {
+                            const fullPath = $(this).val() ?? "";
+                            const fileName = fullPath.split("\\").pop();
+                            const cleanBlock = $("<div></div>")
+                                .text(fileName)
+                                .css({
+                                    display: "inline-block",
+                                    "font-size": "13px",
+                                    "line-height": "1.6",
+                                    "white-space": "nowrap",
+                                    "word-break": "break-word",
+                                    "overflow-wrap": "break-word",
+                                    "margin-bottom": "6px",
+                                    "box-sizing": "border-box",
+                                    padding: "6px 0",
+                                    "min-height": "20px",
+                                    border: "none",
+                                })
+                                .addClass("pdf-clean");
+
+                            $(this).hide().after(cleanBlock);
+                        });
+
+                        $("#downloadPDFBtn").hide();
+
+                        // Outer border cleanup
+                        const outerBox = container.find("div").first();
+                        const originalBorder = outerBox.css("border");
+                        outerBox.css("border", "none");
+
+                        // Optional watermark image
+                        const imgUrl = '{% static "images/messylog.png" %}';
+                        const img = new Image();
+                        img.crossOrigin = "anonymous";
+                        img.src = imgUrl;
+
+                        img.onload = function () {
+                            html2pdf()
+                                .from(container[0])
+                                .set({
+                                    margin: 10,
+                                    filename: `N-${procurementId || 'unknown'}.pdf`,
+
+                                    html2canvas: {
+                                        scale: 4,
+                                        useCORS: true,
+                                        scrollY: -window.scrollY,
+                                    },
+                                    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+                                })
+                                .toPdf()
+                                .get("pdf")
+                                .then(function (pdf) {
+                                    const totalPages = pdf.internal.getNumberOfPages();
+                                    const pageWidth = pdf.internal.pageSize.getWidth();
+                                    const pageHeight = pdf.internal.pageSize.getHeight();
+
+                                    for (let i = 1; i <= totalPages; i++) {
+                                        pdf.setPage(i);
+                                        pdf.setDrawColor(0);
+                                        pdf.setLineWidth(0.5);
+                                        pdf.rect(10, 10, pageWidth - 20, pageHeight - 20);
+                                    }
+                                })
+                                .save()
+                                .then(() => {
+                                    // Cleanup PDF-only elements
+                                    container.find(".pdf-clean").remove();
+                                    container.find("input[type='text'], textarea, input[type='number'], input[type='file']").show();
+                                    container.find(".pdf-title").remove();
+
+                                    // Restore container styles
+                                    container.css({
+                                        height: originalHeight,
+                                        maxHeight: originalMaxHeight,
+                                        overflow: originalOverflow,
+                                    });
+
+                                    outerBox.css("border", originalBorder);
+
+                                    // Restore action buttons
+                                    container.find(".submit-btn, .approve-btn, .reject-btn, .download").show();
+
+                                    $("#downloadPDFBtn").show();
+                                    hideLoader();
+                                });
+                        };
+
+                        img.onerror = function () {
+                            showAlert("Failed to load background image.");
+
+                            container.find(".pdf-clean").remove();
+                            container.find("input[type='text'], textarea, input[type='number'], input[type='file']").show();
+                            container.find(".pdf-title").remove();
+                            outerBox.css("border", originalBorder);
+                            container.css({
+                                height: originalHeight,
+                                maxHeight: originalMaxHeight,
+                                overflow: originalOverflow,
+                            });
+
+                            container.find(".submit-btn, .approve-btn, .reject-btn, .download").show();
+
+                            $("#downloadPDFBtn").show();
+                            hideLoader();
+                        };
+                    });
+ 
+                    hideLoader()                     
+            }
+        });
+    });
+   
+
+    //websocket for sidebar
+    (function() {
+        const role = "imm";  // IMM role
+        const pageKey = "negotiation";  // Default to 'imm', but can be dynamic based on remark type
+        
+        const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+        const ws_url = `${ws_scheme}://${window.location.host}/ws/sidebar/${role}/${pageKey}/`;
+        const neg_socket = new WebSocket(ws_url);
+        
+        neg_socket.onopen = function() {
+            console.log("Neg sidebar WebSocket opened.");
+
+        }
+        neg_socket.onmessage = function(event) {
+            const data = JSON.parse(event.data);
+            console.log("imm data", data)
+    
+            if (data.update_type === "refresh_sidebar_neg") {
+                // Only update if message is for IMM role and corresponding page
+               
+    
+                const procurementId = data.procurement_id;
+                const dateObj = new Date(data.timestamp);
+                let formattedDatetime = '';
+    
+                if (!isNaN(dateObj)) {
+                    const pad = num => String(num).padStart(2, '0');
+                    const day = pad(dateObj.getDate());
+                    const month = pad(dateObj.getMonth() + 1);
+                    const year = dateObj.getFullYear();
+                    const hours = pad(dateObj.getHours());
+                    const minutes = pad(dateObj.getMinutes());
+                    const seconds = pad(dateObj.getSeconds());
+                    formattedDatetime = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                }
+    
+                const listItem = $(`#procurementSidebar .list-group-item a.view-pr-id[data-id="${procurementId}"]`).closest('.list-group-item');
+                if (data.role !== "imm" || data.page !== pageKey) {
+                    console.log("Ignoring update for role/page:", data.role, data.page);
+                    if (data.page=="rejectedimm"){
+                        listItem.css('background-color', '#CCE5F0');
+                    }
+                
+                    return;
+                }
+                if (listItem.length) {
+                    listItem.find('div').eq(1).text(formattedDatetime);
+                    console.log('hi',data.forwarded_to_imm_user);
+                    // Apply background logic based on conditions
+                    if (data.forwarded_to_imm_user && pagekey) {
+                        listItem.css('background-color', '#f8f9fa'); // Reset background if forwarded
+                    } else {
+                        // Assuming procurement was recommended, update the background color
+                        listItem.css('background-color', '#CCE5F0'); // Highlight the item when recommended
+                    }
+                    $('#procurementSidebar').on('click', '.list-group-item', function() {
+                        // Remove the active class from all items
+                        $('#procurementSidebar .list-group-item').removeClass('active-procurement');
+                    
+                        // Add active class to the clicked item
+                        $(this).addClass('active-procurement');
+                    });
+                    
+                } else {
+                    // New procurement item
+                    const statusesString = (data.statuses || []).join(',');
+                    let backgroundColor = '#f8f9fa'; // Default background color
+
+                    // Apply background color for forwarded or recommended stage
+                    if (data.forwarded_to_imm_user) {
+                        backgroundColor = '#f8f9fa'; // Reset if forwarded
+                    } else {
+                        backgroundColor = '#CCE5F0'; // Highlight if recommended
+                    }
+    
+                    const newListItem = `
+                        <li id="procurement-${procurementId}" class="list-group-item" data-statuses="${statusesString}"
+                            style="background-color: ${backgroundColor}; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top:7px; padding:9px;">
+                            <a href="#" class="view-pr-id" data-id="${procurementId}" style="text-decoration: none; color: inherit; display: block;">
+                                <div style="font-weight: 500; font-size: 14px; color: black;">
+                                    ${procurementId}
+                                </div>
+                                <div style="font-size: 11px; color: black;">
+                                    ${formattedDatetime}
+                                </div>
+                            </a>
+                        </li>
+                    `;
+    
+                    $('#procurementSidebar').prepend(newListItem);
+                    $('#procurementSidebar').on('click', '.list-group-item', function() {
+                        // Remove the active class from all items
+                        $('#procurementSidebar .list-group-item').removeClass('active-procurement');
+                    
+                        // Add active class to the clicked item
+                        $(this).addClass('active-procurement');
+                    });
+                    
+                }
+                // Reapply any filter you have
+                $('#statusFilter').trigger('change');
+            }
+        };
+    
+        neg_socket.onclose = function() {
+            console.warn("neg sidebar WebSocket closed.");
+        };
+    })();
+
+</script>
+
+{% endblock scripts %}

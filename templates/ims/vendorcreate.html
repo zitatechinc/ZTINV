@@ -1,0 +1,990 @@
+{% extends 'ims/index.html' %}
+{%load static%}
+{% block mainblock %}
+    <!-- Bootstrap 5 CSS -->
+    <link href="{% static "css/bootstrap.min.css" %}" rel="stylesheet">
+    <!-- DataTables CSS -->
+    <link rel="stylesheet" href="{% static "css/jquery.dataTables.min.css" %}">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <!-- intl-tel-input CSS -->
+    <link rel="stylesheet" href="{% static "css/intlTelInput.min.css" %}">
+ 
+    <style>
+        /* General Styles */
+        body {
+            background: white;
+            font-family: 'Roboto', sans-serif;
+            color: #495057;
+           
+        }
+       
+        .container {
+            max-width: 1200px;
+            margin: 30px auto;
+        }
+ 
+        .alert {
+            margin-top: 15px;
+            border-radius: 10px;
+        }
+ 
+        .table th, .table td {
+            text-align: center;
+            vertical-align: middle;
+        }
+ 
+        /* Form Styling */
+        .custom-form {
+            background: #ffffff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            margin-bottom: 40px;
+        }
+ 
+        .custom-form label {
+            font-weight: 600;
+            color: #6c757d;
+        }
+ 
+        .custom-form input,
+        .custom-form select,
+        .custom-form textarea {
+            border-radius: 10px;
+            box-shadow: none;
+            border: 1px solid #ddd;
+            padding: 10px;
+        }
+ 
+        .custom-form input:focus,
+        .custom-form select:focus,
+        .custom-form textarea:focus {
+            border-color: #007bff;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+ 
+        .custom-form button {
+            border-radius: 10px;
+            padding: 12px 25px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            font-weight: 600;
+            transition: background-color 0.3s ease;
+        }
+ 
+        .custom-form button:hover {
+            background-color: #0056b3;
+        }
+ 
+        /* Vendor Table */
+        .table-container {
+            background:white;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+        }
+ 
+        .table-container h5 {
+            font-weight: 600;
+            color: #007080;
+            margin-bottom: 20px;
+        }
+ 
+        .table th {
+            background-color:#007080;
+            color:white;
+        }
+ 
+        .table-striped tbody tr:nth-of-type(odd) {
+            background-color: #f8f9fa;
+        }
+ 
+        .dataTables_wrapper .dataTables_length, .dataTables_wrapper .dataTables_filter {
+            padding: 10px 15px;
+        }
+ 
+        .dataTables_wrapper .dataTables_length select {
+            border-radius: 10px;
+            padding: 2px;
+        }
+        #city-loader {
+            font-style: italic;
+            color: #555;
+            margin-top: 5px;
+        }
+        
+ 
+        /* Spinner */
+        .spinner-border {
+            display: none;
+        }
+ 
+        /* Select Dropdown */
+        .form-control {
+            border-radius: 10px;
+        }
+ 
+   
+            .table-header th {
+                padding: 5px 10px;
+                font-size: 10px;
+            }
+            #loader {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background-color: rgba(0, 0, 0, 0.3);
+        backdrop-filter: blur(6px);
+        display: none; /* Hide by default */
+        z-index: 9999;
+        justify-content: center;
+        align-items: center;
+        }
+       
+    </style>
+<!-- ===================== Loader Spinner ===================== -->
+<div class="loader" id="loader">
+    <div class="spinner-border text-light" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<!-- ===================== Create Vendor Form Card ===================== -->
+<div class="card mt-4" style="border-color: #7cc2e6; margin:15px;">
+    <div class="card-body" style="border-radius: 15px; background-color: #ffffff; border: 1px solid #7cc2e6; padding: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
+        
+        <!-- Form Title -->
+        <h4 class="mb-4 text-center" style="text-decoration: underline; color: black;"><b>Create Vendor</b></h4>
+
+        <!-- ===================== Vendor Registration Form ===================== -->
+        <form id="vendorForm" class="mb-4" style="padding: 10px;">
+            <div class="row">
+
+                <!-- Company Name (Required) -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="company_name" class="form-label"><b>Company Name:</b><span style="color:red;">*</span></label>
+                    <input type="text" class="form-control" id="company_name" name="company_name" required>
+                </div>
+
+                <!-- Email -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="email" class="form-label"><b>Email:</b></label>
+                    <input type="email" class="form-control" id="email" name="email">
+                </div>
+
+                <!-- Phone Number -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="phone_number" class="form-label"><b>Phone Number:</b></label>
+                    <input type="tel" class="form-control" id="phone_number" name="phone_number" maxlength="10" pattern="\d{10}" title="Enter a 10-digit phone number">
+                    <div class="invalid-feedback">Please enter a valid phone number.</div>
+                </div>
+
+                <!-- Address -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="address" class="form-label"><b>Address:</b></label>
+                    <textarea class="form-control" id="address" name="address" rows="3" maxlength="255" style="resize: none;"></textarea>
+                </div>
+
+                <!-- GST Number -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="gst_number" class="form-label"><b>GST Number:</b></label>
+                    <input type="text" class="form-control" id="gst_number" name="gst_number">
+                </div>
+
+                <!-- TIN Number -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="tin_number" class="form-label"><b>TIN Number:</b></label>
+                    <input type="text" class="form-control" id="tin_number" name="tin_number">
+                </div>
+
+                <!-- Vendor Contact Name -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="Vendor_name" class="form-label"><b>Name of Contact:</b></label>
+                    <input type="text" class="form-control" id="Vendor_name" name="Vendor_name">
+                </div>
+
+                <!-- Country Dropdown -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12 mb-3">
+                    <label for="country" class="form-label"><b>Country:</b></label>
+                    <select id="country" name="country" class="form-control">
+                        <option value="">Select Country</option>
+                        {% for country in countries %}
+                            <option value="{{ country }}">{{ country }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- State Dropdown (Disabled until country selected) -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="state" class="form-label"><b>State:</b></label>
+                    <select id="state" name="state" class="form-control" disabled>
+                        <option value="">Select State</option>
+                    </select>
+                </div>
+
+                <!-- City Dropdown (Disabled until state selected) -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="city" class="form-label"><b>City:</b></label>
+                    <select id="city" name="city" class="form-control" disabled>
+                        <option value="">Select City</option>
+                    </select>
+                    <div id="city-loader" style="display: none;">Loading cities...</div>
+                </div>
+
+                <!-- Zip/Pincode (Disabled until city selected) -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <label for="pincode" class="form-label"><b>Zip/Pincode:</b></label>
+                    <input type="text" id="pincode" name="pincode" class="form-control" placeholder="Enter Pincode" maxlength="6" disabled>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="col-md-12 col-lg-2 col-sm-12 col-xs-12">
+                    <button class="btn btn-primary" id="submit" style="margin: 31px;background-color:#007080;border-color:#007080;">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- ===================== Edit Vendor Modal ===================== -->
+<div class="modal fade" id="editVendorModal" tabindex="-1" aria-labelledby="editVendorModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form id="editVendorForm">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editVendorModalLabel"><b>Edit Vendor</b></h5>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="edit_vendor_id" name="vendor_id">
+
+                    <!-- Vendor Name and Company Name -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_vendor_name" class="form-label"><b>Name of Contact</b></label>
+                            <input type="text" class="form-control" id="edit_vendor_name" name="vendor_name">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_company_name" class="form-label"><b>Company Name</b><span style="color:red;">*</span></label>
+                            <input type="text" class="form-control" id="edit_company_name" name="company_name" required>
+                        </div>
+                    </div>
+
+                    <!-- Email and Phone -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_email" class="form-label"><b>Email</b></label>
+                            <input type="email" class="form-control" id="edit_email" name="email">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_phone_number" class="form-label"><b>Phone Number</b></label>
+                            <input type="text" class="form-control" id="edit_phone_number" name="phone_number" maxlength="10" pattern="\d{10}" title="Enter a 10-digit phone number">
+                        </div>
+                    </div>
+
+                    <!-- GST and TIN -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_gst_number" class="form-label"><b>GST Number</b></label>
+                            <input type="text" class="form-control" id="edit_gst_number" name="gst_number" maxlength="15">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_tin_number" class="form-label"><b>TIN Number</b></label>
+                            <input type="text" class="form-control" id="edit_tin_number" name="tin_number" maxlength="11">
+                        </div>
+                    </div>
+
+                    <!-- Address and Country -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_address" class="form-label"><b>Address</b></label>
+                            <textarea class="form-control" id="edit_address" name="address" rows="3" maxlength="255" style="resize: none;"></textarea>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_country" class="form-label"><b>Country</b></label>
+                            <select class="form-control" id="edit_country" name="country">
+                                {% for country in countries %}
+                                    <option value="{{ country }}">{{ country }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- State, City, and Pincode -->
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_state" class="form-label"><b>State</b></label>
+                            <select class="form-control" id="edit_state" name="state" disabled>
+                                <option value="">Select State</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_city" class="form-label"><b>City</b></label>
+                            <select class="form-control" id="edit_city" name="city" disabled>
+                                <option value="">Select City</option>
+                            </select>
+                            <div id="city-loader" style="display: none;">Loading cities...</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="edit_pincode" class="form-label"><b>Zip/Pincode</b></label>
+                            <input type="text" class="form-control" id="edit_pincode" name="pincode" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal Footer Buttons -->
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" id="closeModalBtn" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-primary" style="background-color:#007080;border-color:#007080;color:white">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===================== Vendor List Table ===================== -->
+<div class="table-container" id="vendorTableContainer" style="border: 1px solid #7cc2e6; margin: 10px; margin-bottom: 70px; margin-top: 41px;">
+    <h5 style="font-size: 1.5rem; text-align: center; color: black; text-decoration: underline;">Vendor List</h5>
+    
+    <div class="table-responsive">
+        <table class="display table table-bordered" id="vendorTable" style="table-layout: fixed; width: 100%; word-wrap: break-word;">
+            <thead style="position: sticky; top: 0; background-color: #fff; z-index: 1;">
+                <tr>
+                    <th>Vendor ID</th>
+                    <th>Company Name</th>
+                    <th>Email</th>
+                    <th>Phone Number</th>
+                    <th>GST Number</th>
+                    <th>TIN Number</th>
+                    <th>Address</th>
+                    <th>Pincode</th>
+                    <th>State</th>
+                    <th>City</th>
+                    <th>Name of Contact</th>
+                    <th>Country</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for vendor in vendors %}
+                    <tr>
+                        <td>{{ vendor.vendor_id }}</td>
+                        <td>{{ vendor.company_name }}</td>
+                        <td>{{ vendor.email }}</td>
+                        <td>{{ vendor.phone_number }}</td>
+                        <td>{{ vendor.gst_number }}</td>
+                        <td>{{ vendor.tin_number }}</td>
+                        <td>{{ vendor.address }}</td>
+                        <td>{{ vendor.pincode }}</td>
+                        <td>{{ vendor.state }}</td>
+                        <td>{{ vendor.city }}</td>
+                        <td>{{ vendor.vendor_name }}</td>
+                        <td>{{ vendor.country }}</td>
+                        <td>
+                            <!-- Edit Button -->
+                            <button class="btn btn-sm editVendorBtn" style="background-color: #007080; border-color:#007080; color:white" data-vendor-id="{{ vendor.vendor_id }}">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Invalid GST Feedback (Potential Validation Placement) -->
+<div class="invalid-feedback">Please enter a valid GST number.</div>
+
+{%endblock%} 
+ <!-- jQuery -->
+ <script src="{% static "js/jquery-3.6.0.min.js" %}"></script>
+
+<!-- intl-tel-input CSS and JS -->
+<link rel="stylesheet" href="{% static "css/intlTelInput.min.css" %}">
+{%block scripts%}
+<script src="{% static "js/intlTelInput.min.js" %}"></script>
+ 
+   
+<script>
+        
+    // Global utility functions
+    function hasSpecialChars(str) {
+        return /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(str);
+    }
+    //remove the spaces
+    function hasSpaces(str) {
+        return /\s/.test(str);
+    }
+    //enabling the state and city dropdowns in the vendor forms
+    function enableManualEntry() {
+        $('#state, #city').prop('readonly', false);
+    }
+    //enabling the state and city dropdowns
+    function enableEditManualEntry() {
+        $('#edit_state, #edit_city').prop('readonly', false);
+    }
+ 
+
+
+    $(document).ready(function() {
+        // Initialize DataTable
+        $('#vendorTableContainer').show();
+        $('#vendorTable').DataTable({responsive: true, order: [[0, 'desc']]});
+        
+
+        // GST/TIN Number Validation
+        $('#gst_number, #tin_number').on('input', function() {
+            var value = $(this).val();
+            
+            if (hasSpecialChars(value)) {
+                $(this).addClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('Special characters are not allowed.');
+                return;
+            }
+            
+            if (hasSpaces(value)) {
+                $(this).addClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('Spaces are not allowed.');
+                return;
+            }
+            
+            if ($(this).attr('id') === 'gst_number' && value.length > 15) {
+                $(this).addClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('GST Number should be exactly 15 characters.');
+                return;
+            }
+            
+            if ($(this).attr('id') === 'tin_number' && value.length > 11) {
+                $(this).addClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('TIN Number should be exactly 11 characters.');
+                return;
+            }
+            
+            $(this).removeClass('is-invalid');
+        });
+        //Country related states should display
+        $('#country').on('change', function () {
+            const selectedCountry = $(this).val();
+            const stateSelect = $('#state');
+        
+            if (!selectedCountry) {
+                stateSelect.html('<option value="">Select State</option>').prop('disabled', true);
+                return;
+            }
+        
+            $.ajax({
+                url: `/vender-create/?country=${encodeURIComponent(selectedCountry)}`,
+                method: 'GET',
+                success: function (data) {
+                    if (data.states && data.states.length > 0) {
+                        let options = '<option value="">Select State</option>';
+                        data.states.forEach(function (state) {
+                            options += `<option value="${state}">${state}</option>`;
+                        });
+                        stateSelect.html(options).prop('disabled', false);
+                    } else {
+                        stateSelect.html('<option value="">No states found</option>').prop('disabled', true);
+                    }
+                },
+            
+                error: function () {
+                    alert('Failed to load states');
+                    stateSelect.html('<option value="">Select State</option>').prop('disabled', true);
+                }
+            });
+        });
+        //State selected then related cities dropdown enabling
+        $('#state').on('change', function () {
+            const selectedCountry = $('#country').val();
+            const selectedState = $(this).val();
+            const citySelect = $('#city');
+            const loader = $('#city-loader'); // Loader element
+        
+            if (!selectedCountry || !selectedState) {
+                citySelect.html('<option value="">Select City</option>').prop('disabled', true);
+                loader.hide(); // Ensure loader is hidden
+                return;
+            }
+        
+            // Show loader before making the request
+            loader.show();
+            citySelect.prop('disabled', true); // Disable during loading
+        
+            $.ajax({
+                url: `/vender-create/?country=${encodeURIComponent(selectedCountry)}&state=${encodeURIComponent(selectedState)}`,
+                method: 'GET',
+                success: function (data) {
+                    if (data.cities && data.cities.length > 0) {
+                        let options = '<option value="">Select City</option>';
+                        data.cities.forEach(function (city) {
+                            options += `<option value="${city}">${city}</option>`;
+                        });
+                        citySelect.html(options).prop('disabled', false);
+                        $("#pincode").prop('disabled', false);
+                    } else {
+                        citySelect.html('<option value="">No cities found</option>').prop('disabled', true);
+                    }
+                    loader.hide(); // Hide loader after response
+                },
+                error: function () {
+                    showWarningAlert('Failed to load cities');
+                    citySelect.html('<option value="">Select City</option>').prop('disabled', true);
+                    loader.hide(); // Hide loader on error
+                }
+            });
+        });
+        
+        
+        function normalize(str) {
+            return (str || '').trim().toLowerCase();
+        }
+        let isPincodeValidated = false; // global flag to track validation
+        //Pincode  validations (matches or not)
+        $('#pincode').on('input', function () {
+            const pincode = $(this).val();
+            const normalize = str => str?.normalize("NFD").replace(/[\u0300-\u036f\-]/g, '').trim().toLowerCase();
+        
+            const selectedState = normalize($('#state').val());
+            const selectedCity = normalize($('#city').val());
+        
+            if (pincode.length > 6) {
+                $(this).addClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('Pincode should be exactly 6 digits.');
+                return;
+            }
+        
+            if (pincode.length === 6) {
+                $.ajax({
+                    url: `https://api.postalpincode.in/pincode/${pincode}`,
+                    method: 'GET',
+                    success: function (response) {
+                        if (response[0].Status === 'Success' && Array.isArray(response[0].PostOffice)) {
+                            const normSelectedState = normalize(selectedState);
+                            const normSelectedCity = normalize(selectedCity);
+        
+                            const matchedOffice = response[0].PostOffice.find(postOffice => {
+                                const apiState = normalize(postOffice.State);
+                                const apiDistrict = normalize(postOffice.District);
+                                const apiBlock = normalize(postOffice.Block);
+        
+                                const stateMatches = !normSelectedState || apiState === normSelectedState;
+                                const cityMatches = !normSelectedCity || 
+                                    apiDistrict === normSelectedCity || 
+                                    apiBlock === normSelectedCity;
+        
+                                console.log('Checking:', apiState, '|', apiDistrict, '|', apiBlock, 'against', normSelectedState, '|', normSelectedCity);
+        
+                                return stateMatches && cityMatches;
+                            });
+        
+                            if (matchedOffice) {
+                                const matchedBlock = normalize(matchedOffice.Block);
+                                let cityToUse = matchedOffice.District;
+                                if (normSelectedCity === matchedBlock) {
+                                    cityToUse = matchedOffice.Block;
+                                }
+        
+                                $('#city').val(cityToUse).prop('readonly', true);
+                                $('#pincode').removeClass('is-invalid').addClass('is-valid');
+                                isPincodeValidated = true; // set flag
+                            } else {
+                                $('#pincode').addClass('is-invalid').removeClass('is-valid');
+                                $('#pincode').siblings('.invalid-feedback').text('Pincode does not match selected state/city.');
+                                showAlert('Pincode does not match the selected state or city.');
+                                $("#pincode").val("");
+                                enableManualEntry();
+                                isPincodeValidated = false;
+                            }
+                        } else {
+                            showAlert('Invalid Pincode!');
+                            $("#pincode").val('');
+                            enableManualEntry();
+                            isPincodeValidated = false;
+                        }
+                    },
+                    error: function () {
+                        showWarningAlert('Error fetching pincode details.');
+                        enableManualEntry();
+                        isPincodeValidated = false;
+                    }
+                });
+            } else {
+                enableManualEntry();
+                isPincodeValidated = false;
+            }
+        });
+        
+        // ✅ Clear pincode when city is changed after validation
+        $('#city').on('input', function () {
+            if (isPincodeValidated) {
+                $('#pincode').val('').removeClass('is-valid is-invalid');
+                $('#city').prop('readonly', false); // let user edit again
+                isPincodeValidated = false;
+            }
+        });
+        
+        //  Vendor Form Submission
+        const csrftoken = '{{ csrf_token }}';
+        $('#vendorForm').on('submit', function(e) {
+            e.preventDefault();
+            showLoader();
+            var gstNumber = $('#gst_number').val();
+            var tinNumber = $('#tin_number').val();
+            
+            if (hasSpecialChars(gstNumber) || hasSpaces(gstNumber)) {
+                showAlert('GST Number contains invalid characters or spaces.');
+                return;
+            }
+            
+            if (hasSpecialChars(tinNumber) || hasSpaces(tinNumber)) {
+                showAlert('TIN Number contains invalid characters or spaces.');
+                return;
+            }
+            
+            let form = $(this)[0];
+            if (!form.checkValidity()) {
+                e.stopPropagation();
+                form.classList.add('was-validated');
+                return;
+            }
+            
+            $.ajax({
+                url: '{% url "vender-create" %}',
+                type: 'POST',
+                headers: { 'X-CSRFToken': csrftoken },
+                data: $(this).serialize(),
+                success: function(response) {
+                    console.log(response,'response')
+                    if (response.success) {
+                        hideLoader();
+                        var vendor = response.vendor;
+                        var newRow = `<tr>
+                            <td>${vendor.vendor_id}</td>
+                            <td>${vendor.company_name}</td>
+                            <td>${vendor.email}</td>
+                            <td>${vendor.phone_number}</td>
+                            <td>${vendor.gst_number}</td>
+                            <td>${vendor.tin_number}</td>
+                            <td>${vendor.address}</td>
+                            <td>${vendor.pincode}</td>
+                            <td>${vendor.state}</td>
+                            <td>${vendor.city}</td>
+                            <td>${vendor.Vendor_name}</td>
+                            <td>${vendor.country}</td>
+                            <td>
+                                <button class="btn btn-sm editVendorBtn" style="background-color: #007080; border-color:#007080;color:white;" data-vendor-id="${vendor.vendor_id}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                        $('#vendorTable tbody').prepend(newRow);
+                        $('#vendorForm')[0].reset();
+                        $('#state, #city').prop('readonly', false);
+
+                        showSuccessAlert('Vendor added successfully!');
+                        $('#pincode').removeClass('is-valid');
+                    } else {
+                        hideLoader();
+                        showWarningAlert(response.error || 'Error adding vendor.');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideLoader();
+                    showWarningAlert('An error occurred: ' + error);
+                    
+                }
+            });
+        });
+        //click function for editing the vendor
+        $(document).on('click', '.editVendorBtn', function () {
+            const row = $(this).closest('tr');
+        
+            const vendorId = $(this).data('vendor-id');
+            const vendorName = row.find('td:eq(10)').text().trim();
+            const companyName = row.find('td:eq(1)').text().trim();
+            const email = row.find('td:eq(2)').text().trim();
+            const phoneNumber = row.find('td:eq(3)').text().trim();
+            const gstNumber = row.find('td:eq(4)').text().trim();
+            const tinNumber = row.find('td:eq(5)').text().trim();
+            const address = row.find('td:eq(6)').text().trim();
+            const pincode = row.find('td:eq(7)').text().trim();
+            const state = row.find('td:eq(8)').text().trim();
+            const city = row.find('td:eq(9)').text().trim();
+            const country = row.find('td:eq(11)').text().trim();
+        
+            $('#edit_vendor_id').val(vendorId);
+            $('#edit_vendor_name').val(vendorName).data('original', vendorName);
+            $('#edit_company_name').val(companyName).data('original', companyName);
+            $('#edit_email').val(email).data('original', email);
+            $('#edit_phone_number').val(phoneNumber).data('original', phoneNumber);
+            $('#edit_gst_number').val(gstNumber).data('original', gstNumber);
+            $('#edit_tin_number').val(tinNumber).data('original', tinNumber);
+            $('#edit_address').val(address).data('original', address);
+            $('#edit_pincode').val(pincode).data('original', pincode);
+            $('#edit_country').val(country).data('original', country).trigger('change');
+        
+            $('#edit_state').one('statesLoaded', function () {
+                $('#edit_state').val(state).data('original', state).trigger('change');
+        
+                $('#edit_city').one('citiesLoaded', function () {
+                    $('#edit_city').val(city).data('original', city);
+                });
+            });
+        
+            $('#editVendorModal').modal('show');
+        });
+        
+        
+        
+
+        // Edit Pincode Validation
+        $('#edit_pincode').on('input', function() {
+            const pincode = $(this).val();
+            const normalize = str => str?.normalize("NFD").replace(/[\u0300-\u036f\-]/g, '').trim().toLowerCase();
+
+            const selectedState = normalize($('#edit_state').val());
+            const selectedCity = normalize($('#edit_city').val());
+            
+            if (pincode.length > 6) {
+                $(this).addClass('is-invalid');
+                $(this).siblings('.invalid-feedback').text('Pincode should be exactly 6 digits.');
+                return;
+            }
+            
+            if (pincode.length === 6) {
+                $.ajax({
+                    url: `https://api.postalpincode.in/pincode/${pincode}`,
+                    method: 'GET',
+                    success: function(response) {
+                        if (response[0].Status === 'Success') {
+                            const postOffice = response[0].PostOffice[0];
+                            const apiState = normalize(postOffice.State);
+                            const apiCity = normalize(postOffice.District);
+        
+                            // Match validation logic
+                            const stateMatches = !selectedState || apiState === selectedState;
+                            const cityMatches = !selectedCity || apiCity === selectedCity;
+        
+                            if (stateMatches && cityMatches) {
+                                $('#edit_state').val(postOffice.State).prop('readonly', true);
+                                $('#edit_city').val(postOffice.District).prop('readonly', true);
+                                $('#edit_pincode').removeClass('is-invalid').addClass('is-valid');
+                            } else {
+                                $('#edit_pincode').addClass('is-invalid').removeClass('is-valid');
+                                $(this).siblings('.invalid-feedback').text('Pincode does not match selected state/city.');
+                                alert('Pincode does not match the selected state or city.');
+                                $("#edit_pincode").val("");
+                                enableManualEntry();
+                            }
+                        } else {
+                            showAlert('Invalid Pincode!');
+                            enableManualEntry();
+                        }
+                    },
+                    error: function() {
+                        showWarningAlert('Error fetching pincode details.');
+                        enableEditManualEntry();
+                    }
+                });
+            } else {
+                enableEditManualEntry();
+            }
+        });
+        //Edit country Validation
+        $('#edit_country').on('change', function () {
+            const selectedCountry = $(this).val();
+            const stateSelect = $('#edit_state');
+        
+            if (!selectedCountry) {
+                stateSelect.html('<option value="">Select State</option>').prop('disabled', true);
+                return;
+            }
+        
+            $.ajax({
+                url: `/vender-create/?country=${encodeURIComponent(selectedCountry)}`,
+                method: 'GET',
+                success: function (data) {
+                    if (data.states && data.states.length > 0) {
+                        let options = '<option value="">Select State</option>';
+                        data.states.forEach(function (state) {
+                            options += `<option value="${state}">${state}</option>`;
+                        });
+                        stateSelect.html(options).prop('disabled', false).trigger('statesLoaded');
+                    } else {
+                        stateSelect.html('<option value="">No states found</option>').prop('disabled', true);
+                    }
+                    
+                },
+                error: function () {
+                    showWarningAlert('Failed to load states');
+                    stateSelect.html('<option value="">Select State</option>').prop('disabled', true);
+                }
+            });
+        });
+        // Edit State Validation
+        $('#edit_state').on('change', function () {
+            const selectedCountry = $('#edit_country').val();
+            const selectedState = $(this).val();
+            const citySelect = $('#edit_city');
+            const loader = $('#city-loader'); // Loader element
+        
+            if (!selectedCountry || !selectedState) {
+                citySelect.html('<option value="">Select City</option>').prop('disabled', true);
+                return;
+            }
+            loader.show();
+            citySelect.prop('disabled', true); // Disable during loading
+        
+            $.ajax({
+                url: `/vender-create/?country=${encodeURIComponent(selectedCountry)}&state=${encodeURIComponent(selectedState)}`,
+                method: 'GET',
+                success: function (data) {
+                    if (data.cities && data.cities.length > 0) {
+                        let options = '<option value="">Select City</option>';
+                        data.cities.forEach(function (city) {
+                            options += `<option value="${city}">${city}</option>`;
+                        });
+                        citySelect.html(options).prop('disabled', false).trigger('citiesLoaded');
+                        $("#edit_pincode").prop('disabled',false);
+                    } else {
+                        citySelect.html('<option value="">No cities found</option>').prop('disabled', true);
+                        
+                    }loader.hide(); 
+                },
+                error: function () {
+                    showWarningAlert('Failed to load cities');
+                    citySelect.html('<option value="">Select City</option>').prop('disabled', true);
+                    loader.hide(); 
+                }
+            });
+        });
+        
+        
+        
+
+        // Edit Form Submission
+        $('#editVendorForm').on('submit', function (e) {
+            e.preventDefault();
+            showLoader();
+        
+            // Validate GST/TIN numbers
+            var gstNumber = $('#edit_gst_number').val();
+            var tinNumber = $('#edit_tin_number').val();
+            var isValid = true;
+        
+            if (hasSpecialChars(gstNumber) || hasSpaces(gstNumber)) {
+                $('#edit_gst_number').addClass('is-invalid');
+                if (!$('#edit_gst_number').next('.invalid-feedback').length) {
+                    $('#edit_gst_number').after('<div class="invalid-feedback">GST Number contains invalid characters or spaces.</div>');
+                }
+                isValid = false;
+            }
+        
+            if (hasSpecialChars(tinNumber) || hasSpaces(tinNumber)) {
+                $('#edit_tin_number').addClass('is-invalid');
+                if (!$('#edit_tin_number').next('.invalid-feedback').length) {
+                    $('#edit_tin_number').after('<div class="invalid-feedback">TIN Number contains invalid characters or spaces.</div>');
+                }
+                isValid = false;
+            }
+        
+            if (!isValid) {
+                showAlert('Please correct the validation errors before submitting.');
+                hideLoader();
+                return false;
+            }
+        
+            // Check for no changes
+            let noChange = true;
+            $('#editVendorForm')
+                .find('input, select, textarea')
+                .each(function () {
+                    const original = $(this).data('original');
+                    const current = $(this).val();
+                    if (original !== undefined && original !== current) {
+                        noChange = false;
+                        
+                        return false; // Exit loop early
+                        
+                    }
+                });
+        
+                if (noChange) {
+                    hideLoader(); 
+                    showAlert('No Changes Done.');
+                    $("#editVendorModal").modal('hide'); 
+                    return false;
+                }
+            // Check form validity
+            let form = $(this)[0];
+            if (!form.checkValidity()) {
+                e.stopPropagation();
+                form.classList.add('was-validated');
+                hideLoader();
+                return false;
+            }
+        
+            // Proceed with AJAX if valid
+            var formData = $(this).serializeArray();
+            var data = {};
+            $.each(formData, function (i, field) {
+                data[field.name] = field.value;
+            });
+        
+            $.ajax({
+                url: '{% url "vender-create" %}',
+                type: 'POST',
+                headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+                data: data,
+                success: function (response) {
+                    if (response.success) {
+                        hideLoader();
+                        const vendor = response.vendor;
+                        const row = $(`button[data-vendor-id="${vendor.vendor_id}"]`).closest('tr');
+        
+                        row.find('td:eq(1)').text(vendor.company_name || '');
+                        row.find('td:eq(2)').text(vendor.email || '');
+                        row.find('td:eq(3)').text(vendor.phone_number || '');
+                        row.find('td:eq(4)').text(vendor.gst_number || '');
+                        row.find('td:eq(5)').text(vendor.tin_number || '');
+                        row.find('td:eq(6)').text(vendor.address || '');
+                        row.find('td:eq(7)').text(vendor.pincode || '');
+                        row.find('td:eq(8)').text(vendor.state || '');
+                        row.find('td:eq(9)').text(vendor.city || '');
+                        row.find('td:eq(10)').text(vendor.vendor_name || '');
+                        row.find('td:eq(11)').text(vendor.country || '');
+        
+                        $('#editVendorModal').modal('hide');
+                        showSuccessAlert('Vendor updated successfully!');
+                    } else {
+                        showWarningAlert(response.error || 'Error updating vendor.');
+                        hideLoader();
+                    }
+                },
+                error: function (xhr, status, error) {
+                    showWarningAlert('An error occurred: ' + error);
+                    hideLoader();
+                }
+            });
+        });
+        
+
+        // Close Modal
+        $('#closeModalBtn').click(function() {
+            $('#editVendorModal').modal('hide');
+            $('#editVendorForm')[0].reset();
+            $('#edit_state, #edit_city').prop('readonly', false);
+        });
+    });
+
+
+       
+       
+</script>
+{% endblock %}
+ 
+ 

@@ -1,0 +1,77 @@
+{% extends 'core/base.html' %}
+{% load humanize %}
+
+{% block content %}
+<div class="row mb-2 mt-2">
+    <div class="col-12 text-end">
+        <!-- Edit Button Top-Right -->
+        <button type="button" class="btn btn-sm app-btn-primary edit-link"
+                data-url="{% url 'vendor-product-update' vendor_obj.pk object.pk %}">
+            <i class="fa fa-edit fa-lg"></i> Edit
+        </button>
+    </div>
+</div>
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+
+        {% include 'vendor/vendor_menu.html' %}
+
+        <div class="app-card-body p-4">
+
+            <!-- Product Information -->
+            <div class="row mb-4">
+                <h6 class="mb-3">Product Information</h6>
+
+                <div class="col-md-4"><strong>Product Name :</strong> {{ object.product.name }}</div>
+                <div class="col-md-4"><strong>Product Code :</strong> {{ object.product.code }}</div>
+                <div class="col-md-4"><strong>Vendor :</strong> {{ object.vendor.company_name1 }}</div>
+                <div class="col-md-4"><strong>Status :</strong> <span class="{{ object.status_name }}">{{ object.status_name }}</span></div>
+                <div class="col-md-4"><strong>Date Updated :</strong> {{ object.last_modified_at }}</div>
+
+                {% if object.notes %}
+                <div class="col-md-12 mt-3">
+                    <strong>Notes:</strong><br>
+                    {{ object.notes }}
+                </div>
+                {% endif %}
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block pagecss %}
+<style>
+label.required::after { display: none !important; }
+label { font-weight: bold !important; }
+</style>
+{% endblock %}
+
+{% block pagejs %}
+<!-- SweetAlert2 for Edit Confirmation -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.edit-link').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const url = btn.getAttribute('data-url');
+            Swal.fire({
+                text: 'Do you want to edit this product?',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Edit',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                width: 350
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

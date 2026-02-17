@@ -1,0 +1,90 @@
+{% extends 'core/base.html' %}
+
+
+{% block content %}
+
+
+<!-- ===== Search Form (your existing global search UI) ===== -->
+
+ {% include 'core/search_audit_form.html' with add_url='attribute-create' model_name=model_name %}
+
+<!-- ===== Audit Log Table ===== -->
+<div class="table-responsive">
+                    <table class="table app-table-hover mb-0 text-left table-bordered app-table-striped"
+                           id="app_table_data">
+
+    <thead>
+      <tr>
+        <th>Column</th>
+        <th>Old Value</th>
+        <th>New Value</th>
+        <th>Action</th>
+        <th>User</th>
+        <th>Timestamp</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {% for row in object_list %}
+        <tr>
+         
+          <td>{{ row.ColumnName }}</td>
+          <td class="text-danger">{{ row.OldValue }}</td>
+          <td class="text-success">{{ row.NewValue }}</td>
+          <td>{{ row.Action }}</td>
+          <td>{{ row.User }}</td>
+          <td>{{ row.Timestamp}}</td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="8" class="text-center text-muted">
+            No audit history found
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+
+  </table>
+</div>
+
+<!-- ===== Pagination ===== -->
+{% if page_obj.has_other_pages %}
+<nav>
+  <ul class="pagination pagination-sm">
+
+    {% if page_obj.has_previous %}
+      <li class="page-item">
+        <a class="page-link"
+           href="?page={{ page_obj.previous_page_number }}">
+          «
+        </a>
+      </li>
+    {% endif %}
+
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <li class="page-item active">
+          <span class="page-link">{{ num }}</span>
+        </li>
+      {% else %}
+        <li class="page-item">
+          <a class="page-link"
+             href="?page={{ num }}">{{ num }}</a>
+        </li>
+      {% endif %}
+    {% endfor %}
+
+    {% if page_obj.has_next %}
+      <li class="page-item">
+        <a class="page-link"
+           href="?page={{ page_obj.next_page_number }}">
+          »
+        </a>
+      </li>
+    {% endif %}
+
+  </ul>
+</nav>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,297 @@
+{% extends 'core/base.html' %}
+{% block content %}
+<form method="post" enctype="multipart/form-data" action = "{{form_action_url}}" novalidate>
+   {% csrf_token %}
+   
+   <div class="row mb-2 mt-2">
+      <div class="col-12 text-end">
+         <div class="button-group">
+               <button type="submit" class="btn btn-sm app-btn-primary">
+                  <i class="fa fa-save fa-lg"></i> Save
+               </button>
+         </div>
+      </div>
+   </div>
+
+   <div class="row">
+      <div class="col-12 col-md-12">
+         <div class="app-card app-card-settings shadow-md" >
+            <!-- <div class="p-2" style="background:#eee;font-weight: bold;">General Details</div> -->
+            <div class="app-card-body p-4">
+                  <div class="row">
+                  <div class="col-md-12 mb-2">
+                     <h6>Application Information</h6>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.name }}
+                        <label for="floatingName" class="form-label">{{ form.name.label_tag }}</label>
+                        {% if form.name.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.name.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.company_name }}
+                        <label for="floatingName" class="form-label">{{ form.company_name.label_tag }}</label>
+                        {% if form.company_name.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.company_name.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+               </div>
+
+               <div class="row">
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.email }}
+                        <label for="floatingName" class="form-label">{{ form.email.label_tag }}</label>
+                        {% if form.email.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.email.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.phone }}
+                        <label for="floatingName" class="form-label">{{ form.phone.label_tag }}</label>
+                        {% if form.phone.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.phone.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+               </div>
+
+            
+
+                <div class="row">
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.website }}
+                        <label for="floatingName" class="form-label">{{ form.website.label_tag }}</label>
+                        {% if form.website.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.website.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.address }}
+                        <label for="floatingName" class="form-label">{{ form.address.label_tag }}</label>
+                        {% if form.address.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.address.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.header_text }}
+                        <label for="floatingName" class="form-label">{{ form.header_text.label_tag }}</label>
+                        {% if form.header_text.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.header_text.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.footer_text }}
+                        <label for="floatingName" class="form-label">{{ form.footer_text.label_tag }}</label>
+                        {% if form.footer_text.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.footer_text.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+               </div>
+
+               <div class="row">
+                  <div class="col-md-6">
+                     <div class="form-group " style="margin-left: 5px;">
+                        <div><label for="floatingName" class="form-label" >{{ form.logo.label_tag }}</label></div>
+                        {{ form.logo }}
+                        
+                        {% if form.logo.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.logo.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <div class="col-md-6">
+                     <div class="form-group " style="margin-left: 5px;">
+                        <div><label for="floatingName" class="form-label" >{{ form.favicon.label_tag }}</label></div>
+                        {{ form.favicon }}
+                        
+                        {% if form.favicon.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.favicon.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+               </div>
+
+               <!-- <div class="row">
+                  <div class="col-md-12 mt-4">
+                     <h6>Addtional Fields</h6>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.attribute_1 }}
+                        <label for="floatingCode" class="form-label" >{{ form.attribute_1.label_tag }}</label>
+                        {% if form.attribute_1.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.attribute_1.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+               
+               
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.attribute_2 }}
+                        <label for="floatingStatus" class="form-label">{{ form.attribute_2.label_tag }}</label>
+                        {% if form.attribute_2.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.attribute_2.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        <div class="form-floating mb-3">
+                           {{ form.attribute_3 }}
+                           <label for="floatingParent" class="form-label" id="">{{ form.attribute_3.label_tag }}</label>
+                           {% if form.attribute_3.errors %}
+                           <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                              {% for error in form.attribute_3.errors %}
+                              <li class="text-danger">{{ error }}</li>
+                              {% endfor %}
+                           </ul>
+                           {%endif%}
+                        </div>
+                     </div>
+                  </div>
+
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.attribute_4 }}
+                        <label for="floatingDescription" class="form-label">{{ form.attribute_4.label_tag }}</label>
+                        {% if form.attribute_4.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.attribute_4.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  </div>
+               <div class="row">
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.attribute_5 }}
+                        <label for="floatingMetaKeyword" class="form-label">{{ form.attribute_5.label_tag }}</label>
+                        {% if form.attribute_5.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.attribute_5.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.attribute_6 }}
+                        <label for="floatingMetaKeyword" class="form-label">{{ form.attribute_6.label_tag }}</label>
+                        {% if form.attribute_6.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.attribute_6.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+
+               </div> -->
+               <div class="row">
+                  <div class="col-md-12 mt-4 mb-2">
+                     <h6>Theme Details</h6>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.theme }}
+                        <label for="floatingMetaKeyword" class="form-label">{{ form.theme.label_tag }}</label>
+                        {% if form.theme.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.theme.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+</form>
+{% endblock %}
+{% block pagecss %}
+{% endblock %}

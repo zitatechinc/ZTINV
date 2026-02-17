@@ -1,0 +1,289 @@
+{% extends 'core/base.html' %}
+{% load static %}
+
+{% block content %}
+<div class="container">
+    <!-- Inventory Dashboard Section -->
+    <div class="custom-header">Inventory Dashboard</div>
+
+    <!-- Total Vendors, Products, and Customers -->
+    <div class="row mb-4">
+        <div class="col-12 col-md-3">
+            <div class="app-card total-vendors-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fa fa-industry fa-3x"></i>
+                    </div>
+                    <div class="count-wrapper">
+                        <a href="{% url 'vendor-list' %}" class="count-link">
+                            <div class="large-count">{{ total_vendors }}</div>
+                        </a>
+                        <p>Total Vendors</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-3">
+            <div class="app-card total-inventory-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fa fa-cogs fa-3x"></i>
+                    </div>
+                    <div class="count-wrapper">
+                        <div class="large-count">{{ total_inventory_count }}</div>
+                        <p>Total Inventory</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-3">
+            <div class="app-card total-products-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fa fa-cube fa-3x"></i>
+                    </div>
+                    <div class="count-wrapper">
+                        <a href="{% url 'product-list' %}" class="count-link">
+                            <div class="large-count">{{ total_products }}</div>
+                        </a>
+                        <p>Total Products</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-3">
+            <div class="app-card total-customers-card">
+                <div class="card-content">
+                    <div class="card-icon">
+                        <i class="fa fa-users fa-3x"></i>
+                    </div>
+                    <div class="count-wrapper">  
+                        <a href="{% url 'customer-list' %}" class="count-link">
+                            <div class="large-count">{{ total_customers }}</div>
+                        </a>
+                        <p>Total Customers</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dashboard Charts Section -->
+    <div class="custom-header">Dashboard Charts</div>
+
+    <div class="chart-row">
+        <div class="chart-card">
+            <h3>Vendors by Country</h3>
+            <div id="vendor-pie-chart"></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Products by Category</h3>
+            <div id="product-category-pie-chart"></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Products by Brand</h3>
+            <div id="product-brand-pie-chart"></div>
+        </div>
+
+        <div class="chart-card">
+            <h3>Customers by Type</h3>
+            <div id="customer-pie-chart"></div>
+        </div>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block pagejs %}
+<script>
+    // Log data for debugging
+    console.log('Vendor Labels:', {{ vendor_chart_labels_json|safe }});
+    console.log('Vendor Data:', {{ vendor_chart_data_json|safe }});
+    console.log('Category Labels:', {{ product_category_labels_json|safe }});
+    console.log('Category Data:', {{ product_category_data_json|safe }});
+    console.log('Brand Labels:', {{ product_brand_labels_json|safe }});
+    console.log('Brand Data:', {{ product_brand_data_json|safe }});
+    console.log('Customer Labels:', {{ customer_chart_labels_json|safe }});
+    console.log('Customer Data:', {{ customer_chart_data_json|safe }});
+
+    // Function to create a pie chart
+    function createPieChart(elementId, labels, values) {
+        var data = [{
+            labels: labels,
+            values: values,
+            type: 'pie',
+            textinfo: 'percent',      // show percentage
+            textposition: 'inside',
+            hoverinfo: 'label+percent'
+        }];
+
+        var layout = {
+            height: 180,              // same height for all
+            width: 0,               //  same width for all
+            showlegend: false,        //  hide legend
+            margin: { l: 5, r: 5, t: 5, b: 5 }
+        };
+
+        var config = {
+            displayModeBar: false,
+            displaylogo: false,
+            responsive: true
+        };
+
+        Plotly.newPlot(elementId, data, layout, config);
+    }
+
+    // Data from Django
+    var vendorLabels = {{ vendor_chart_labels_json|safe }};
+    var vendorData = {{ vendor_chart_data_json|safe }};
+
+    var categoryLabels = {{ product_category_labels_json|safe }};
+    var categoryData = {{ product_category_data_json|safe }};
+
+    var brandLabels = {{ product_brand_labels_json|safe }};
+    var brandData = {{ product_brand_data_json|safe }};
+
+    var customerLabels = {{ customer_chart_labels_json|safe }};
+    var customerData = {{ customer_chart_data_json|safe }};
+
+    // Create charts
+    createPieChart('vendor-pie-chart', vendorLabels, vendorData);
+    createPieChart('product-category-pie-chart', categoryLabels, categoryData);
+    createPieChart('product-brand-pie-chart', brandLabels, brandData);
+    createPieChart('customer-pie-chart', customerLabels, customerData);
+</script>
+{% endblock %}
+
+{% block pagecss %}
+<style>
+    /* .count-link {
+        text-decoration: none;
+        color: currentColor;
+    }
+
+    .count-link:hover .large-count {
+        text-decoration: underline;
+        cursor: pointer;
+    } */
+
+    .count-link .large-count {
+        color: #ffeb3b;          
+        cursor: pointer;
+        transition: color 0.2s ease;
+    }
+
+    .count-link:hover .large-count {
+        color: #ffffff;        
+    }  
+
+    .custom-header {
+        font-size: 1rem;        /* increase font size */
+        font-weight: 400;       /* bold */
+        color: #003366;
+        margin: 20px 0 25px 10px;
+        letter-spacing: 0.5px; /* optional – cleaner look */
+    }
+
+    .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 20px;
+    }
+
+    /* Cards */
+    .app-card {
+        padding: 10px;
+        border-radius: 12px;
+        box-shadow: 0 6px 20px rgba(0,0,0,0.15);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        color: #fff;
+        margin-bottom: 25px;
+        height: 130px;
+        transition: transform 0.3s ease-in-out, box-shadow 0.3s ease;
+    }
+
+    .app-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .card-content {
+        display: flex;
+        align-items: center;
+    }
+
+    .card-icon {
+        margin-right: 50px;
+        font-size: 1.5em;
+    }
+
+    .count-wrapper .large-count {
+        font-size: 5em;
+        font-weight: bold;
+    }
+
+    .count-wrapper p {
+        font-size: 1.5em;
+        text-align: center;
+        margin-bottom: 30px;
+    }
+
+    .total-inventory-card { background-color: #007bff; }
+    .total-vendors-card { background-color: #28a745; }
+    .total-products-card { background-color: #6f42c1; }
+    .total-customers-card { background-color: #fd7e14; }
+
+    /* Chart row */
+    .chart-row {
+        display: flex;
+        gap: 20px;
+        justify-content: space-between;
+        align-items: stretch;
+        flex-wrap: nowrap;        /* force single row */
+        margin-bottom: 30px;
+    }
+
+    .chart-card {
+        flex: 1;                  /* equal width */
+        max-width: 260px;         /* smaller cards */
+        background: #ffffff;
+        padding: 12px;
+        border-radius: 14px;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+        text-align: center;
+    }
+
+    .chart-card h3 {
+        font-size: 1rem;          /* smaller heading */
+        margin-bottom: 8px;
+        color: #003366;
+    }
+
+    /* chart container height control */
+    .chart-card > div {
+        height: 220px;            /* reduce empty space */
+    }
+
+    /* responsive fallback */
+    @media (max-width: 1200px) {
+        .chart-row {
+            flex-wrap: wrap;      /* wrap only on smaller screens */
+        }
+    }
+
+
+    @media (max-width: 768px) {
+        .chart-row { flex-direction: column; align-items: center; }
+        .chart { max-width: 100%; }
+        .app-card { text-align: center; }
+        .card-icon { margin-right: 0; margin-bottom: 10px; }
+    }
+</style>
+{% endblock %}

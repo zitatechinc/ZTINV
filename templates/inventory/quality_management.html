@@ -1,0 +1,73 @@
+{% extends 'core/base.html' %}
+{% load static %}
+{% load humanize %}
+
+{% block content %}
+<h6>Goods Receiver</h6>
+
+<form method="post" class="form-inline">
+  {% csrf_token %}
+  <div class="row mb-2">
+    <div class="col-md-6">
+
+  {{ form.as_p }}
+  <button type="submit" class="btn btn-sm app-btn-primary">Search</button>
+</div>
+</div>
+</form>
+ <div class="app-card-body p-4">
+{% if po_item_list %}
+  <h6>PO: {{ po_header.po_number }} (Vendor: {{ po_header.vendor }})</h6>
+
+ <div class="table-responsive">
+    <table class="table app-table-hover mb-0 text-left">
+      <thead>
+      <tr>
+        <th>EBELP</th>
+        <th>MATNR</th>
+        <th>MAKTX</th>
+        <th>Serialized</th>
+        <th>WERKS</th>
+        <th>Location_Name</th>
+        <th>LGORT</th>
+        <th>POQTY</th>
+        <th>POUOM</th>
+        <th>Already Recvd Qty</th>
+        <th>Yet to be received</th>
+        <th>Qty  being Received</th>
+        <th>PRICE</th>
+        <th>TOTAL</th>
+        <th>ISTAT</th>
+        <th>ITEXT</th>
+      </tr>
+      </thead>
+      <tbody>
+      {% for s in po_item_list %}
+        <tr>
+          <td>{{ s.EBELP }}</td>
+          <td>{{ s.MATNR }}</td>
+          <td>{{ s.MAKTX }}</td>
+          <td>{{ s.Serialized }}</td>
+          <td>{{ s.WERKS }}</td>
+          <td>{{ s.Location_Name }}</td>
+          <td>{{ s.LGORT }}</td>
+          <td>{{ s.POQTY }}</td>
+          <td>{{ s.POUOM }}</td>
+          <td>{{ s.Already_Recvd_Qty }}</td>
+          <td>{{ s.Yet_to_be_received }}</td>
+          <td>{{ s.Qty_being_Received }}</td>
+          <td>{{ s.PRICE }}</td>
+          <td>{{ s.TOTAL }}</td>
+          <td>{{ s.ISTAT }}</td>
+          <td>{{ s.ITEXT }}</td>
+        </tr>
+      {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>No schedules found for this PO.</p>
+  {% endif %}
+</div>
+</div>s
+
+{% endblock %}

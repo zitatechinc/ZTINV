@@ -1,0 +1,134 @@
+{% extends 'core/base.html' %}
+{% block content %}
+
+<div class="row mb-2 mt-2">
+    <div class="col-6 col-md-6">
+        <!-- Left column removed (page title) -->
+    </div>
+    <div class="col-6 col-md-6">
+        <div class="button-group" style="float:right;">
+            {% if product_obj.getProductAttributes %}
+                 <div class="col-12 col-md-12 text-end">
+                    <!-- Edit Button with SweetAlert2 Popup -->
+                    <button type="button" class="btn btn-sm app-btn-primary edit-link"
+                            data-url="{% url 'product-attribute-create' product_obj.pk %}">
+                        <i class="fa fa-edit fa-lg"></i> Edit
+                    </button>
+                </div>
+            {% else %}
+                <a href="{% url 'product-attribute-create' product_obj.pk %}" class="btn btn-sm btn-default">
+                    <i class="fa fa-plus-circle"></i> Add New Attributes
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+
+        <nav class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row">
+            <a class="flex-sm-fill text-sm-center nav-link"
+               href="{% url 'product-view' product_obj.pk %}">
+                Product Details
+            </a>
+            <a class="flex-sm-fill text-sm-center nav-link active"
+               href="{% url 'product-attribute-create' product_obj.pk %}">
+                Product Attributes Details
+            </a>
+            <a class="flex-sm-fill text-sm-center nav-link"
+               href="{% url 'product-vendor-list' product_obj.pk %}">
+                Product Vendor Details
+            </a>
+        </nav>
+
+        <div class="app-card-body p-4">
+
+            {% if page_obj.object_list %}
+
+            <!-- ✅ COMMON ATTRIBUTES -->
+            {% with common_list=page_obj.object_list %}
+            {% if common_list %}
+            <div class="col-md-12">
+                <h6>Common Attributes</h6>
+                <table class="table table-bordered table-hover">
+                    {% for eachRow in page_obj.object_list %}
+                        {% if eachRow.attribute.attribute_type == 'Common' and eachRow.value %}
+                            <tr>
+                                <td width="20%"><strong>{{ eachRow.attribute.name }}</strong></td>
+                                <td width="80%">{{ eachRow.value }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- ✅ CATEGORY SPECIFIC ATTRIBUTES -->
+            {% with category_list=page_obj.object_list %}
+            {% if category_list %}
+            <div class="col-md-12 mt-3">
+                <h6>Category Specific Attributes</h6>
+                <table class="table table-bordered table-hover">
+                    {% for eachRow in page_obj.object_list %}
+                        {% if eachRow.attribute.attribute_type == 'Category Specific' and eachRow.value %}
+                            <tr>
+                                <td width="20%"><strong>{{ eachRow.attribute.name }}</strong></td>
+                                <td width="80%">{{ eachRow.value }}</td>
+                            </tr>
+                        {% endif %}
+                    {% endfor %}
+                </table>
+            </div>
+            {% endif %}
+            {% endwith %}
+
+            {% else %}
+            <div class="col-md-12">
+                <h6 class="text-center">No Records Found.</h6>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block pagecss %}
+<style type="text/css">
+   label.required::after { display: none !important; }
+   label, strong { font-weight: bold !important; }
+</style>
+{% endblock %}
+
+{% block pagejs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Edit Button with SweetAlert2 Popup
+    document.querySelectorAll('.edit-link').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            const url = btn.getAttribute('data-url');
+            
+            // Display SweetAlert2 popup
+            Swal.fire({
+                text: 'Do you want to edit these product attributes?',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, Edit',
+                cancelButtonText: 'Cancel',
+                allowOutsideClick: false,
+                width: 350
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    // Redirect to edit page if confirmed
+                    window.location.href = url;
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

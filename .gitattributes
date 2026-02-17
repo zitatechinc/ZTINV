@@ -1,0 +1,2 @@
+ims/static/data/*.json filter=lfs diff=lfs merge=lfs -text
+ims/static/data/*.csv filter=lfs diff=lfs merge=lfs -text

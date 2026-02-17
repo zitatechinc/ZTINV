@@ -1,0 +1,237 @@
+1) Activate env
+
+   D:\Meslova_Inventory\MeslovaInventoryApp-main>env\Scripts\activate 
+   (env) D:\Meslova_Inventory\MeslovaInventoryApp-main>  -->>  environment is Activated
+
+2) Makemigrations
+
+Note : Run below commands should be 'manage.py' existed in that path or not
+   and run below sequence of commands
+*********************************************
+python manage.py makemigrations core
+python manage.py makemigrations accounts
+python manage.py makemigrations location
+python manage.py makemigrations catalog
+python manage.py makemigrations vendor
+python manage.py makemigrations ims
+python manage.py makemigrations customer
+python manage.py makemigrations application 
+python manage.py makemigrations inventory
+python manage.py makemigrations project
+*********************************************
+
+python manage.py makemigrations core accounts location catalog vendor ims customer application inventory project
+ 
+3) Migrate
+************************************
+python manage.py migrate core
+python manage.py migrate accounts
+python manage.py migrate location
+python manage.py migrate catalog
+python manage.py migrate vendor
+python manage.py migrate ims
+python manage.py migrate customer
+python manage.py migrate application
+python manage.py migrate inventory
+python manage.py migrate project
+python manage.py migrate auditlog
+*************************************
+python manage.py migrate core accounts location catalog vendor ims customer application inventory project auditlog
+
+4) run overall project level migrations to run below commands
+  ==============================================================
+   
+*************************************
+python manage.py makemigrations
+python manage.py migrate
+**************************************
+
+5) create Projectlevel admin credentianls
+   ======================================
+   *******************************************
+   command : python manage.py createsuperuser
+   *******************************************
+   Example :
+   Username : meslova
+   Email    : meslovasys@gmail.com
+   Password : admin@1234
+
+6) insert sample users data::
+   ==========================
+   *****************************************************
+   command : python manage.py create_ims_accounts_users
+   *****************************************************
+
+7) Run insert_permission_data.py first:
+   ====================================
+   *****************************************************
+   command: python manage.py insert_permission_data
+   *****************************************************
+   insert_permission_data.py:
+   -------------------------
+
+   Objective: This file is designed to setup standardized role-based permissions for a set of models in your Django application. It primarily focuses on 
+   creating groups (roles) like Administrator, Staff, and Guest, and assigning model-based permissions (such as can_create, can_edit, can_view) to these groups.
+
+   Key Features:
+   -------------
+
+   Creates roles (groups): It ensures that the groups defined in the ROLE_PERMISSIONS dictionary (Administrator, Staff, Guest) exist.
+
+   Assigns permissions to roles: For each model in the MODEL_CLASSES list, it assigns specific permissions (like can_create, can_edit, can_delete, can_view) to each group.
+
+   Global permissions: It works on creating global permissions for different models across the application, centralizing permissions management for users in various roles.
+
+ 
+8) Run insert_po_data.py second:
+   ==============================
+   ******************************************
+   command: python manage.py insert_po_data
+   ******************************************
+   insert_po_data.py:
+   ------------------
+
+   Objective: This file appears to be intended for setting up role-based permissions specifically for models related to Purchase Orders and related entities 
+   (e.g., PurchaseOrderType,PurchaseOrderStatus, PurchaseOrderHeader, etc.). It's similar to insert_permission_data.py, but it might be more focused on the models 
+   related to inventory, procurement, and vendor management.
+
+   Key Features:
+   --------------
+   Specific permission handling: This script assigns permissions for models like PurchaseOrder, GoodsMovement, Inventory, Vendor, and related components.
+
+   Targeted permissions: It also follows a similar logic as the insert_permission_data.py script but is likely designed to work within a narrower 
+   scope (i.e., Purchase Orders and related models).
+
+   Similar roles: It would typically assign permissions like can_create, can_edit, can_delete, can_view for those models.
+
+9) Country, Location, SubLocation:
+   ===============================
+  *****************************************************
+  Command : python manage.py import_india_locations
+  *****************************************************
+  This script automates importing India’s hierarchical location data (country → states → cities) into your database models (Country, Location, SubLocation) 
+   while handling duplicates and generating unique identifiers.
+
+10) Purchase Order Types & Purchase Order Status :
+    ============================================
+    *****************************************************
+    Command : python manage.py insert_real_po_types_status
+    ******************************************************
+    It is a data seeding script for purchase order management, creating ready-to-use types and statuses for your inventory or procurement system with meaningful 
+     names, codes, descriptions, and search keywords.
+
+12)  categories, product types, brands, languages, product groups, and manufacturers:
+     ================================================================================
+   ************************************************
+   Command : python manage.py insert_catalog_list_data
+   ************************************************
+   Populates the catalog with 50 records each for categories, product types, brands, languages, product groups, and manufacturers, 
+   creating a complete, realistic dataset with slugs and hierarchy.”
+
+13) Themes :
+    =========
+   ************************************************
+   Command : python manage.py insert_best_theme
+   ************************************************
+   “Populates the database with predefined default themes, creating or updating each theme’s colors, fonts, and styling details.”
+
+14) Product :
+    =========
+    ************************************************
+    Command : python manage.py insert_master_products_data
+    ************************************************
+    Note :
+    ------
+    Populate foreign key tables first:
+    ----------------------------------
+    Insert default data into Brand, ProductGroup, Language, Manufacturer, Category, Country, and ProductType. This ensures that when products reference 
+    these tables via foreign keys, the IDs exist, preventing database integrity errors.
+
+    Insert products safely:
+    -----------------------
+    Run insert_master_products_data.py to create 100 products. The command randomly assigns valid foreign key IDs from the populated tables and fills all product fields, 
+    ensuring every   product references existing records without causing constraint violations.
+
+    This command inserts 100 realistic product records into the database, filling all fields with unique values, descriptions, identifiers, and search keywords for easy retrieval.
+
+
+15)  VendorType ::
+     =============
+     ************************************************
+     Command : python manage.py insert_vendor_types
+     ************************************************
+     Inserts 100 realistic VendorType records with unique codes, random status, and descriptions, skipping duplicates, into the database.
+
+16) Vendor :
+    ========
+
+    ************************************************
+    Command : python manage.py insert_master_vendors_data
+    ************************************************
+    Note :
+    -------
+    1️⃣ Insert foreign key data first – Populate VendorType, Country, Location, SubLocation, and Languages tables so that each vendor can reference valid IDs. 
+       Without this, running the vendor insert will fail due to foreign key constraints.
+
+    2️⃣ Then run insert_master_vendors_data – This command generates 100 realistic vendors, automatically assigning valid vendor_type_id, country_id, state_id, 
+        sublocation_id, and language_id from the populated tables, along with email, phone, address, slug, and notes.
+
+16) Vendor Bank & Vendor Tax :
+    ===========================
+
+    ************************************************
+    Command : python manage.py insert_vendor_bank_and_tax
+    ************************************************
+
+    Note :
+    ------
+
+    Run insert_master_vendors_data first – this creates vendors in the database (requires VendorType, Country, Location, SubLocation, Languages to exist).
+
+    Run insert_vendor_bank_and_tax second – this adds bank and tax records for the vendors created in step 1 (requires Country to have India).
+
+17) Customers insert_customers_data :
+    =================================
+
+    ***********************************************
+
+    Command : python manage.py insert_customers_data
+
+    ************************************************
+
+    Note : 
+    ------
+
+    1) Insert master data first – Ensure Country (id=1), Location, SubLocation, and Languages tables contain data, 
+         because insert_customers_data depends on them (foreign keys).
+
+    2) Then run insert_customers_data – It will create 100 customers using those existing records for country, 
+        state, sublocation, and language.
+
+     This will create 100 customers with valid foreign key references (country, state, sublocation, language), phone numbers, emails, address, and other details.
+
+
+====================== ims ==================
+
+18) inset IMS required Tables(Stages,Units,Departments,Roles,Tendor Type and Procurement Type)
+    ===========================================================================================
+    Procurement Types  : 
+    Departments        : 
+    Source Types       : 
+    Tender Types       : 
+    Units              : 
+    Delivery Types     : 
+    Stages             : 
+    Roles              : 
+    Designations       : 
+
+    ***********************************************
+    Command: python manage.py inventory_master_data
+    ************************************************
+
+19) Insert both Project and Budget : 
+   =================================
+
+   ***********************************************
+    Command: python manage.py create_realtime_projects
+    ************************************************

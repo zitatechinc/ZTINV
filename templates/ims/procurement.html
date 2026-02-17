@@ -1,0 +1,4463 @@
+
+{% extends 'ims/index.html' %}
+{% load static %}
+<link rel="stylesheet" href="{% static "css/all.min.css" %}"> 
+<script src="{% static "js/jquery-3.6.0.min.js" %}"></script> 
+ <script src="{% static "js/jquery.dataTables.min.js" %}"></script> <!-- DataTables --> 
+<script src="{% static "js/jspdf.umd.min.js" %}"></script> <!-- jsPDF --> 
+<script src="{% static "js/sweetalert2.all.min.js" %}"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+
+{% block scripts %}
+<script>
+  //Global declarations
+  let isEditing = false;
+  let currentEditingIndex = null;
+  var mainbudgett = null
+  var prevestimated = null
+  let fileUrl = "";
+  let specFileUrl = "";
+  var procurement_types  = {{procurement_types|safe}}
+  var projects = {{projects|safe}}  
+  var getdata 
+  var specdata
+  var justfile
+  var quotfile
+  var currentTerm = '';
+  var existingTags = [];
+  let skipChange = false;
+  let particularsArray = [];
+  var pap = false;
+  let file = null;
+  let selectedFileURL = null;
+
+  // Open the file URL in a new tab, no encoding needed for slashes
+  function openFile(fileUrl) {
+    // Open the file URL in a new tab, no encoding needed for slashes
+    window.open(fileUrl, '_blank');
+  }
+
+  
+  //Displying the date and year only between the selected project year  
+  document.addEventListener('DOMContentLoaded', function () {
+    const projectDropdown = document.getElementById('project');
+    const dateInput = document.getElementById('firstpositioned_by');
+
+    // Helper to format date to YYYY-MM-DD
+    const formatDate = (date) => date.toISOString().split('T')[0];
+
+    // Always set min date to today
+    const today = new Date();
+    const todayStr = formatDate(today);
+
+    // Initialize min date as today on page load
+    dateInput.min = todayStr;
+
+    projectDropdown.addEventListener('change', function () {
+      const selectedOption = this.options[this.selectedIndex];
+      const financialYear = selectedOption.getAttribute('data-year');
+
+      if (financialYear && /^\d{4}-\d{4}$/.test(financialYear)) {
+        const [startYear, endYear] = financialYear.split('-').map(Number);
+
+        // Financial year dates
+        const fyStartDate = new Date(startYear, 3, 1);  // April 1st
+        const fyEndDate = new Date(endYear, 2, 31);     // March 31st
+
+        // Set max date as financial year end
+        dateInput.max = formatDate(fyEndDate);
+
+        // Set min date as the later of today or financial year start
+        dateInput.min = fyStartDate > today ? formatDate(fyStartDate) : todayStr;
+
+        // Reset value if outside new bounds
+        if (dateInput.value) {
+          const selected = new Date(dateInput.value);
+          if (selected < new Date(dateInput.min) || selected > fyEndDate) {
+            dateInput.value = '';
+          }
+        }
+      } else {
+        // No financial year or invalid -> min = today, max = none
+        dateInput.min = todayStr;
+        dateInput.max = '';
+        dateInput.value = '';
+      }
+    });
+    
+  });
+  //Reset the particulars, if it changes to draft or search while editing any of the particular  
+  function resetEditState() {
+    isEditing = false;
+    currentEditingIndex = null;
+
+    // Reset all form fields
+    document.getElementById('make').value = '';
+    //document.getElementById('descriptionid').value = '';
+    document.getElementById('product').value ='';
+    document.getElementsByName('total_qty_required')[0].value = '';
+    document.getElementsByName('estimated_value')[0].value = '';
+    document.getElementsByName('estimated_value')[0].defaultValue = '';
+    document.getElementsByName('reasons_for_procurement')[0].value = '';
+    document.getElementsByName('unit')[0].value = '';
+    document.getElementsByName('partno')[0].value = '';
+    document.getElementById('materialcode').value = '';
+    document.getElementById('specifications').value = '';
+
+    // Clear file displays and hide buttons
+    //document.getElementById('file-name-display').textContent = '';
+    document.getElementById('viewSpecification').style.display = 'none';
+    // document.getElementById('filenamedisplay').textContent = '';
+    document.getElementById('justificationFile').style.display = 'none';
+
+    // Reset dropdown and conditional views
+    const deliverySelect = document.getElementById('delivery');
+    if (deliverySelect) deliverySelect.selectedIndex = 0;
+    document.getElementById('forquantity').style.display = 'none';
+    document.querySelector('.AddQuant').style.display = 'none';
+
+    // Clear dynamic quantity and date fields
+    // Clear only the input values inside checklistContainer
+    document.querySelectorAll('#checklistContainer input').forEach(input => {
+      input.value = '';
+    });
+
+    // Clear only the input values inside dateFieldsContainer
+    document.querySelectorAll('#dateFieldsContainer input').forEach(input => {
+      input.value = '';
+    });
+
+
+    // Reset "Add/Update" button
+    const addButton = document.getElementById('addParticularBtn');
+    if (addButton) {
+      addButton.textContent = 'Add More Items';
+      addButton.setAttribute('onclick', 'addParticular()');  // restore default
+    }
+  }
+  //File name display and eye button for the specification file in the particulars form and if changes the file it updates to new one
+  document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.getElementById("file-upload");
+    const viewButton = document.getElementById("viewSpecification");
+    // const fileNameDisplay1 = document.getElementById("file-name-display");
+
+    fileInput.addEventListener("change", function () {
+      if (fileInput.files && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+    
+        viewButton.style.display = "inline-block";
+
+        viewButton.onclick = function () {
+          const fileURL = URL.createObjectURL(file);
+          window.open(fileURL, "_blank");
+        };
+      } else {
+        //fileNameDisplay1.textContent = "";
+        viewButton.style.display = "none";
+      }
+    });
+  });
+  //File name display and eye button for the justification file in the particulars form and if changes the file it updates to new one
+  document.addEventListener("DOMContentLoaded", function () {
+    const fileInput = document.getElementById("justification_file");
+    const viewButton = document.getElementById("justificationFile");
+    //const fileNameDisplay = document.getElementById("filenamedisplay");
+
+    fileInput.addEventListener("change", function () {
+      if (fileInput.files && fileInput.files.length > 0) {
+        const file = fileInput.files[0];
+        
+        viewButton.style.display = "inline-block";
+
+        viewButton.onclick = function () {
+          const fileURL = URL.createObjectURL(file);
+          window.open(fileURL, "_blank");
+        };
+      } else {
+        // fileNameDisplay.textContent = "";
+        viewButton.style.display = "none";
+      }
+    });
+  });
+document.addEventListener("DOMContentLoaded", function () {
+  const fileInput = document.getElementById("quotation_upload"); // updated ID
+  const viewButton = document.getElementById("quotationupload"); // updated ID
+
+  fileInput.addEventListener("change", function () {
+    if (fileInput.files && fileInput.files.length > 0) {
+      const file = fileInput.files[0];
+
+      viewButton.style.display = "inline-block"; // show the eye button
+
+      // Open file in new tab when eye button is clicked
+      viewButton.onclick = function () {
+        const fileURL = URL.createObjectURL(file);
+        window.open(fileURL, "_blank");
+      };
+    } else {
+      viewButton.style.display = "none"; // hide the eye button if no file
+    }
+  });
+});
+
+  //If procurement type is capital then the project dropdown will not display
+  document.addEventListener('DOMContentLoaded', function() {
+    const procuretypeSelect = document.getElementById('procurement_type');
+    const projcontainer = document.getElementById('proj');
+
+
+  
+    procuretypeSelect.addEventListener('change', function() {
+        const selectedType = procuretypeSelect.options[procuretypeSelect.selectedIndex].dataset.type;
+
+        if (selectedType === 'capital') {
+        
+            projcontainer.style.display = 'none';
+            
+        } else {
+      
+            projcontainer.style.display = 'block';
+            
+        }
+    });
+  });
+  //Toggle text show more show less for the particular table
+  document.addEventListener('click', function(event) {
+    if (event.target.classList.contains('toggle-text')) {
+      event.preventDefault();
+      const container = event.target.closest('.expandable-text');
+      const shortText = container.querySelector('.short-text');
+      const fullText = container.querySelector('.full-text');
+      const isExpanded = fullText.style.display === 'inline';
+
+      fullText.style.display = isExpanded ? 'none' : 'inline';
+      shortText.style.display = isExpanded ? 'inline' : 'none';
+      event.target.textContent = isExpanded ? 'Show More' : 'Show Less';
+    }
+  });
+  //If delivery type staggered the  multiple quantity input fields display or else only the single date will display
+  $(document).on("change", "#delivery", function () {
+    ///debugger;
+    const deliverySelect = document.getElementById('delivery');
+    const selectedOption = deliverySelect.options[deliverySelect.selectedIndex];
+    const selectedDeliveryType = selectedOption.getAttribute('data-id');
+
+    $(".extraQD").remove();
+    $("#quantity").val('');
+    $("#firstpositioned_by").val('');
+
+    if (selectedDeliveryType === 'Staggered') {
+      console.log(selectedDeliveryType, 'selectedDeliveryType');
+      $("#forquantity").css('display', 'block');
+      $(".AddQuant").show();
+
+      // ✅ Clean up and keep only the first checklist item and date field
+      const $checklistItems = $("#checklistContainer .checklist-item");
+      $checklistItems.each(function (index) {
+        if (index > 0) {
+          $(this).remove();
+        }
+      });
+
+      const $dateFields = $("#dateFieldsContainer .date-field-item");
+      $dateFields.each(function (index) {
+        if (index > 0) {
+          $(this).remove();
+        }
+      });
+
+    } else if (selectedDeliveryType === 'Full Quantity') {
+      $("#forquantity").css('display', 'none');
+      $(".AddQuant").hide();
+
+      // ✅ Keep only the first date field
+      const $dateFields = $("#dateFieldsContainer .date-field-item");
+      $dateFields.each(function (index) {
+        if (index > 0) {
+          $(this).remove();
+        }
+      });
+
+    } else {
+      $("#forquantity").css('display', 'block');
+      $(".AddQuant").hide();
+    }
+  });
+  //The below function completely describes about the quantity field and the datefield (remove or add ),when staggered delivery type
+  $(document).on("click", ".AddQuant", function() { 
+    const deliverySelect = document.getElementById('delivery');
+      const selectedOption = deliverySelect.options[deliverySelect.selectedIndex];
+      const selectedDeliveryType = selectedOption.getAttribute('data-id');
+
+
+      if (selectedDeliveryType !== 'Staggered') return;
+
+    
+      const newaddlistItem = document.createElement('div');
+      newaddlistItem.classList.add('checklist-item', 'mb-2', 'extraQD' );
+      newaddlistItem.innerHTML = 
+        '<input type="text" class="form-control checklist-input" placeholder="Quantity" required>';
+
+      // Create new date field item for Items to be Positioned By
+      const newDateFieldItem = document.createElement('div');
+      newDateFieldItem.classList.add('date-field-item', 'mb-2', 'd-flex', 'align-items-center','extraQD');
+      newDateFieldItem.innerHTML = 
+        '<input type="date" name="items_to_be_positioned_by" style="margin-left: -12px;" class="form-control" required>';
+
+      // Create and append the remove button
+      const removeButton = document.createElement('button');
+      removeButton.type = 'button';
+      removeButton.classList.add('remove-checklist-btn', 'btn', 'btn-danger', 'btn-sm', 'ml-2' );
+      removeButton.style.marginLeft = '4px';
+      removeButton.innerHTML = '<i class="fas fa-minus"></i>';
+
+      // Append the remove button to the date field item (beside the input field)
+      newDateFieldItem.appendChild(removeButton);
+
+      // Append the new items to the respective containers
+      checklistContainer.appendChild(newaddlistItem);
+      dateFieldsContainer.appendChild(newDateFieldItem);
+
+      // Remove button functionality
+      removeButton.addEventListener('click', function() {
+        newaddlistItem.remove();
+        newDateFieldItem.remove();
+      });
+  });
+  //The function for the changing of capital letters to lower case
+  $(document).ready(function() {
+
+    function capitalizeFirstLetter(string) {
+      if (string) {
+          return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase();
+      }
+      return string;
+  }
+  $("#source_of_supplies").change(function () {
+
+    let vendor_ids = $(this).val();
+
+    $.ajax({
+        url: "",                // same URL as the page
+        type: "GET",
+        data: { "vendors[]": vendor_ids },
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        success: function (response) {
+          console.log(response)
+
+            $("#product").empty();
+            $("#product").append(
+                `<option value="" disabled selected hidden>Select Product Type</option>`
+            );
+
+            response.products.forEach(function (p) {
+                $("#product").append(
+        `<option value="${p.id}" data-id="${p.name}" vendor-id="${p.vendor}">
+            ${p.name} - ${p.code}
+        </option>`
+    );
+            });
+        }
+    });
+
+});
+  //Select2 function for the source of supplies -->Label text display
+  $(".js-example-tags").select2({
+
+    tags: true,
+    
+    createTag: function (params) {
+
+      currentTerm = $.trim(params.term);
+
+      existingTags = $(".js-example-tags").select2('data').map(function(tag) {
+
+        return tag.text;
+
+      });
+
+      return null; 
+
+    },
+    placeholder: {
+      id: '-1', // the value of the option
+      text: 'Source of Supplies'
+    }
+
+  });
+  // When the input element with ID "project" gains focus
+  $('#project').on('focus', function () {
+    // Store the current value of the input in a custom attribute called "preValue"
+    // This allows you to later compare if the value was changed after editing
+    $(this).attr("preValue", $(this).val());
+  });
+  // Triggered when the #project dropdown value changes
+  $('#project').on('change', function () {
+      
+    // If skipChange is true, skip this change logic once and reset flag
+    if (skipChange) {
+        skipChange = false;
+        return;
+    }
+
+    // Check if particularsArray is empty (i.e., no items added yet)
+    if (particularsArray.length === 0) {
+        // Safe to update preValue, as no particulars were added
+        $('#project').attr("preValue", $(this).val());
+
+        // Prepare data to send to server
+        var formData = {
+            'status': 'projectbudget',
+            'projectid': $("#project option:selected").data('code'),
+            'financial_year': $("#project option:selected").data('year')
+        };
+
+        // Make AJAX POST request to fetch budget data
+        $.ajax({
+            url: '{% url "procurement" %}',  // Django template tag for URL
+            type: 'POST',
+            data: JSON.stringify(formData),  // Send data as JSON
+            headers: {
+                'X-CSRFToken': '{{csrf_token}}'  // CSRF token for Django
+            },
+            contentType: 'application/json',
+            success: function (response) {
+                // If response contains budget info
+                if (response.status.length) {
+                    // Parse and assign budget values from response
+                    const allocatedBudget = parseFloat(response.status[0].allocated_budget) || 0;
+                    const remainingBudget = parseFloat(response.status[0].remaining_budget) || 0;
+
+                    // Update budget input fields
+                    $("#budget").val(allocatedBudget.toFixed(2));
+                    $("#budget-container").css("display", "block");
+
+                    // Update both remaining-budget inputs and store original value
+                    $("#remaining-budget").val(remainingBudget.toFixed(2));
+                    $("#remaining-budget")[0].defaultValue = remainingBudget.toFixed(2);
+                    $("#remaining-budget").data("original", remainingBudget);
+
+                    $("#remainingbudget").val(remainingBudget.toFixed(2));
+                    $("#remainingbudget")[0].defaultValue = remainingBudget.toFixed(2);
+                    $("#remainingbudget").data("original", remainingBudget);
+
+                    // Update global variables
+                    mainbudgett = remainingBudget;
+                    prevestimated = null;
+
+                    // Clear estimated value input
+                    $("#estimated_value").val('');
+                } else {
+                    // If no data in response, clear all budget-related inputs
+                    $("#budget").val('');
+                    $("#budget-container").css("display", "none");
+                    $("#remaining-budget").val('');
+                    $("#remainingbudget").val('');
+                    $("#estimated_value").val('');
+                }
+            },
+            error: function (error) {
+                console.error("Error:", error);  // Log any AJAX errors
+            }
+        });
+
+    } else {
+        // Block project change if particulars have already been added
+        alert("Cannot change the project as particulars are already added for this specific project.");
+
+        // Retrieve previous value from preValue attribute
+        const previousValue = $(this).attr("preValue");
+
+        // Revert dropdown to previous value if it exists
+        if (previousValue !== undefined && previousValue !== "") {
+            skipChange = true;  // Prevent recursion from triggering `change` again
+            $(this).val(previousValue).trigger('change');  // Revert and retrigger
+        }
+    }
+  });
+
+  //  This function handles real-time validation and calculation when the user enters an "Estimated Value".
+  // It ensures a project is selected, validates the input, and updates the remaining budget accordingly.
+  $('#estimated_value').on('input', function () {
+    ///debugger
+    var originaldata = $("#remaining-budget").val()
+    //var originaldata1 =$("#remaining-budget").val()
+    var defaultestimatedvalue=this.defaultValue;
+  
+    if($("#project").val() == ''){
+      alert("please select project")
+      $('#estimated_value').val('')
+      return
+    }else if(parseFloat($("#estimated_value").val()) <= 0){
+      alert("please give vaild Estimated Total Value")
+      $('#estimated_value').val('')
+      return
+    }
+    else if(parseFloat($("#estimated_value").val()) > parseFloat(mainbudgett)){
+        showAlert("please give vaild value")
+      $('#estimated_value').val('')
+      $("#remaining-budget").val(mainbudgett)
+    //  $("#remainingbudget").val(originaldata1)
+      return
+    }
+  
+    else{
+  
+      var estimatedValue = parseFloat($(this).val()) || 0;
+      var originalRemainingBudget = parseFloat($("#remaining-budget").val());
+      var originalRemainingBudget1 = parseFloat($("#remainingbudget").val());
+      var mainbudgett1 = parseFloat(mainbudgett)
+    
+      ///debugger;
+    
+      if(defaultestimatedvalue){
+        $("#remaining-budget").val(((mainbudgett1+parseFloat(defaultestimatedvalue-estimatedValue))).toFixed(2));
+        //$("#remainingbudget").val(((mainbudgett1+parseFloat(defaultestimatedvalue-estimatedValue))).toFixed(2));
+      }
+      else{
+        $("#remaining-budget").val((mainbudgett1-estimatedValue).toFixed(2));
+        //$("#remainingbudget").val((mainbudgett1-estimatedValue).toFixed(2));
+      }
+    
+    }
+  });
+  
+  // Handle procurement confirmation (deduct budget in DB)
+  $('#confirm_procurement').on('click', function () {
+    var estimatedValue = parseFloat($("#estimated_value").val()) || 0;
+    var projectid = $("#project option:selected").data('code');
+
+    if (!projectid || estimatedValue <= 0) {
+        alert("Please select a project and enter a valid amount.");
+        return;
+    }
+
+    var formData = {
+        'status': 'update_budget',
+        'projectid': projectid,
+        'used_amount': estimatedValue
+    };
+
+    $.ajax({
+        url: '{% url "procurement" %}',
+        type: 'POST',
+        data: JSON.stringify(formData),
+        headers: {
+            'X-CSRFToken': '{{csrf_token}}'
+        },
+        contentType: 'application/json',
+        success: function(response) {
+            if (response.success) {
+                $("#remaining-budget").val(response.remaining_budget.toFixed(2));
+                $("#remaining-budget").data("original", response.remaining_budget);
+                $("#remainingbudget").val(response.remaining_budget.toFixed(2));
+                $("#remainingbudget").data("original", response.remaining_budget);
+            } else {
+                alert(response.error);
+            }
+        },
+        error: function(error) {
+            console.error("Error:", error);
+        }
+      });
+      });
+      // Initialize DataTable
+      var vendortable = $("#example").DataTable();
+    
+
+  
+  });
+
+  //Adding of particulars multiple for single procurement in the particulars table,It handles the edit button,delete of particular also
+  function addParticular() {
+      ///debugger
+      var checkboxes = document.getElementsByClassName('procurement-checkbox');
+      //var description = document.getElementById('descriptionid').value;
+      var totalQty = document.getElementsByName('total_qty_required')[0].value;
+      var estimatedValue = document.getElementsByName('estimated_value')[0].value;
+      var reasons = document.getElementsByName('reasons_for_procurement')[0].value;
+      if($("#justification_file")[0].files.length != 0){
+        var justification_file =$("#justification_file")[0].files[0]
+      }else{
+        var justification_file = ''
+      }
+      if($("#quotation_upload")[0].files.length != 0){
+        var quotation_upload =$("#quotation_upload")[0].files[0]
+      }else{
+        var quotation_upload = ''
+      }
+      var date = document.getElementsByName('items_to_be_positioned_by')[0].value;
+      var location = document.getElementById('location').value;
+      var sourceOfSupplies = $('#source_of_supplies option:selected').map(function() {
+        return $(this).data('id');
+      }).get();
+
+      console.log(sourceOfSupplies);
+      var make = document.getElementById('make').value;
+      var qualityCertificates = document.getElementById('quality_certificates_required').value;
+      if($("#attachment")[0].files.length != 0){
+        var acceptance_attach =$("#attachment")[0].files[0]
+      }else{
+        var acceptance_attach = ''
+      }
+      //var materialStandard = document.getElementById('material_to_confirm_to_standard').value;
+      var earlierProcurement = document.getElementById('earlier_procurement_details').value;
+      var procurement_title = document.getElementById('procurement_title').value.trim();
+      //var specialConditions = document.getElementById('special_conditions').value;
+      var tendertype = $("#tender_type option:selected").data("name");
+      var procurementtype = $("#procurement_type option:selected").data("type");
+    // var procurementtype = $("#procurement_type option:selected").data("id");
+      var importindigenous =  $("#import_indigenous option:selected").data("id");
+      var projectname =  $("#project option:selected").data('name');
+      var project=$("#project option:selected").data('code');
+      var delivery=$("#delivery option:selected").data("id");
+      var department=$("#departments option:selected").data('id')
+      var datacode =$("#tender_type option:selected").data("code");
+      var datacodeprtype=$("#procurement_type option:selected").data("prtype");
+      var datacodeimport=$("#imp_ind option:selected").data("imp");
+      var departments = $("#departments").val();
+      var specification=$("#specifications").val();
+      var unit=$("#unit").val();
+      var units=$("#unit option:selected").data("id");
+      var partno=$("#partno").val();
+      var materialcode=$("#materialcode").val();
+      var role=$("#recommending_authority").val();
+      var category_events  = $("#category_events").val();
+      var products = $("#product").val(); 
+      var product = $("#product option:selected").data('id');
+      console.log(product,'product ')
+
+      if (!datacodeprtype == null || datacodeprtype === ""|| datacodeprtype === undefined) {
+      
+        showAlert("Procurement Type is required. Please select a value.");
+        return;
+      }
+      if(!departments == null || departments === ""|| departments === undefined) {
+        
+        showAlert("Department is required. Please select a value.");
+        return;
+      }
+      if (!importindigenous || importindigenous == null || importindigenous === "" || importindigenous === undefined) {
+      
+        showAlert("Import/Indigenous option is required. Please select a value.");
+        return;
+      }
+      if (!tendertype || tendertype == null || tendertype === undefined) {
+        
+        showAlert("Tender Type is required. Please select a value.");
+        return;
+      }
+      if (!projectname || projectname == null || projectname === "" || projectname === undefined) {
+        
+        showAlert("Project is required. Please select a value.");
+        return;
+      }
+      if (location === "" || location == null) {
+        showAlert("Location is required. Please enter a value.");
+        return;
+      }
+      if (!sourceOfSupplies || sourceOfSupplies == null || sourceOfSupplies === undefined) {
+        showAlert("Source of Supplies is required. Please select a value.");
+        return;
+      }
+
+      if (!qualityCertificates || qualityCertificates == null || qualityCertificates === undefined) {
+        showAlert("Acceptance Criteria is required. Please select a value.");
+        return;
+      }
+      if (!procurement_title || procurement_title == null || procurement_title === undefined) {
+        showAlert("Procurement Title is required. Please select a value.");
+        return;
+      }
+      
+      if (procurement_title.length > 50) {
+        showAlert("Procurement Title cannot exceed 50 characters.");
+        return;
+      }
+      if (!role || role == null || role === undefined) {
+        showAlert("Role is required. Please select a value.");
+        return;
+      }
+      if (category_events === "" || category_events == null) {
+        showAlert("Category Events is required. Please enter a value.");
+        return;
+      }
+      if (!unit || unit == null || unit === undefined) {
+        showAlert("Units is required. Please select a value.");
+        return;
+      }
+      if (!delivery || delivery == null || delivery === undefined) {
+        showAlert("Delivery option is required. Please select a value.");
+        return;
+      }
+      
+     
+      if (!partno || partno == null || partno === undefined) {
+        showAlert("Part No. is required. Please select a value.");
+        return;
+      }
+      if (!make || make == null || make === undefined) {
+        showAlert("Make is required. Please select a value.");
+        return;
+      }
+
+      if (reasons === "" || reasons == null) {
+        showAlert("Justification for Procurement are required. Please enter a value.");
+        return;
+      }
+      // Check if totalQty is entered
+      if (totalQty === "" || totalQty == null) {
+        showAlert("Total Quantity is required. Please enter a value.");
+        return;
+      }
+      if (Number(totalQty) <= 0) {
+        showAlert("Total Quantity cannot be zero or negative.");
+        return;
+      }
+      // Check if estimatedValue is entered
+      if (estimatedValue === "" || estimatedValue == null) {
+        showAlert("Estimated Value is required. Please enter a value.");
+        return;
+      }
+      // Validate if totalQty is a valid number
+      if (isNaN(totalQty)) {
+        showAlert("Total Quantity must be a valid number.");
+        return;
+      }
+      // Validate if estimatedValue is a valid number
+      if (isNaN(estimatedValue)) {
+        showAlert("Estimated Value must be a valid number.");
+        return;
+      }
+      if (specification === "" || specification == null) {
+        showAlert("Specifications are required. Please enter a value.");
+        return;
+      }
+      
+      if (date === "" || date == null) {
+        showAlert("Items Required By is required. Please enter a value.");
+        return;
+      }
+      if(delivery != 'Full Quantity'){
+        var totalQty = parseFloat(document.getElementsByName('total_qty_required')[0].value) || 0;
+        var sumEnteredQty = 0;
+        var quantityInput = document.querySelectorAll('.checklist-input');
+        quantityInput.forEach(function(input) {
+          sumEnteredQty += parseFloat(input.value) || 0;
+        });
+        if (quantityInput === 0 || quantityInput === -1) {
+          showAlert("Error: Quantity cannot be 0 or -1.");
+          invalidQty = true;
+          return;
+      }
+        console.log("Total Quantity Required:", totalQty);
+        console.log("Sum of Entered Quantities:", sumEnteredQty);
+        if (sumEnteredQty !== totalQty) {
+
+          showAlert(`The sum of entered quantities (<strong>${sumEnteredQty}</strong>) does not match the total required quantity (<strong>${totalQty}</strong>).`);
+
+          return;
+        }
+        
+        console.log("Validation Passed: Proceeding with submission.");
+      }
+
+
+      const enteredDate = new Date(date);
+      const today = new Date();
+
+      // Reset time for both today and enteredDate to compare only the date parts
+      enteredDate.setHours(0, 0, 0, 0);
+      today.setHours(0, 0, 0, 0);
+
+      if (enteredDate < today) {
+        showAlert("Date must be today or a future date. Please enter a valid date.");
+        return;
+      }
+      var remainingBudgetField = $("#remaining-budget");
+      var remainingBudgetField1 = $("#remainingbudget");
+      var currentRemainingBudget = parseFloat(remainingBudgetField.val()) || parseFloat(remainingBudgetField.data("original")) || 0;
+      var currentRemainingBudget1 = parseFloat(remainingBudgetField1.val()) || parseFloat(remainingBudgetField1.data("original")) || 0;
+      var updatedBudget = currentRemainingBudget - estimatedValue;
+      var updatedBudget1 = currentRemainingBudget1 - estimatedValue;
+      if (currentRemainingBudget < 0) {
+        showAlert("You cannot add this procurement because the remaining budget is negative.");
+          return;
+      }
+
+      mainbudgett = parseFloat($("#remaining-budget").val())
+      mainbudgett1 = parseFloat($("#remainingbudget").val())
+      prevestimated = null
+      // remainingBudgetField.val(updatedBudget.toFixed(2));
+
+      const quantities = [];
+      const dates = [];
+      const Quandata = [];
+
+      let hasInvalidDate = false; // Flag to track invalid dates
+
+      // Get selected delivery type (Full Quantity or Staggered)
+      const deliveryy = $("#delivery option:selected").data("id");
+
+      // Set required number of dates
+      const minRequiredDates = (deliveryy === "Full Quantity") ? 1 : 1; // Staggered should allow 1 or 2 dates
+      const maxAllowedDates = (deliveryy === "Full Quantity") ? 1 : 2; // Staggered max is 2
+
+      // Get all quantity inputs
+      document.querySelectorAll('.checklist-input').forEach(input => {
+          quantities.push(input.value);
+      });
+
+      // Get all date fields (Items to be Positioned By)
+      const dateInputs = document.querySelectorAll('input[name="items_to_be_positioned_by"]');
+
+      
+      dateInputs.forEach(input => {
+          const enteredDate = new Date(input.value);
+          const today = new Date();
+
+          enteredDate.setHours(0, 0, 0, 0);
+          today.setHours(0, 0, 0, 0);
+
+          if (!input.value.trim()) {
+            showAlert("Please enter the required date(s).");
+              hasInvalidDate = true;
+          } else if (enteredDate < today) {
+            showAlert("Date must be today or a future date. Please enter a valid date.");
+              hasInvalidDate = true;
+          } else {
+              dates.push(input.value);
+          }
+      });
+
+      // Stop execution if any invalid date exists
+      if (hasInvalidDate) return;
+      if (deliveryy !== "Full Quantity") {
+        for (let i = 0; i < quantities.length; i++) {
+            if (isNaN(quantities[i]) || quantities[i] <= 0) {
+              showAlert("For Staggered delivery, quantities must be greater than 0.");
+                return;
+            }
+        }
+      }
+      for (let i = 0; i < quantities.length; i++) {
+        if(delivery != 'Full Quantity'){
+        Quandata.push({
+              quantity: quantities[i],
+              date: dates[i] || null  // Fallback if no corresponding date
+          });
+        }else{
+          Quandata.push({
+              quantity: null,
+              date: dates[i] || null  // Fallback if no corresponding date
+          });
+        }
+      }
+
+      
+
+
+      var particular = {
+        product: product,
+        productid:products,
+        total_qty_required: totalQty,
+        estimated_value: estimatedValue,
+        reasons_for_procurement: reasons,
+        make: make,
+        delivery:delivery,
+        quantities:Quandata,
+        specification:specification,
+        unit:unit,
+        units:units,
+        partno:partno,
+        materialcode:materialcode,
+        specificationFile: document.getElementById("file-upload").files[0] || null,
+        justification_file: document.getElementById("justification_file").files[0] || null,
+        quotation_upload: document.getElementById("quotation_upload").files[0] || null
+      };
+      var fileInput = document.getElementById("file-upload");
+
+      if (fileInput.files.length > 0) {    
+          particular.specificationFile = fileInput.files[0];
+      }else{
+        particular.specificationFile = ''
+      }
+      var justificationFile = document.getElementById("justification_file");
+
+      if (justificationFile.files.length > 0) {    
+          particular.justification_file = justificationFile.files[0];
+      }else{
+        particular.justification_file = ''
+      }
+      var quotationUpload = document.getElementById("quotation_upload");
+
+      if (quotationUpload.files.length > 0) {    
+          particular.quotation_upload = quotationUpload.files[0];
+      }else{
+        particular.quotation_upload = ''
+      }
+      particularsArray.push(particular);
+      console.log("Updated particularsArray:", particularsArray);
+
+      ///debugger
+      if (particularsArray.length === 0) {
+        alert('Please add some particulars before proceeding.');
+        return; 
+      }
+      $("#procurement_display").text(procurementtype)
+
+      var particularsTable = document.getElementById("particularsTable").getElementsByTagName('tbody')[0];
+
+
+      var newRow = particularsTable.insertRow();
+      var serialNoCell = newRow.insertCell(0);
+      serialNoCell.textContent = particularsArray.length;
+
+      var tblength= $("#paticularbody tr").length -1
+    
+      newRow.innerHTML = `
+      <td style="display:none;"><input type="checkbox" class="procurement-checkbox" checked data-index="${particularsArray.length - 1}"></td>
+      <td>${particularsArray.length}</td>
+      <td>${delivery}</td>
+      <td>${createExpandableText(product)}</td>
+      <td>${units}</td>
+      <td>${createExpandableText(partno)}</td>
+      <td>${createExpandableText(make)}</td>
+      <td>${totalQty}</td>
+      <td>${estimatedValue}</td>
+      `;
+
+      if (justificationFile.files.length > 0) {
+        const fileLink = URL.createObjectURL(justificationFile.files[0]);
+        newRow.innerHTML += `
+          <td style="max-width: 250px;">
+            <a href="${fileLink}" target="_blank">
+              <button type="button" class="btn btn-sm btn-outline-secondary vwinpartab" id="view_${particularsArray.length}">
+                <i class="fas fa-eye"></i>
+              </button>
+            </a>
+            ${createExpandableText(reasons)}
+          </td>
+        `;
+      } else {
+        newRow.innerHTML += `<td>${createExpandableText(reasons)}</td>`;
+      }
+
+      if (fileInput.files.length > 0) {
+        const fileLink = URL.createObjectURL(fileInput.files[0]);
+        newRow.innerHTML += `
+          <td style="max-width: 250px;">
+            <a href="${fileLink}" target="_blank">
+              <button type="button" class="btn btn-sm btn-outline-secondary vwinpartab" id="view_${particularsArray.length}">
+                <i class="fas fa-eye"></i>
+              </button>
+            </a>
+            ${createExpandableText(specification)}
+          </td>
+        `;
+      } else {
+        newRow.innerHTML += `<td>${createExpandableText(specification)}</td>`;
+      }
+
+            if(delivery != 'Full Quantity'){
+              newRow.innerHTML += `<td>${Quandata.map(item => {
+                const date = new Date(item.date);
+                const day = date.getDate().toString().padStart(2, '0'); 
+                const month = (date.getMonth() + 1).toString().padStart(2, '0'); // Ensures month is two digits
+                const year = date.getFullYear();
+                const formattedDate = `${day}-${month}-${year}`;
+                return item.quantity ? `${item.quantity} - ${formattedDate}` : formattedDate;
+              }).join("<br>")}</td>`
+            }else{
+              newRow.innerHTML += `<td>${Quandata.map(item => {
+                const date = new Date(item.date);
+                const day = date.getDate().toString().padStart(2, '0'); 
+                const month = (date.getMonth() + 1).toString().padStart(2, '0'); 
+                const year = date.getFullYear();
+                const formattedDate = `${day}-${month}-${year}`;
+                return item.quantity ? `${formattedDate}` : formattedDate;
+              }).join("<br>")}</td>`
+            }
+            if (quotationUpload.files.length > 0) {
+              const fileLink = URL.createObjectURL(quotationUpload.files[0]);
+              newRow.innerHTML += `
+                <td style="max-width: 250px;">
+                  <a href="${fileLink}" target="_blank">
+                    <button type="button" class="btn btn-sm btn-outline-secondary vwinpartab" id="view_${particularsArray.length}">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </a>
+                 
+                </td>
+              `;
+            }else {
+              newRow.innerHTML += `
+                <td style="max-width: 250px; color: #999; text-align: center;">
+                  No file
+                </td>
+              `;
+            } 
+            
+          newRow.innerHTML += `<td>
+              <button type="button" class="btn btn-warning btn-sm" onclick="editParticular(${particularsArray.length - 1})" style="background-color:#007080;border-color:#007080;color:white;">
+                  <i class="fas fa-edit"></i> 
+              </button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="deleteParticular(${particularsArray.length - 1})">
+                  <i class="fas fa-trash-alt"></i> 
+              </button>
+          </td>`
+          ;
+        clearInputFields();
+      }
+     
+
+  //Show more show less for the particular table
+  document.addEventListener('click', function(e) {
+    if (e.target.classList.contains('toggle-link')) {
+      e.preventDefault();
+      
+      const parent = e.target.closest('.toggle-text');
+      const id = parent.getAttribute('data-id');
+
+      const shortText = document.querySelector(`.short-text[data-id="${id}"]`);
+      const fullText = document.querySelector(`.full-text[data-id="${id}"]`);
+
+      if (shortText && fullText) {
+        const isShortVisible = shortText.style.display !== 'none';
+        shortText.style.display = isShortVisible ? 'none' : 'inline';
+        fullText.style.display = isShortVisible ? 'inline' : 'none';
+      }
+    }
+  });
+  function createToggleText(text, id) {
+    const maxLength = 30;
+
+    if (!text || text.length <= maxLength) {
+      return `<span>${text || '-'}</span>`;
+    }
+
+    const shortText = text.substring(0, maxLength) + '...';
+
+    return `
+      <span class="toggle-text short-text" data-id="${id}">
+        ${shortText} <a href="#" class="toggle-link" style="    color: blue;
+      cursor: pointer;
+      text-decoration: underline;
+      display: inline-block;">Show More</a>
+      </span>
+      <span class="toggle-text full-text" data-id="${id}" style="display:none;">
+        ${text} <a href="#" class="toggle-link" style="    color: blue;
+      cursor: pointer;
+      text-decoration: underline;
+      display: inline-block;">Show Less</a>
+      </span>
+    `;
+}
+
+  //This function handles about the project display in the preview of the particulars 
+  function updateProjectDisplay() {
+    var selectedProjectId = parseInt($("#project").val());
+
+    // From dropdown data attributes
+    var projectname = $("#project option:selected").data('name') || "Not selected";
+    var projectcode = $("#project option:selected").data('code') || "N/A";
+
+    console.log("Selected project name from dropdown:", projectname);
+    console.log("Selected project code from dropdown:", projectcode);
+
+    if ($("#project_display").length) {
+      $("#project_display").html("<b>Project:</b> " + projectname )
+        .css("text-align", "left");
+    } else {
+      console.warn("#project_display not found.");
+    }
+
+    
+
+    // Update procurement display
+    var selectedType = $("#procurement_type option:selected").data("type");
+    $("#procurement_display").html('<b>Material:</b> ' + (selectedType || "Not selected"))
+      .css({ 'text-align': 'left', 'font-size': '16px' });
+  }
+  //Added particulars can display in the preview format. 
+  function previewAllParticulars() {
+        ///debugger
+        pap = true
+        let tableBody = '';
+        if (particularsArray.length === 0) {
+          showAlert("Please add at least one particular to Submit.");
+          return; // Exit the function if no particulars are added
+        }
+
+      
+        var deliveryType = $("#delivery").val();  
+        const isStaggered = deliveryType === "2"; 
+
+
+        
+        // Loop through particularsArray to generate rows
+        particularsArray.forEach((particular, index) => {
+          console.log(particular, 'particular');
+          
+    // Function to open the file
+
+
+      // Create a link for specificationFile if it is a File object
+
+     let specificationFileLink = "";
+if (particular.specificationFile instanceof File) {
+  specificationFileLink = `
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12"
+      onclick="openFile('${URL.createObjectURL(particular.specificationFile)}')">
+      <i class="fa fa-eye"></i>
+    </button>`;
+} else if (typeof particular.specificationFile === "string" && particular.specificationFile.trim() !== "") {
+  let fileUrl = particular.specificationFile;
+  if (!fileUrl.startsWith('http')) {
+    if (fileUrl.startsWith('procurement/')) {
+      fileUrl = `/media/${fileUrl.substring('procurement/'.length)}`;
+    } else if (!fileUrl.startsWith('/media/')) {
+      fileUrl = `/media/${fileUrl}`;
+    }
+  }
+  specificationFileLink = `
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12"
+      onclick="openFile('${fileUrl}')">
+      <i class="fa fa-eye"></i>
+    </button>`;
+} else {
+  specificationFileLink = `<span class="text-danger fw-semibold fst-italic">No file available</span>`;
+}
+
+
+// Justification file
+let justificationFileLink = "";
+if (particular.justification_file instanceof File) {
+  justificationFileLink = `
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12"
+      onclick="openFile('${URL.createObjectURL(particular.justification_file)}')">
+      <i class="fa fa-eye"></i>
+    </button>`;
+} else if (typeof particular.justification_file === "string" && particular.justification_file.trim() !== "") {
+  let fileUrl = particular.justification_file;
+  if (!fileUrl.startsWith('http')) {
+    if (fileUrl.startsWith('procurement/')) {
+      fileUrl = `/media/${fileUrl.substring('procurement/'.length)}`;
+    } else if (!fileUrl.startsWith('/media/')) {
+      fileUrl = `/media/${fileUrl}`;
+    }
+  }
+  justificationFileLink = `
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12"
+      onclick="openFile('${fileUrl}')">
+      <i class="fa fa-eye"></i>
+    </button>`;
+} else {
+  justificationFileLink = `<span class="text-danger fw-semibold fst-italic">No file available</span>`;
+}
+
+
+// Quotation file
+let quotationFileLink = "";
+if (particular.quotation_upload instanceof File) {
+  quotationFileLink = `
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12"
+      onclick="openFile('${URL.createObjectURL(particular.quotation_upload)}')">
+      <i class="fa fa-eye"></i>
+    </button>`;
+} else if (typeof particular.quotation_upload === "string" && particular.quotation_upload.trim() !== "") {
+  let fileUrl = particular.quotation_upload;
+  if (!fileUrl.startsWith('http')) {
+    if (fileUrl.startsWith('procurement/')) {
+      fileUrl = `/media/${fileUrl.substring('procurement/'.length)}`;
+    } else if (!fileUrl.startsWith('/media/')) {
+      fileUrl = `/media/${fileUrl}`;
+    }
+  }
+  quotationFileLink = `
+    <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12"
+      onclick="openFile('${fileUrl}')">
+      <i class="fa fa-eye"></i>
+    </button>`;
+} else {
+  quotationFileLink = `<span class="text-danger fw-semibold fst-italic">No file available</span>`;
+}
+
+
+
+              
+
+          
+      tableBody += `
+      <tr>
+        <td>${index + 1}</td>
+        <td>${particular.delivery}</td>
+        <td>${createToggleText(particular.product, 'description-' + index)}</td>
+        <td>${particular.units}</td>
+        <td>${createToggleText(particular.partno, 'partno-' + index)}</td>
+        <td>${createToggleText(particular.make, 'make-' + index)}</td>
+        <td>${particular.total_qty_required}</td>
+        <td>${particular.estimated_value}</td>
+        <td>
+          ${createToggleText(particular.reasons_for_procurement, 'justification-' + index)} 
+          ${justificationFileLink}
+        </td>
+        <td>
+          ${createToggleText(particular.specification, 'specification-' + index)} 
+          ${specificationFileLink}
+        </td>
+        <td>
+          ${Array.isArray(particular.quantities) ? 
+            particular.quantities.map(item => {
+              let date;
+              try {
+                date = new Date(item.date);
+                if (isNaN(date.getTime())) throw "Invalid date";
+              } catch {
+                const parts = item.date.split('-'); // e.g. yyyy-mm-dd or dd-mm-yyyy
+                date = new Date(parts[2] + '-' + parts[1] + '-' + parts[0]);
+              }
+              
+              const day = date.getDate().toString().padStart(2, '0');
+              const month = (date.getMonth() + 1).toString().padStart(2, '0');
+              const year = date.getFullYear();
+              const formattedDate = `${day}-${month}-${year}`;
+
+              return item.quantity ? `${item.quantity} - ${formattedDate}` : formattedDate;
+            }).join("<br>") : 
+            particular.items_to_be_positioned_by || "-"
+          }
+        </td>
+        <td>
+        ${quotationFileLink}
+        </td>
+      </tr>
+      `;
+
+        });
+
+
+        var mypro = procurement_types.filter(function(evt){
+          return evt.id == $("#procurement_type").data('procurementtype');
+        });
+      
+        console.log(mypro, 'mypro');
+        var procutype = mypro[0]?.type || "Unknown";
+        console.log(procutype);
+      
+        // Initial Project Selection Handling
+        updateProjectDisplay();
+      
+        // Update project display when user changes project selection
+        $("#project").on("change", function () {
+          updateProjectDisplay();
+        });
+      
+    
+
+        var spec = $("#specifications").val()
+        var items = $("#dateFieldsContainer").val()
+
+        document.getElementById('particularsTableBody').innerHTML = tableBody;
+        let selectedSupplies = $("#source_of_supplies").find(":selected").map(function() {
+          return $(this).text();
+        }).get(); 
+        let selectedSuppliesText = selectedSupplies.length ? selectedSupplies.join(", ") : "____________";
+        let earlierProcurementDetails = $("#earlier_procurement_details").val() || "____________";
+        let qualityCertificates = $("#quality_certificates_required").val() || "____________";
+        let datacodetender =$("#tender_type option:selected").data("name");
+        let deliveryStatusRaw = $("input[name='is_delivered']:checked").val() || "____________";
+
+        let deliveryStatus =
+            deliveryStatusRaw === "____________"
+                ? deliveryStatusRaw
+                : deliveryStatusRaw.charAt(0).toUpperCase() + deliveryStatusRaw.slice(1).toLowerCase();
+
+
+// Get selected PR event text and value
+        let selectedPREvent = $("#pr_event option:selected").text() || "____________";
+        let selectedCategoryEvent = $("#category_events option:selected").text() || "____________";
+        selectedCategoryEvent = selectedCategoryEvent.replace(/_/g, ' ');
+
+        let selectedPREventValue = $("input[name='pr_event']:checked").val() || "____________";
+      // First check if there's a file from the HTML input
+        // 1. Check HTML input
+
+        // 1. If user selected a file in the input
+        if ($("#attachment")[0].files.length > 0) {
+          file = $("#attachment")[0].files[0];
+          fileUrl = URL.createObjectURL(file);
+        }
+        // 2. If getdata is a string URL (like from backend)
+        else if (typeof getdata === 'string' && getdata.trim() !== '') {
+          fileUrl = getdata; // assume it's a valid file path
+        }
+
+        // 3. Set the HTML for the attachment view
+        let acceptance_attach = fileUrl
+        ? `<button onclick="openFile('${fileUrl}')" 
+                  class="btn btn-sm btn-outline-secondary ms-2 file12">
+              <i class="fa fa-eye"></i>
+          </button>`
+        : 'No File available';
+
+        // Append the button (or message) to a container
+        $('#previewAttachment').html(acceptance_attach);
+        let previewContentFooter = `
+        <div class="container row">
+          <div class="left-column col-md-6">
+            <p><b>Source of supplies:</b> ${selectedSuppliesText}</p>
+            <p><b>Quality Document: </b>${acceptance_attach||'No File available'}</p>
+            <p><b>Quality certificates required if any: </b>${qualityCertificates}</p>
+            <p><b>Category Events: </b>${selectedCategoryEvent}</p>
+          </div>
+          <div class="right-column col-md-6">
+            <p><b>Earlier procurement details (if any):</b> ${earlierProcurementDetails}</p>
+            <p><b>Tender Type:</b> ${datacodetender || '_________________________'}</p>
+            <p><b>Post Facto:</b> ${deliveryStatus}</p>
+            <p><b>Online Order:</b> ${selectedPREventValue === 'Purchase_order' ? 'No' : 'Yes'}</p>
+
+            
+          
+          </div>
+        </div>
+
+          
+          
+          
+          <p style="text-align: right;">
+          <b> Name of the Indentor: </b>{{request.user.first_name}} {{request.user.last_name}}<br>
+            <b>Employee Id: </b>{{request.user.username}}<br>
+            <b>Department: </b>{{ request.user.userreg.user_dept.dept_name }}<br>
+            <b>Date: </b> {% now "jS F Y" %}
+          </p>
+        
+        `;
+        
+      
+        document.getElementById('previewContentFooter').innerHTML = previewContentFooter;
+
+
+        $('#previewModal').modal('show');
+  }
+
+  //This change function is related to the attachments when we need to change.
+  $(document).on("change", "#attachment", function () {
+    let file = this.files[0];
+    if (file) {
+      selectedFileURL = URL.createObjectURL(file);
+
+      // Show eye button
+      $("#viewAttachment").show();
+
+      // Optional: Show file name
+      $("#fileNameDisplay").text("Selected file: " + file.name);
+    }
+  });
+  //This function is used to view the attchement from the eye button
+  $(document).on("click", "#viewAttachment", function (e) {
+    e.preventDefault();
+    if (selectedFileURL) {
+      window.open(selectedFileURL, "_blank");
+    }
+  });
+
+  // Delegated event handling for dynamically added minus buttons
+  $(document).on('click', '.remove-checklist-btn', function () {
+    // Remove both the quantity and date fields
+    const dateField = this.closest('.date-field-item');
+    const index = [...dateFieldsContainer.children].indexOf(dateField);
+    const quantityField = checklistContainer.children[index];
+
+    if (quantityField) quantityField.remove();
+    if (dateField) dateField.remove();
+  });
+  //Validations for the Particulars after editing to be checked
+  function validateParticularForm() {
+    let isValid = true;
+    let messages = [];
+
+    const make = document.getElementById('make').value.trim();
+    const product = document.getElementById('product').value.trim();
+    const totalQty = parseFloat(document.getElementsByName('total_qty_required')[0].value);
+    const estimatedValue = parseFloat(document.getElementsByName('estimated_value')[0].value);
+    const reasons = document.getElementsByName('reasons_for_procurement')[0].value.trim();
+    const unit = document.getElementsByName('unit')[0].value.trim();
+    const partno = document.getElementsByName('partno')[0].value.trim();
+    //const materialcode = document.getElementById('materialcode').value.trim();
+    const specifications = document.getElementById('specifications').value.trim();
+    const delivery = document.getElementById('delivery').value;
+
+    const quantityInputs = document.querySelectorAll('.checklist-input');
+
+    // Basic required field validation
+    //var messages = [];
+
+    if (!make) {
+      showAlert("Make is required.");
+      return;
+    }
+    
+    if (isNaN(totalQty) || totalQty <= 0){
+      showAlert("Total quantity required must be a positive number.");
+    }
+    if (isNaN(estimatedValue) || estimatedValue <= 0){
+      showAlert("Estimated value must be a positive number.");
+    }
+    if (!reasons){
+      showAlert("Reasons for procurement are required.");
+    }
+    if (!unit){
+      showAlert("Unit is required.");
+    }
+    if (!partno){
+      showAlert("Part number is required.");
+    }
+    // if (!materialcode) messages.push("Material code is required.");
+    if (!specifications){
+      showAlert("Specifications are required.");
+    }
+    if (!delivery){
+      showAlert("Delivery method must be selected.");
+    }
+    
+    
+    
+    // Check budget
+    var remainingBudgetField = $("#remaining-budget");
+    var remainingBudgetField1 = $("#remainingbudget");
+    var currentRemainingBudget = parseFloat(remainingBudgetField.val()) || parseFloat(remainingBudgetField.data("original")) || 0;
+    var currentRemainingBudget1 = parseFloat(remainingBudgetField1.val()) || parseFloat(remainingBudgetField1.data("original")) || 0;
+    var updatedBudget = currentRemainingBudget - estimatedValue;
+    var updatedBudget1 = currentRemainingBudget1 - estimatedValue;
+    
+    if (currentRemainingBudget < 0 || currentRemainingBudget1 < 0) {
+
+      showAlert('You cannot add this procurement because the remaining budget is negative.')
+      return;
+    }
+    
+
+
+    // Quantity Sum Validation
+    if (delivery === "Staggered") {
+      const quantityInputs = document.querySelectorAll('.checklist-input');
+      let enteredQuantities = 0;
+
+      quantityInputs.forEach(input => {
+        let val = parseFloat(input.value);
+        if (!isNaN(val)) {
+          enteredQuantities += val;
+        } else {
+        showAlert("All staggered quantities must be valid numbers.");
+          isValid = false;
+        }
+      });
+
+      if (!isNaN(totalQty) && enteredQuantities !== totalQty) {
+        showAlert(`The sum of entered quantities (<strong>${enteredQuantities}</strong>) does not match the total required quantity (<strong>${totalQty}</strong>).`);
+
+        isValid = false;
+      }
+    }
+
+    
+
+    return true;
+  }
+
+  //This below function is used for editing the particulars 
+  function editParticular(index) {
+    ///debugger;
+    isEditing = true;
+    currentEditingIndex = index;
+    var particular = particularsArray[index];
+    
+    var makeInput = document.getElementById('make');
+    if (makeInput) {
+      makeInput.value = particular.make || '';  
+    } else {
+
+      console.error('Make input element not found!');
+    }
+
+    document.getElementById('product').value = particular.productid || '';
+   
+    document.getElementsByName('total_qty_required')[0].value = particular.total_qty_required || '';
+    document.getElementsByName('estimated_value')[0].value = parseFloat(particular.estimated_value) || '';
+    document.getElementsByName('estimated_value')[0].defaultValue = parseFloat(particular.estimated_value) || '';
+    document.getElementsByName('reasons_for_procurement')[0].value = particular.reasons_for_procurement || '';
+    document.getElementsByName('unit')[0].value = particular.unit || '';
+    document.getElementsByName('partno')[0].value = particular.partno || '';
+    document.getElementById('materialcode').value = particular.materialcode || '';
+    
+    
+
+    var fileInput = document.getElementById('file-upload');
+    var viewSpecificationButton = document.getElementById('viewSpecification');
+    //var fileNameDisplay = document.getElementById('file-name-display');
+
+
+  
+    
+    var fileInputjust = document.getElementById('justification_file');
+    var viewJustificationButton = document.getElementById('justificationFile');
+    //var fileNameDisplayjust = document.getElementById('filenamedisplay');
+
+
+    var fileInputquot = document.getElementById('quotation_upload');
+    var viewQuotationButton = document.getElementById('quotationupload');
+
+    // If there is a file attached, display the file name and make the "eye" button visible
+    
+    if (particular.specificationFile) {
+      if(typeof(particular.specificationFile) == "string"){
+          if (particular.specificationFile.substring(0, 6) === '/media'){
+            var specification_File=particular.specificationFile; 
+          }else{
+            var specification_File = '/media/'+particular.specificationFile; ;
+          }
+          //fileNameDisplay.textContent = specification_File.name;  // Display the file name
+          viewSpecificationButton.style.display = 'inline-block'; // Show the "eye" button
+          $(viewSpecificationButton).attr('onclick','window.open("'+specification_File+'")' )
+        }else{
+          //fileNameDisplay.textContent = particular.specificationFile.name;  // Display the file name
+          viewSpecificationButton.style.display = 'inline-block'; // Show the "eye" button
+          viewSpecificationButton.onclick = function() {
+            var fileURL = (window.URL || window.webkitURL).createObjectURL(particular.specificationFile);
+            window.open(fileURL);  // Open the file in a new tab when clicking the eye button
+          };
+        }
+      } else {
+        //fileNameDisplay.textContent = ''; // Clear any file name if there's no file
+        viewSpecificationButton.style.display = 'none'; // Hide the "eye" button
+      }
+    
+
+      // If there is a file attached, display the file name and make the "eye" button visible
+      
+      if(particular.justification_file){
+        if(typeof(particular.justification_file) == "string"){
+          if(particular.justification_file.substring(0, 6) === '/media'){
+            var justificationFile = particular.justification_file;
+          }else{
+            var justificationFile = '/media/'+particular.justification_file;
+          }
+          //fileNameDisplayjust.textContent = justificationFile.name;  // Display the file name
+          viewJustificationButton.style.display = 'inline-block'; // Show the "eye" button
+          $(viewJustificationButton).attr('onclick','window.open("'+justificationFile+'")' )
+        }else{
+          //fileNameDisplayjust.textContent = particular.justification_file.name;  // Display the file name
+          viewJustificationButton.style.display = 'inline-block'; // Show the "eye" button
+          viewJustificationButton.onclick = function() {
+            var fileURL = (window.URL || window.webkitURL).createObjectURL(particular.justification_file);
+            window.open(fileURL);  // Open the file in a new tab when clicking the eye button
+          };
+        }
+      } else {
+        //fileNameDisplayjust.textContent = ''; // Clear any file name if there's no file
+        viewJustificationButton.style.display = 'none'; // Hide the "eye" button
+      }
+
+       
+      if(particular.quotation_upload){
+        if(typeof(particular.quotation_upload) == "string"){
+          if(particular.quotation_upload.substring(0, 6) === '/media'){
+            var quotationUpload = particular.quotation_upload;
+          }else{
+            var quotationUpload = '/media/'+particular.quotation_upload;
+          }
+          //fileNameDisplayjust.textContent = justificationFile.name;  // Display the file name
+          viewQuotationButton.style.display = 'inline-block'; // Show the "eye" button
+          $(viewQuotationButton).attr('onclick','window.open("'+quotationUpload+'")' )
+        }else{
+          //fileNameDisplayjust.textContent = particular.justification_file.name;  // Display the file name
+          viewQuotationButton.style.display = 'inline-block'; // Show the "eye" button
+          viewQuotationButton.onclick = function() {
+            var fileURL = (window.URL || window.webkitURL).createObjectURL(particular.quotation_upload);
+            window.open(fileURL);  // Open the file in a new tab when clicking the eye button
+          };
+        }
+      } else {
+        //fileNameDisplayjust.textContent = ''; // Clear any file name if there's no file
+        viewQuotationButton.style.display = 'none'; // Hide the "eye" button
+      }
+
+      var deliverySelect = document.getElementById('delivery');
+      var forQuantity = document.getElementById('forquantity');
+      var addQuantButton = document.querySelector('.AddQuant');
+
+      if (deliverySelect) {
+        let isDeliveryFound = false;
+
+        for (let option of deliverySelect.options) {
+          if (option.dataset.id && option.dataset.id.trim() === particular.delivery.trim()) {
+            option.selected = true;
+            isDeliveryFound = true;
+            break;
+          }
+        }
+
+        if (!isDeliveryFound) {
+          console.warn(`Delivery value '${particular.delivery}' not found in the options.`);
+        }
+
+      if (particular.delivery === "Staggered") {
+        if (forQuantity) forQuantity.style.display = "block";
+        if (addQuantButton) addQuantButton.style.display = "inline-block";
+      } else if (particular.delivery === "Full Quantity") {
+        if (forQuantity) forQuantity.style.display = "none";
+        if (addQuantButton) addQuantButton.style.display = "none";
+      } else {
+        if (forQuantity) forQuantity.style.display = "block";
+        if (addQuantButton) addQuantButton.style.display = "none";
+      }
+    } else {
+      console.error('Delivery select element not found!');
+    }
+
+    document.getElementById('specifications').value = particular.specification;
+
+    // Handle quantities and dates
+    let quantityInputs = document.querySelectorAll('.checklist-input');
+    let dateInputs = document.querySelectorAll('input[name="items_to_be_positioned_by"]');
+
+    // Clear previous values
+    quantityInputs.forEach(input => input.value = '');  
+    dateInputs.forEach(input => input.value = '');
+
+    // Check if quantities exist and populate accordingly
+    if (Array.isArray(particular.quantities) && particular.quantities.length > 0) {
+      const checklistContainer = document.getElementById('checklistContainer');
+      const dateFieldsContainer = document.getElementById('dateFieldsContainer');
+      
+      checklistContainer.innerHTML = ''; // Clear any existing quantity fields
+      dateFieldsContainer.innerHTML = ''; // Clear any existing date fields
+      ///debugger
+      particular.quantities.forEach((item, index) => {
+        // Create quantity fields
+        const quantityField = document.createElement('div');
+        quantityField.classList.add('checklist-item', 'mb-2');
+        quantityField.innerHTML = `<input type="text" id="quantity" class="form-control checklist-input" placeholder="Quantity" value="${item.quantity || ''}" required>`;
+        checklistContainer.appendChild(quantityField);
+
+        // Create date fields
+        const dateField = document.createElement('div');
+        dateField.classList.add('date-field-item', 'mb-2', 'd-flex', 'align-items-center');
+        dateField.innerHTML = `<input type="date"  id="firstpositioned_by" class="form-control" name="items_to_be_positioned_by" style="margin-left: -5%;margin-top: -2%;"value="${item.date || ''}" required>`;
+
+        // Only add remove button for subsequent dates, not the first 
+        if (index > 0) {
+          const removeButton = document.createElement('button');
+          removeButton.type = 'button';
+          removeButton.classList.add('remove-checklist-btn', 'btn', 'btn-danger', 'btn-sm', 'ml-2');
+          removeButton.style.marginLeft = '4px';
+          removeButton.innerHTML = '<i class="fas fa-minus"></i>';
+          dateField.appendChild(removeButton);
+        }
+
+        dateFieldsContainer.appendChild(dateField);
+      });
+    }
+
+    // Adjust Add Button visibility based on "Staggered"
+    var addButton = document.getElementById('addParticularBtn');
+    if (addButton) {
+      addButton.textContent = 'Update Particular';
+      addButton.setAttribute('onclick', `updateParticular(${index})`);
+    }
+
+    console.log("Editing Particular:", particular);  // Debugging line
+  }
+  //Expandale text for the particulars table
+  function createExpandableText1(fullText, maxLength = 50) {
+    if (!fullText) return '';
+    if (fullText.length <= maxLength) return `<span>${fullText}</span>`;
+
+    const shortText = fullText.slice(0, maxLength);
+    const escapedFull = fullText.replace(/"/g, '&quot;').replace(/'/g, '&#39;'); // prevent XSS
+    return `
+      <span class="short-text">${shortText}...</span>
+      <span class="full-text" style="display:none;">${escapedFull}</span>
+      <a href="javascript:void(0);" onclick="toggleText(this)">Show More</a>
+    `;
+  }
+  //Toggle function for the particulars table
+  function toggleText1(link) {
+    const shortText = link.parentElement.querySelector('.short-text');
+    const fullText = link.parentElement.querySelector('.full-text');
+    const isExpanded = fullText.style.display === 'inline';
+
+    shortText.style.display = isExpanded ? 'inline' : 'none';
+    fullText.style.display = isExpanded ? 'none' : 'inline';
+    link.textContent = isExpanded ? 'Show More' : 'Show Less';
+  }
+
+  //The below function is used for updating particulars for specific procurement in the particular table
+  function updateParticular(index) {
+    ///debugger;
+    if (!validateParticularForm()) {
+      return; // Stop if validation fails
+    }
+    let updatedItems = [];
+    let updatedItem1 = [];
+
+    try {
+      // Input Extraction
+      var product = $("#product option:selected").data("id");
+      var unit = document.getElementsByName('unit')[0].value;
+      var productid=document.getElementById('product').value;
+      var units = $("#unit option:selected").data("id");
+      var materialcode = document.getElementById('materialcode').value;
+      var partno = document.getElementsByName('partno')[0].value;
+      var totalQty = document.getElementsByName('total_qty_required')[0].value;
+      var estimatedValue = document.getElementsByName('estimated_value')[0].value;
+
+      var reasons = document.getElementsByName('reasons_for_procurement')[0].value;
+      var make = document.getElementById('make').value;
+      var delivery = $("#delivery option:selected").data("id");
+      var specification = document.getElementById('specifications').value;
+
+      var fileInput = document.getElementById('file-upload');
+      var specificationFile = fileInput.files[0] || null;
+      if (!fileInput.files[0] && particularsArray[index]?.specificationFile) {
+        specificationFile = particularsArray[index].specificationFile;
+      }
+
+
+
+
+      var fileInputjust = document.getElementById('justification_file');
+      var justification_file = fileInputjust.files[0] || null;
+      if (!fileInputjust.files[0] && particularsArray[index]?.justification_file) {
+        justification_file = particularsArray[index].justification_file;
+      }
+
+
+      
+      var fileInputquot = document.getElementById('quotation_upload');
+      var quotation_upload = fileInputquot.files[0] || null;
+      if (!fileInputquot.files[0] && particularsArray[index]?.quotation_upload) {
+        quotation_upload = particularsArray[index].quotation_upload;
+      }
+
+      // Validation
+      if (!delivery || !unit || !partno || !reasons || !totalQty || !estimatedValue || !specification || !make) {
+      
+        showAlert("All fields are required. Please ensure all fields are filled out.");
+        return;
+      }
+
+      if (!parseFloat(totalQty) || isNaN(totalQty) || parseFloat(totalQty) <= 0) {
+      showAlert("Total Quantity must be a valid positive number.");
+        return;
+      }
+
+      if (!parseFloat(estimatedValue) || isNaN(estimatedValue) || parseFloat(estimatedValue) <= 0) {
+        showAlert("Estimated Value must be a valid positive number.");
+        return;
+      }
+      if (delivery === 'Staggered') {
+        let quantitiesInputs = document.querySelectorAll('.checklist-input');
+        let sum = 0;
+        let hasInvalid = false;
+    
+        quantitiesInputs.forEach(input => {
+            const val = parseFloat(input.value);
+            
+            // Check for invalid values: NaN, zero, or negative
+            if (isNaN(val) || val <= 0) {
+                hasInvalid = true;
+                input.classList.add('is-invalid'); // Optional: highlight invalid input
+            } else {
+                input.classList.remove('is-invalid'); // Remove highlight if valid
+                sum += val;
+            }
+        });
+    
+        if (hasInvalid) {
+            showAlert('Please enter only positive values greater than 0 for staggered delivery.');
+            return;
+        }
+    
+        if (Math.round(sum) !== Math.round(totalQty)) {
+
+          showAlert(`The sum of entered quantities (<strong>${sum}</strong>) does not match the total required quantity (<strong>${totalQty}</strong>).`);
+          return;
+        }
+        
+    }
+    
+    
+
+      // =========== HANDLE DATES & QUANTITIES ================
+      if (delivery === "Full Quantity") {
+        const dateInput = document.querySelector('input[name="items_to_be_positioned_by"]');
+        if (!dateInput) {
+          showAlert("Date field is missing.");
+          return;
+        }
+
+        const date = dateInput.value.trim();
+        if (!date) {
+          showAlert("Please enter the required date.");
+          return;
+        }
+
+        const parsedDate = new Date(date);
+        const today = new Date();
+        parsedDate.setHours(0, 0, 0, 0);
+        today.setHours(0, 0, 0, 0);
+
+        if (isNaN(parsedDate.getTime())) {
+        showAlert("Invalid date format.");
+          return;
+        }
+
+        if (parsedDate < today) {
+          showAlert("The date must be today or a future date.");
+          return;
+        }
+
+        const day = parsedDate.getDate().toString().padStart(2, '0');
+        const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
+        const year = parsedDate.getFullYear();
+        const formattedDate = `${year}-${month}-${day}`;
+        const formattedDate1 = `${day}-${month}-${year}`;
+
+        updatedItems.push({ quantity: "", date: formattedDate });
+        updatedItem1.push({ quantity: "", date: formattedDate1 });
+
+      } else {
+        let quantityInputs = document.querySelectorAll('.checklist-input');
+        let dateInputs = document.querySelectorAll('input[name="items_to_be_positioned_by"]');
+
+        for (let i = 0; i < quantityInputs.length; i++) {
+          let quantity = quantityInputs[i]?.value.trim();
+          let date = dateInputs[i]?.value.trim();
+
+          if (!date) {
+            showAlert("Please enter all required dates.");
+            return;
+          }
+
+          const parsedDate = new Date(date);
+          const today = new Date();
+          parsedDate.setHours(0, 0, 0, 0);
+          today.setHours(0, 0, 0, 0);
+
+          if (isNaN(parsedDate.getTime())) {
+          showAlert("Invalid date format.");
+            return;
+          }
+
+          if (parsedDate < today) {
+            showAlert("Dates must be today or a future date.");
+            return;
+          }
+
+          const day = parsedDate.getDate().toString().padStart(2, '0');
+          const month = (parsedDate.getMonth() + 1).toString().padStart(2, '0');
+          const year = parsedDate.getFullYear();
+          const formattedDate = `${year}-${month}-${day}`;
+          const formattedDate1 = `${day}-${month}-${year}`;
+
+          updatedItems.push({ quantity: quantity || "", date: formattedDate });
+          updatedItem1.push({ quantity: quantity || "", date: formattedDate1 });
+          
+        }
+
+      }
+      
+      document.getElementsByName('estimated_value')[0].defaultValue='';
+      mainbudgett=$('#remaining-budget').val();
+      // Update data in array
+      particularsArray[index] = {
+        delivery,
+        product,
+        productid,
+        unit,
+        units,
+        partno,
+        make,
+        total_qty_required: totalQty,
+        estimated_value: estimatedValue,
+        reasons_for_procurement: reasons,
+        specification,
+        materialcode,
+        specificationFile,
+        justification_file,
+        quotation_upload,
+        quantities: updatedItems
+      };
+
+    } catch (err) {
+      console.error("Error during input extraction/validation:", err);
+        showConfirmAlert("An unexpected error occurred while processing input. Check the console for details.");
+    }
+
+    try {
+      // ========== UI Update Block ==========
+      var table = document.getElementById('particularsTable').getElementsByTagName('tbody')[0];
+      var row = table.rows[index];
+
+      if (row) {
+        row.cells[1].textContent = index + 1;
+        row.cells[2].textContent = $("#delivery option:selected").attr("data-id");
+        row.cells[3].innerHTML = createExpandableText(product);
+        row.cells[4].innerHTML = $("#unit option:selected").data("id");
+        row.cells[5].innerHTML = createExpandableText(partno);
+        row.cells[6].innerHTML = createExpandableText(make);
+        row.cells[7].textContent = totalQty;
+        row.cells[8].textContent = estimatedValue;
+
+        // Justification File
+            // Justification File
+            let justFileContent = '<div style="display: flex; flex-direction: column; align-items: start;">';
+
+            // First: file button
+            if (justification_file) {
+              if (typeof justification_file === "string") {
+                if (!justification_file.startsWith('/media')) {
+                  justification_file = '/media/' + justification_file;
+                }
+                justFileContent += `
+                  <div style="margin-bottom: 8px;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.open('${justification_file}')">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>`;
+              } else {
+                const fileURL = URL.createObjectURL(justification_file);
+                justFileContent += `
+                  <div style="margin-bottom: 8px;">
+                    <a href="${fileURL}" target="_blank">
+                      <button type="button" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </a>
+                  </div>`;
+              }
+            }
+            
+            // Then: text content
+            justFileContent += `<span>${createExpandableText(reasons || '')}</span>`;
+            
+            justFileContent += '</div>';
+            row.cells[9].innerHTML = justFileContent;
+            
+            let specFileContent = '<div style="display: flex; flex-direction: column; align-items: start;">';
+
+            // First: the file view button
+            if (specificationFile) {
+              if (typeof specificationFile === "string") {
+                // Normalize file path
+                if (!specificationFile.startsWith('/media')) {
+                  specificationFile = '/media/' + specificationFile;
+                }
+            
+                specFileContent += `
+                  <div style="margin-bottom: 8px;">
+                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.open('${specificationFile}', '_blank')">
+                      <i class="fas fa-eye"></i>
+                    </button>
+                  </div>`;
+              } else {
+                // Blob/File object
+                const fileURL = URL.createObjectURL(specificationFile);
+                specFileContent += `
+                  <div style="margin-bottom: 8px;">
+                    <a href="${fileURL}" target="_blank">
+                      <button type="button" class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-eye"></i>
+                      </button>
+                    </a>
+                  </div>`;
+              }
+            }
+            
+            // Then: the expandable text content
+            specFileContent += `<span>${createExpandableText(specification || '')}</span>`;
+            specFileContent += '</div>';
+            
+            row.cells[10].innerHTML = specFileContent;
+
+
+            
+
+        // Quantity and Date Display
+        let itemsText = updatedItem1.map(item => {
+          if (item.quantity && item.date) return `${item.quantity} - ${item.date}`;
+          else if (item.date) return item.date;
+          else return item.quantity;
+        }).filter(Boolean).join("<br>");
+        row.cells[11].innerHTML = itemsText;
+      }
+
+      
+            
+      let quotFileContent = '<div style=" flex-direction: column; align-items: start;">';
+
+      // First: the file view button
+      if (quotation_upload) {
+        if (typeof quotation_upload === "string") {
+          // Normalize file path
+          if (!quotation_upload.startsWith('/media')) {
+            quotation_upload = '/media/' + quotation_upload;
+          }
+      
+          quotFileContent += `
+            <div style="margin-bottom: 8px;">
+              <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.open('${quotation_upload}', '_blank')">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>`;
+        } else {
+          // Blob/File object
+          const fileURL = URL.createObjectURL(quotation_upload);
+          quotFileContent += `
+            <div style="margin-bottom: 8px;">
+              <a href="${fileURL}" target="_blank">
+                <button type="button" class="btn btn-sm btn-outline-secondary">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </a>
+            </div>`;
+        }
+      }else {
+        // Display "No file" message when no file is uploaded
+        quotFileContent += `
+          <div style="max-width: 250px; color: #999; text-align: center;">No file</div>`;
+      }
+      
+      // Then: the expandable text content
+     
+      quotFileContent += '</div>';
+      
+      row.cells[12].innerHTML = quotFileContent;
+      // Reset Button
+      var addButton = document.getElementById('addParticularBtn');
+      if (addButton) {
+        addButton.textContent = 'Add More Items';
+        addButton.setAttribute('onclick', 'addParticular()');
+      }
+
+      clearInputFields();
+
+    } catch (err) {
+      console.error("Error while updating UI:", err);
+      showConfirmAlert("An error occurred while updating the table or resetting fields.");
+    }
+  }
+  //Updating the remaining budget ,if any particular is deleted
+  function updateRemainingBudgetOnDelete(deletedValue) {
+    var remainingBudgetField = $("#remaining-budget");
+    var remainingBudgetField1 = $("#remainingbudget");
+    var currentRemainingBudget = parseFloat(remainingBudgetField.val()) || 0;
+    var updatedBudget = currentRemainingBudget + deletedValue;
+    mainbudgett = updatedBudget
+    prevestimated = null
+    remainingBudgetField.val(updatedBudget.toFixed(2));
+    remainingBudgetField[0].defaultValue=updatedBudget.toFixed(2);
+    var currentRemainingBudget1 = parseFloat(remainingBudgetField1.val()) || 0;
+    var updatedBudget1 = currentRemainingBudget1 + deletedValue;
+    mainbudgett1 = updatedBudget1
+    prevestimated = null
+    remainingBudgetField1.val(updatedBudget1.toFixed(2));
+    remainingBudgetField1[0].defaultValue=updatedBudget1.toFixed(2);
+  }
+  //Function delete to delete any particulars from the particulars table
+  function deleteParticular(index) {
+    if (confirm('Are you sure you want to delete this procurement?')) {
+      var table = document.getElementById('particularsTable').getElementsByTagName('tbody')[0];
+      var row = table.rows[index];
+      var estimatedValue = parseFloat(particularsArray[index].estimated_value) || 0;
+      table.deleteRow(index);  
+      particularsArray.splice(index, 1);
+      
+      updateRemainingBudgetOnDelete(estimatedValue);
+      reIndexRowsInTable();
+      reIndexCheckboxes();
+      clearInputFields();
+    }
+  }
+  //If any particular is delete ,the below function is used to reindex the particulars
+  function reIndexRowsInTable() {
+    ///debugger;
+    var table = document.getElementById('particularsTable').getElementsByTagName('tbody')[0];
+    for (var i = 0; i < table.rows.length; i++) {
+      var row = table.rows[i];
+      var lastcell = row.cells.length-1
+      row.cells[1].textContent = i + 1;  
+      row.cells[lastcell].lastElementChild.setAttribute("onclick","deleteParticular("+i+")")
+      row.cells[lastcell].firstElementChild.setAttribute("onclick","editParticular("+i+")")
+    }
+  }
+  //Reindex the checkboxes for every particular,after any deletion of particulars
+  function reIndexCheckboxes() {
+    var checkboxes = document.getElementsByClassName('procurement-checkbox');
+    for (var i = 0; i < checkboxes.length; i++) {
+      checkboxes[i].setAttribute('data-index', i); 
+    }
+  }
+  //Clear the input fields for particulars ,after adding any particulars or editing.
+  function clearInputFields() {
+    // Clear basic input fields
+    document.getElementById('unit').value = '';
+    document.getElementById('delivery').value = '';
+   
+    document.getElementById('partno').value = '';
+    document.getElementById('materialcode').value = '';
+    document.getElementById('specifications').value = '';
+    document.getElementById('file-upload').value = '';
+    document.getElementById('justification_file').value = '';
+    document.getElementsByName('total_qty_required')[0].value = '';
+    document.getElementsByName('estimated_value')[0].value = '';
+    document.getElementsByName('reasons_for_procurement')[0].value = '';
+    document.getElementById('make').value = '';
+    document.getElementById('product').value = '';
+    // Hide the quantity section
+    const quantityDiv = document.getElementById('forquantity');
+    if (quantityDiv) {
+      quantityDiv.style.display = 'none';
+    }
+
+    // Clear quantity fields
+    const checklistContainer = document.getElementById('checklistContainer');
+    if (checklistContainer) {
+      checklistContainer.innerHTML = `
+        <div class="checklist-item mb-2">
+          <input type="number" class="form-control checklist-input" id="quantity" placeholder="Quantity" required oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        </div>
+      `;
+    }
+
+    // Reset the date fields
+    const dateFieldsContainer = document.getElementById('dateFieldsContainer');
+    if (dateFieldsContainer) {
+      dateFieldsContainer.innerHTML = `
+        <div class="date-field-item mb-2">
+          <input type="date" id="firstpositioned_by" name="items_to_be_positioned_by" class="form-control" required style="margin-left: -8px; margin-top: -9px;" value="">
+        </div>
+      `;
+    }
+
+    // Optional: if you use a wrapper for both, clear that too
+    const deliveryWrapper = document.getElementById('deliveryDetailsContainer');
+    if (deliveryWrapper) {
+      deliveryWrapper.style.display = 'block'; // ensure it’s visible
+      // Optionally clear wrapper if you dynamically append multiple rows here
+      // deliveryWrapper.innerHTML = ''; // uncomment if needed
+    }
+
+    // Hide file preview buttons
+    document.getElementById('viewSpecification').style.display = 'none';
+    document.getElementById('justificationFile').style.display = 'none';
+    $("#quotationupload").css("display","none")
+    $("#quotation_upload").val("");
+    
+
+    console.log("Fields cleared: quantity and date fields reset, inputs cleared.");
+  }
+
+  // Re-index the checkboxes after deletion
+  function reIndexCheckboxes() {
+      var checkboxes = document.querySelectorAll('.procurement-checkbox');
+      checkboxes.forEach((checkbox, index) => {
+          checkbox.dataset.index = index;
+      });
+  }
+  //Saving the procurement as draft 
+  function savedraft() {
+      debugger
+      var selectedProcurements = [];
+      var checkboxes = document.getElementsByClassName('procurement-checkbox');
+      // Debugging
+      var sourceOfSupplies = $('#source_of_supplies option:selected').map(function() {
+          return $(this).data('id');
+      }).get();
+      var make = document.getElementById('make').value
+      var quality_certificates_required = document.getElementById('quality_certificates_required').value
+      if($("#attachment")[0].files.length != 0){
+        var acceptance_attach = $("#attachment")[0].files[0];
+      } else if(getdata != undefined){
+        // Clean the getdata string here before assigning
+        var acceptance_attach = getdata.replace(/(\/media)+/g, "/media");
+      } else {
+        var acceptance_attach = '';
+      }
+      
+      console.log(acceptance_attach,'acceptance_attach45678')
+      //var material_to_confirm_to_standard = document.getElementById('material_to_confirm_to_standard').value
+      var earlier_procurement_details = document.getElementById('earlier_procurement_details').value
+      var procurement_title = document.getElementById('procurement_title').value
+    // var special_conditions = document.getElementById('special_conditions').value
+      var locations = document.getElementById('location').value
+      var tendertype = $("#tender_type").val();
+      var importindigenous =$("#import_indigenous").val()
+      var procurementtype = $("#procurement_type option:selected").data("type");
+      var project = $("#project").val()
+      var specification=$("#specifications").val()
+      var materialcode=$("#materialcode").val()
+      var department=$("#departments option:selected").data('id')
+      var delivery=$("#delivery").val()
+      var datacode = $("#tender_type option:selected").data("code")
+      var datacodeprtype=$("#procurement_type option:selected").data("prtype")
+      var datacodeimport=$("#import_indigenous option:selected").data("imp")
+      var departments =$("#departments").val()
+      var dataproject = $("#project option:selected").data("code")
+      var dataprojectyear = $("#project option:selected").data("year")
+      var total_qty_required=$("#total_qty_required").val()
+      var unit=$("#unit").val()
+      var partno=$("#partno").val()
+      var role = $("#recommending_authority").val();
+      var selectedOption = $("#recommending_authority option:selected");
+      var selected_user_role = selectedOption.data("role");
+      var isDelivered = $('input[name="is_delivered"]:checked').val(); 
+      var prevent = $('input[name="pr_event"]:checked').val();
+      var category_events  = $("#category_events").val();
+
+      
+
+      const quantities = [];
+      const dates = [];
+      const data = [];
+      /////debugger
+      // Get all quantities
+      const quantityInputs = document.querySelectorAll('.checklist-input');
+      quantityInputs.forEach(input => {
+        quantities.push(input.value);
+      });
+
+      // Get all date fields (Items to be Positioned By)
+      const dateInputs = document.querySelectorAll('input[name="items_to_be_positioned_by"]');
+      dateInputs.forEach(input => {
+        dates.push(input.value);
+      });
+
+      for (let i = 0; i < quantities.length; i++) {
+        data.push({
+          quantity: quantities[i],
+          date: dates[i] || null  // Fallback in case there's no corresponding date
+        });
+      }
+
+
+    
+      for (var i = 0; i < checkboxes.length; i++) {
+        if (checkboxes[i].checked) {
+          var index = checkboxes[i].dataset.index;
+          selectedProcurements.push(particularsArray[index]);
+        }
+      }
+      console.log(selectedProcurements,'selectedProcurements')
+
+      if (selectedProcurements.length === 0) {
+        showAlert('Please create atleast one particular to submit');
+        return;
+      }
+      if($("#paticularbod tr").length){
+        showAlert("please add particulars")
+        return;
+      }
+      if (pap != true) {
+        showAlert('Please preview the particulars before saving Draft.');
+      return;
+      }
+      showLoader()
+
+      let formData = new FormData();
+      formData.append("status", "d");
+      formData.append("id_draft_id", $("#id_draft_id").val());
+      formData.append("source_of_supplies", sourceOfSupplies);
+      formData.append("quality_certificates_required", quality_certificates_required);
+      formData.append("acceptance_attach", acceptance_attach);
+      formData.append("remaining_budget", $("#remaining-budget").val());
+      formData.append("materialcode",materialcode);
+      formData.append("earlier_procurement_details", earlier_procurement_details);
+      formData.append("procurement_title", procurement_title);
+      formData.append("location", locations);
+      formData.append("tendertype", tendertype);
+      formData.append("importindigenous", importindigenous);
+      formData.append("procurementtype", procurementtype);
+      formData.append("project", project);
+      formData.append("datacode", datacode);
+      formData.append("category_events", category_events);
+      formData.append("datacodeprtype", datacodeprtype);
+      formData.append("datacodeimport", datacodeimport);
+      formData.append("departments", departments);
+      formData.append("dataproject", dataproject);
+      formData.append("dataprojectyear", dataprojectyear);
+      formData.append("department", department);
+      formData.append("role", role);
+      formData.append("selected_user_role", selected_user_role);
+      formData.append("pr_event", prevent);
+      formData.append("delivery", isDelivered);
+
+      formData.append("particular_length", selectedProcurements.length);
+      console.log
+      selectedProcurements.forEach((item, index) => {
+        // Append JSON data as a string
+        formData.append(`selectedProcurements_${index}`, JSON.stringify(item));
+
+        // Handle file separately (if exists)
+        if (item.specificationFile && item.specificationFile instanceof File) {
+            formData.append(`specificationFile_${index}`, item.specificationFile);
+        }
+        if (item.justification_file && item.justification_file instanceof File) {
+          formData.append(`justificationfile_${index}`, item.justification_file);
+        }
+        if (item.quotation_upload) {
+    formData.append(`quotationfile_${index}`, item.quotation_upload);
+  }
+      });
+
+
+
+      
+
+
+      // Send data to server via AJAX
+      $.ajax({
+          url: '{% url "procurement_draft" %}', // Ensure this URL is correct in your context
+          type: 'POST',
+          data: formData,
+          processData: false, // Important to prevent jQuery from processing the data
+          contentType: false, // Set to false to allow FormData to set the correct content type
+          headers: {
+              'X-CSRFToken': '{{csrf_token}}' // CSRF token for protection
+          },
+          success: function(response) {
+              console.log("Procurement saved successfully:", response);
+              hideLoader();
+              $("body").css("pointer-events", "auto");
+              //location.reload();
+
+              if (response.procurements && response.procurements.length > 0) {
+                  const tableBody = document.querySelector("#draftTable tbody");
+                  if (!tableBody) {
+                      console.error("Table body not found. Ensure #draftTable exists in your HTML.");
+                      return;
+                  }
+
+                  response.procurements.forEach(function(procurement) {
+                      const row = document.createElement("tr");
+
+                      const procurementIdCell = document.createElement("td");
+                      procurementIdCell.textContent = procurement.procurement_id;
+                      row.appendChild(procurementIdCell);
+
+                      const actionCell = document.createElement("td");
+                      const postButton = document.createElement("button");
+                      postButton.textContent = "Post";
+                      postButton.classList.add("btn", "btn-primary");
+                      postButton.value = procurement.procurement_id;
+
+                      postButton.addEventListener("click", function() {
+                          postAction(this);
+                      });
+
+                      actionCell.appendChild(postButton);
+                      row.appendChild(actionCell);
+                      tableBody.appendChild(row);
+                  });
+              } else {
+                  console.error("No procurements found in response.");
+              }
+
+              showSuccessAlert('Procurement(s) saved successfully as draft!').then(() => {
+                location.reload();
+            });// This will refresh the page to reflect the changes
+                  },
+                  error: function(error) {
+                      console.error("Error saving procurement:", error);
+                      showWarningAlert('Error: There was an error saving the procurement. Please try again.');
+              //alert("There was an error saving the procurement. Please try again.");
+              
+          }
+      });
+  }
+  //It retrieves the delivery name from the backend and extract the exact value.
+  function getDeliveryName(deliveryId) {
+    var deliveryOptions = $('#delivery option');
+    var deliveryName = '';
+
+    deliveryOptions.each(function() {
+        console.log('Checking option:', $(this).val(), 'for delivery ID:', deliveryId);  // Debugging line
+        if ($(this).val() == deliveryId) {
+            // Access the 'data-id' attribute to get the delivery name
+            deliveryName = $(this).data('id');
+            console.log('Found delivery name:', deliveryName);  // Debugging line
+            return false; // Exit the loop once we find the match
+        }
+    });
+
+    if (!deliveryName) {
+        console.log('Delivery name not found for ID:', deliveryId); // Debugging line
+    }
+
+    return deliveryName;
+  }
+  //It retrieves the unit name from the backend and extract the exact value.
+  function getUnitName(unitId) {
+    var unitOptions = $('#unit option');
+    var unitName = '';
+
+    unitOptions.each(function() {
+        console.log('Checking option:', $(this).val(), 'for unit ID:', unitId);  // Debugging line
+        if ($(this).val() == unitId) {
+            // Access the 'data-id' attribute to get the unit name
+            unitName = $(this).data('id');
+            console.log('Found unit name:', unitName);  // Debugging line
+            return false; // Exit the loop once we find the match
+        }
+    });
+
+    if (!unitName) {
+        console.log('Unit name not found for ID:', unitId); // Debugging line
+    }
+
+    return unitName;
+  }
+  
+  //Toggle function for show more show less.
+  function toggleText(elem) {
+    var parent = $(elem).closest('.text-container');
+    var fullText = parent.find('.full-text');
+    var shortText = parent.find('.short-text');
+    var isExpanded = fullText.is(':visible');
+
+    fullText.toggle(!isExpanded);
+    shortText.toggle(isExpanded);
+    $(elem).text(isExpanded ? 'Show more' : 'Show less');
+  }
+  //Expandale text for the particulars table,if more text is visible
+  function createExpandableText(text, limit = 100) {
+    if (!text) return '';
+    if (text.length <= limit) return `<div>${text}</div>`;
+
+    var shortText = text.substring(0, limit) + '...';
+    return `
+        <div class="text-container">
+            <div class="short-text">${shortText}</div>
+            <div class="full-text" style="display:none;">${text}</div>
+            <a href="javascript:void(0);" onclick="toggleText(this)" style="color: blue;cursor: pointer;text-decoration: underline;display: inline-block;">Show more</a>
+        </div>
+    `;
+  }
+  //Any other draft is selected,after performing any actions in present draft id,so the old one will be cleared
+  function clearDraftSelection() {
+    var selected = document.querySelector('.draft-item.selected');
+    if (selected) {
+        selected.classList.remove('selected');
+    }
+  }
+  //The saved draft details are retreived from the below function
+  function postAction(td) {
+    ///debugger;
+      resetEditState();
+      document.getElementById('procurementselect').value = "";
+      // Get the procurementId from the clicked element (td)
+      
+      var procurementId = td.getAttribute('data-procurement-id');
+      console.log(procurementId,'procurementId');
+      
+      var data = {
+          'draftprocurement_id': procurementId,
+          'status': 'senddraft',
+      };
+
+      console.log("Data being sent:", JSON.stringify(data));
+
+      // Remove previously highlighted row (if any)
+      var previouslyHighlightedRow = document.querySelector('.highlighted-row');
+      if (previouslyHighlightedRow) {
+          previouslyHighlightedRow.classList.remove('highlighted-row');
+      }
+
+      // Highlight the clicked row
+      var rowToHighlight = $(td).closest('tr');
+      rowToHighlight.addClass('highlighted-row');
+
+      // Send an AJAX request
+      $.ajax({
+          url: '{% url "procurement" %}', 
+          type: 'POST',
+          contentType: 'application/json', 
+          headers: {
+              'X-CSRFToken': '{{csrf_token}}'
+          },
+          data: JSON.stringify(data),  
+          success: function(response) {
+              console.log("Response from server:", response);
+              if (response.success) {
+                showSuccessAlert('Draft procurement Data Loaded Successfully!').then((result) => {
+                  if (result.isConfirmed) {
+                    ///debugger;
+                    // Your existing code to load and populate data goes here
+                    
+                    particularsArray = [];
+                    $("#paticularbody tr").remove();
+                    $("#id_draft_id").val(procurementId);
+                    
+                    console.log(response, 'id_draft_id');
+                    
+                    if (response.procurement && response.procurement.length > 0) {
+                      var particularData = response.procurement[0]; // Using first procurement item
+                      
+                      console.log(particularData, "........sddsfsd");
+                      
+                      $('#quality_certificates_required').val(particularData.procurement__quality_certificates_required || '');
+                      let acceptance_attach = response.quality_document_url;
+                      console.log(acceptance_attach, 'acceptance_attach');
+                      
+                      if (acceptance_attach) {
+                        $("#viewAttachment")
+                          .attr("onclick", `window.open('${acceptance_attach}', '_blank')`)
+                          .show();
+                        getdata = acceptance_attach;
+                      }
+                      
+                      $('#earlier_procurement_details').val(particularData.procurement__earlier_procurement_details || '');
+                      $('#procurement_title').val(particularData.procurement__procurement_title || '');
+                      $('#tender_type').val(particularData.procurement__tender_type || '');
+                      $('#category_events').val(particularData.procurement__category_events || '');
+                      $('#import_indigenous').val(particularData.procurement__import_indigenous || '');
+                      var prEvent = (particularData.procurement__pr_events || '').trim();
+                      $('input[name="pr_event"][value="' + prEvent + '"]').prop('checked', true);
+
+                      $('#procurement_type').val(particularData.procurement__procurement_type || '');
+                      $('#recommending_authority').val(response.role || '');
+                      $('#project').val((particularData.procurement__project || '') + (response.budgetdata[0]?.financial_year || ''));
+                      if (particularData.procurement__is_delivered === true || particularData.procurement__is_delivered === 'true' || particularData.procurement__is_delivered === 'yes') {
+                        $('#delivered_yes').prop('checked', true);
+                      } else {
+                        $('#delivered_no').prop('checked', true);
+                      }
+
+                      
+                      // Populate "Source of Supplies" dropdown
+                      var sourceOfSuppliesValues = response.supplier_names || [];
+                      $('#source_of_supplies option').each(function() {
+                        if (sourceOfSuppliesValues.includes($(this).data('name'))) {
+                          $(this).prop('selected', true);
+                        } else {
+                          $(this).prop('selected', false);
+                        }
+                      });
+                      $('#source_of_supplies').trigger('change');
+                      
+                      $("#location").val(particularData.procurement__branch || '');
+                    }
+                    
+                    if (response.particulars && response.particulars.length > 0) {
+                      var tableBody = $('#particularsTable tbody');
+                      var rowCount = tableBody.children('tr').length + 1;
+              
+                      response.particulars.forEach(function(particular, index) {
+                        var myparticular = {
+                          product: particular.product_name,
+                          productid:particular.productid,
+                          total_qty_required: particular.total_qty_required,
+                          estimated_value: particular.estimated_value,
+                          reasons_for_procurement: particular.reasons_for_procurement,
+                          make: particular.make,
+                          justification_file: particular.reasons_document,
+                          quotation_upload:particular.quot_file,
+                          delivery: particular.delivery_name,
+                          quantities: particular.items_to_be_positioned_by,
+                          specification: particular.item_specification,
+                          unit: particular.unit,
+                          units: particular.units,
+                          partno: particular.partno,
+                          materialcode: particular.materialcode,
+                          specificationFile: particular.spec_document,
+                        };
+                        
+                        particularsArray.push(myparticular);
+                        console.log(particularsArray, 'particularsArray');
+                        var newestimatedvalue = 0;
+                        newestimatedvalue += parseFloat(particular.estimated_value);
+                        var newRow = $('<tr></tr>');
+                        
+                        // Add row content (similar to your existing code)
+                        newRow.append('<td style="display:none;"><input type="checkbox" class="procurement-checkbox" checked data-index="' + (particularsArray.length - 1) + '"></td>');
+                        newRow.append('<td>' + (index + 1) + '</td>');
+                        newRow.append('<td>' + (particular.delivery_name || '') + '</td>');
+                        newRow.append('<td>' + createExpandableText(particular.product_name || '') + '</td>');
+                        newRow.append('<td>' + (particular.units || '') + '</td>');
+                        newRow.append('<td>' + createExpandableText(particular.partno || '') + '</td>');
+                        newRow.append('<td>' + createExpandableText(particular.make || '') + '</td>');
+                        newRow.append('<td>' + (particular.total_qty_required || '') + '</td>');
+                        newRow.append('<td>' + (particular.estimated_value || '') + '</td>');
+              
+                        // Reasons for procurement + justification button
+                        // Justification
+                        var reasons_for_procurement = particular.reasons_for_procurement || "";
+                        var justificationFile = particular.reasons_document_url || "";
+                        if (justificationFile) {
+                          $("#justificationFile")
+                            .attr("onclick", `window.open('${justificationFile}', '_blank')`)
+                            .hide();
+                          justfile = justificationFile;
+                        }
+                        console.log(justfile, 'ijuhygtfrspec');
+
+                        newRow.append(`
+                          <td style="word-wrap: break-word; max-width: 250px;">
+                            <div style="display: flex; flex-direction: column; align-items: start;">
+                              ${justificationFile ? `
+                                <div style="margin-bottom: 8px;">
+                                  <button class="btn btn-sm btn-outline-secondary file12" onclick="window.open('${justificationFile}', '_blank')">
+                                    <i class="fas fa-eye"></i>
+                                  </button>
+                                </div>` : ''
+                              }
+                              <div>${createExpandableText(reasons_for_procurement)}</div>
+                            </div>
+                          </td>
+                        `);
+
+                        // Specification
+                        var specification = particular.item_specification || "";
+                        var specificationFile = particular.spec_document_url || "";
+                        if (specificationFile) {
+                          $("#viewSpecification")
+                            .attr("onclick", `window.open('${specificationFile}', '_blank')`)
+                            .hide();
+                          specdata = specificationFile;
+                        }
+                        console.log(specdata, 'ijuhygtfrspec');
+
+                        newRow.append(`
+                          <td style="word-wrap: break-word; max-width: 250px;">
+                            <div style="display: flex; flex-direction: column; align-items: start;">
+                              ${specificationFile ? `
+                                <div style="margin-bottom: 8px;">
+                                  <button class="btn btn-sm btn-outline-secondary file12" onclick="window.open('${specificationFile}', '_blank')">
+                                    <i class="fas fa-eye"></i>
+                                  </button>
+                                </div>` : ''
+                              }
+                              <div>${createExpandableText(specification)}</div>
+                            </div>
+                          </td>
+                        `);
+
+                        // Quantity and Date formatting
+                        var quantityAndDate = '';
+                        if (particular.items_to_be_positioned_by && particular.items_to_be_positioned_by.length > 0) {
+                          particular.items_to_be_positioned_by.forEach(function(item) {
+                            var quantity = item.quantity;
+                            var expectedDate = item.date;
+                            var formattedDate = "";
+                            if (expectedDate) {
+                              var date = new Date(expectedDate);
+                              formattedDate = date.getDate().toString().padStart(2, '0') + '-' +
+                                              (date.getMonth() + 1).toString().padStart(2, '0') + '-' +
+                                              date.getFullYear();
+                            }
+                            if (quantity && formattedDate) {
+                              quantityAndDate += quantity + ' - ' + formattedDate + '<br>';
+                            } else if (quantity) {
+                              quantityAndDate += quantity + '<br>';
+                            } else if (formattedDate) {
+                              quantityAndDate += formattedDate + '<br>';
+                            }
+                          });
+                          quantityAndDate = quantityAndDate.slice(0, -4);
+                        }
+                        newRow.append('<td>' + quantityAndDate + '</td>');
+                        var quotationUpload = particular.quot_file || "";
+                        if (quotationUpload) {
+                          $("#viewSpecification")
+                            .attr("onclick", `window.open('${quotationUpload}', '_blank')`)
+                            .hide();
+                          quotfile = quotationUpload;
+                        }
+                        console.log(quotfile, 'quotfile');
+
+                        newRow.append(`
+                          <td style="word-wrap: break-word; max-width: 250px;">
+                            <div style=" flex-direction: column; align-items: start;">
+                              ${quotationUpload ? `
+                                <div style="margin-bottom: 8px;">
+                                  <button class="btn btn-sm btn-outline-secondary file12" onclick="window.open('${quotationUpload}', '_blank')">
+                                    <i class="fas fa-eye"></i>
+                                  </button>
+                                </div>` :  `
+                                <div style="max-width: 250px; color: #999; text-align: center;">No file</div>`
+                              }
+                              
+                            </div>
+                          </td>
+                        `);
+              
+                        // Action buttons
+                        newRow.append('<td>' +
+                          '<button type="button" style="background-color:#007080;border-color:#007080;color:white;" class="btn btn-warning btn-sm me-2" onclick="editParticular(' + (particularsArray.length - 1) + ')">' +
+                            '<i class="fas fa-edit"></i>' +
+                          '</button>' +
+                          '<button type="button" class="btn btn-danger btn-sm" onclick="deleteParticular(' + (particularsArray.length - 1) + ')">' +
+                            '<i class="fas fa-trash-alt"></i>' +
+                          '</button>' +
+                          '</td>');
+              
+                        tableBody.append(newRow);
+                      });
+                    }
+                    
+                    // Handle budget data
+                    if (response.budgetdata && response.budgetdata.length > 0) {
+                      var budgetData = response.budgetdata[0];
+                      var allocatedBudget = parseFloat(budgetData.allocated_budget.replace(/,/g, ''));
+                      var remainingBudget = parseFloat(budgetData.remaining_budget.replace(/,/g, ''));
+              
+                      $('#budget').val(allocatedBudget);
+                      $('#remaining-budget').val(remainingBudget);
+                      $('#remainingbudget').val(remainingBudget);
+                      mainbudgett = remainingBudget;
+                      prevestimated = null;
+                      $('#budget-container').css('display', 'block');
+                    } else {
+                      console.log('No budget data available for this procurement.');
+                    }
+              
+                    // Ensure checkboxes are checked
+                    document.querySelectorAll('.procurement-checkbox').forEach(checkbox => {
+                      checkbox.checked = true;
+                    });
+                  }
+                });
+              } else {
+                showWarningAlert('Error: ' + response.message);
+              }
+              
+          },
+          
+          error: function(xhr, status, error) {
+      
+              showWarningAlert('An error occurred while fetching the data.');
+          }
+      });
+  }
+  //Function to delete the row of the particulars.
+  function deleteRow(button) {
+    var row = $(button).closest('tr');
+    ///debugger; 
+
+
+    //var draftprocurementId = $(row).data('draftprocurementid'); 
+    var draftprocurementId = $(button).val()
+
+
+
+
+    var confirmation = showConfirmAlert('Are you sure you want to delete this particular?');
+    if (confirmation) {
+
+      $.ajax({
+        url: '/delete-particular/',  
+        type: 'POST',
+        data: JSON.stringify({
+          'status': 'delete',  
+          'draftprocurement_id': draftprocurementId, 
+          
+        }),
+        contentType: 'application/json',
+        headers: {
+          'X-CSRFToken': '{{ csrf_token }}'
+        },
+        success: function(response) {
+          if (response.success) {
+            
+            row.remove();
+            showSuccessAlert('Particular deleted successfully!');
+          } else {
+            showWarningAlert('Error: ' + response.message);
+          }
+        },
+        error: function(xhr, status, error) {
+  
+          showWarningAlert('An error occurred while deleting the particular.');
+        }
+      });
+    }
+  }
+  //Function search is used for retreive the already submitted procurements
+  function searchProcurement() {
+    resetEditState();
+    clearDraftSelection(); 
+    var procurementsearchid = document.getElementById('procurementselect').value;
+  
+    if (procurementsearchid) {
+        var data = {
+            'status': 'procurementsearch',
+            'procurementsearchid': procurementsearchid
+        };
+  
+        console.log("Data being sent:", JSON.stringify(data));
+  
+  
+        $.ajax({
+            url: '{% url "procurement" %}',  // Ensure this URL is correct (your backend endpoint for search)
+            type: 'POST',
+            contentType: 'application/json',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'  // Pass CSRF token for security
+            },
+            data: JSON.stringify(data),
+            success: function(response) {
+                console.log("Response received:", response);
+  
+                if (!response || !response.success || !response.procurement || !response.particulars) {
+                    console.error("Error: Invalid response format.");
+                    showAlert("No valid data found.");
+                    return;
+                }
+                $("#searched_procurement_id").val(response.procurementsearchid || "");
+  
+                var procurementData = response.procurement;  
+                var particularsData = response.particulars;  
+                var budgetData = response.budgetdata;
+                var tableBody = $("#paticularbody");
+                tableBody.empty();
+  
+      
+                particularsArray = [];
+                newestimatedvalue=0
+                if (Array.isArray(particularsData) && particularsData.length > 0) {
+                  particularsData.forEach(function(particular, index) {
+                      // Format dates and quantities
+                      var displayText = '';
+
+                      if (particular.items_to_be_positioned_by && particular.items_to_be_positioned_by.length > 0) {
+                          displayText = particular.items_to_be_positioned_by.map(item => {
+                              var dateObj = new Date(item.date);
+                              var day = dateObj.getDate().toString().padStart(2, '0');
+                              var month = (dateObj.getMonth() + 1).toString().padStart(2, '0');
+                              var year = dateObj.getFullYear();
+                              var formattedDate = `${day}-${month}-${year}`;
+
+                              // Check if quantity is present and not null or undefined
+                              return item.quantity ? `${item.quantity} - ${formattedDate}` : `${formattedDate}`;
+                          }).join("<br>");
+                      } else {
+                          displayText = 'N/A';
+                      }
+
+
+
+                        var specificationFile = particular.spec_document || "";
+                          console.log(specificationFile, 'specificationFile');
+
+                          var quotationUpload = particular.quot_file || "";
+                          console.log(quotation_upload, 'specificationFile');
+                        
+                        
+                        
+                        
+                          console.log(specdata, 'ijuhygtfrspec');
+
+                          var justificationFile = particular.reasons_document || "";
+                          console.log(justificationFile, 'specificationFile');
+                        
+                          //if (justificationFile) {
+                          //    $("#justification_file")
+                          //        .attr("onclick", `window.open('${encodeURIComponent(justificationFile)}', '_blank')`)
+                          //        .show();
+                          //    justfile = justificationFile;
+                          //}
+                        
+                          //console.log(justfile, 'ijuhygtfrspec');
+                        
+                        var specification="";
+                        // If there's item specification text, append it
+                        if (particular.item_specification) {
+                          specification += ` <span>${particular.item_specification}</span>`;
+                        }
+
+                        var reasons_for_procurement="";
+                        // If there's item specification text, append it
+                        if (particular.reasons_for_procurement) {
+                          reasons_for_procurement += ` <span>${particular.reasons_for_procurement}</span>`;
+                        }
+                        ///debugger
+                        newestimatedvalue+=parseFloat(particular.estimated_value)
+                        var row = `<tr>
+                                <td style="display:none;">
+                                `
+                                ///debugger
+                                  if(particularsArray.length==0){
+                                    var parlen =  0
+                                    row +=`<input type="checkbox" class="procurement-checkbox" checked data-index="0">`
+                                  }else{
+                                    var parlen =  index
+                                    row +=`<input type="checkbox" class="procurement-checkbox" checked data-index="${index}">`
+                                  }
+  
+  
+                                  row += `</td>
+                                  <td>${index + 1}</td>
+                                  <td>${particular.delivery_name || "N/A"}</td>
+                                  <td>${createExpandableText(particular.product_name || "N/A")}</td>
+                                  <td>${particular.units || "N/A"}</td>
+                                  <td>${createExpandableText(particular.partno || "N/A")}</td>
+                                  <td>${createExpandableText(particular.make || "N/A")}</td>
+                                  <td>${particular.total_qty_required || "N/A"}</td>
+                                  <td>${particular.estimated_value ? parseFloat(particular.estimated_value) : "N/A"}</td>
+                          
+                                <td style="word-wrap: break-word; max-width: 250px;">
+                                    <div style="display: flex; flex-direction: column; align-items: start;">
+                                      ${justificationFile ? `
+                                        <button class="btn btn-sm btn-outline-secondary mb-2 file12" onclick="window.open('${justificationFile}', '_blank')">
+                                          <i class="fas fa-eye"></i>
+                                        </button>` : ''
+                                      }
+                                      <div>${createExpandableText(reasons_for_procurement)}</div>
+                                    </div>
+                                  </td>
+
+                                  <td style="word-wrap: break-word; max-width: 250px;">
+                                    <div style="display: flex; flex-direction: column; align-items: start;">
+                                      ${specificationFile ? `
+                                        <button class="btn btn-sm btn-outline-secondary mb-2 file12" onclick="window.open('${specificationFile}', '_blank')">
+                                          <i class="fas fa-eye"></i>
+                                        </button>` : ''
+                                      }
+                                      <div>${createExpandableText(specification)}</div>
+                                    </div>
+                                  </td>
+                                 
+
+
+                                  <td>${displayText}</td>
+                                   <td style="word-wrap: break-word; max-width: 250px;">
+                                   <div style="flex-direction: column; align-items: start;">
+                                      ${quotationUpload ? `
+                                        <button class="btn btn-sm btn-outline-secondary mb-2 file12" onclick="window.open('${quotationUpload}', '_blank')">
+                                          <i class="fas fa-eye"></i>
+                                        </button>
+                                      ` : `
+                                        <span style="max-width: 250px; color: #999; text-align: center;">No file</span>
+                                      `}
+                                    </div>
+
+                                  </td>
+                                  <td>
+                                      <button type="button"style="background-color:#007080;border-color:#007080;color:white;" class="btn btn-warning btn-sm" onclick="editParticular(${parlen})">
+                                          <i class="fas fa-edit"></i>
+                                      </button>
+                                      <button type="button" class="btn btn-danger btn-sm" onclick="deleteParticular(${parlen})">
+                                          <i class="fas fa-trash-alt"></i>
+                                      </button>
+                                  </td>
+                              </tr>`;
+                          
+                        tableBody.append(row);
+  
+  
+                        var searchparticular = {
+                            product: particular.product_name,
+                            productid:particular.product,
+                            total_qty_required: particular.total_qty_required,
+                            estimated_value: particular.estimated_value,
+                            reasons_for_procurement: particular.reasons_for_procurement,
+                            make: particular.make,
+                            justification_file:particular.reasons_document,
+                            quotation_upload:particular.quot_file,
+                            delivery: particular.delivery_name,
+                            quantities: particular.items_to_be_positioned_by,
+                            specification: particular.item_specification,
+                            unit: particular.unit,
+                            units: particular.units,
+                            partno: particular.partno,
+                            materialcode: particular.materialcode,
+                            specificationFile :particular.spec_document
+                        };
+                          
+                        
+  
+  
+                        particularsArray.push(searchparticular);
+                        console.log(particularsArray, 'particularsArray');
+                    });
+                } else {
+                    tableBody.html("<tr><td colspan='9' class='text-danger'>No data found</td></tr>");
+                }
+  
+                // --- Update Procurement Form Fields ---
+                $("#procurement_type").val(procurementData.procurement_type || "");
+                $("#import_indigenous").val(procurementData.import_indigenous || "");
+                $("#tender_type").val(procurementData.tender_type || "");
+                $("#category_events").val(procurementData.category_events || "");
+                const prEventValue = (procurementData.pr_events || '').trim();
+                console.log("Trimmed PR Event:", prEventValue);
+
+                const matchedRadio = $('input[name="pr_event"][value="' + prEventValue + '"]');
+
+                if (matchedRadio.length) {
+                  matchedRadio.prop('checked', true);
+                  console.log("Radio selected for:", prEventValue);
+                } else {
+                  console.warn("No radio button found for PR Event value:", prEventValue);
+                }
+
+                if (procurementData.project) {
+                  const projectValue = procurementData.project[0].project_id + procurementData.project[0].financial_year;
+                  console.log(projectValue,'uytr')
+                  $('#project').val(projectValue);
+                }
+                if (procurementData.is_delivered === true || procurementData.is_delivered === 'true' || procurementData.is_delivered === 'yes') {
+                  $('#delivered_yes').prop('checked', true);
+                } else {
+                  $('#delivered_no').prop('checked', true);
+                }
+              
+                $("#location").val(procurementData.branch || "");
+                $("#recommending_authority").val(procurementData.role || "");
+                // Set the value for quality certificates required
+              // Set the value for quality certificates required
+              // Set the value for quality certificates required
+                  $("#quality_certificates_required").val(procurementData.quality_certificates_required || "");
+  
+                  // Function to update the document link
+                  let acceptance_attach = response.quality_document_url;
+                  console.log(acceptance_attach, 'acceptance_attach');
+                
+                  if (acceptance_attach) {
+                    acceptance_attach = acceptance_attach.replace("media/media", "media");
+                    $("#viewAttachment")
+                    
+                      .attr("onclick", `window.open('${acceptance_attach}', '_blank')`)
+                      .show();
+                    getdata =  acceptance_attach
+                  }
+                
+  
+  
+                $("#earlier_procurement_details").val(procurementData.earlier_procurement_details || "");
+                $("#procurement_title").val(procurementData.procurement_title || "");
+                $("#departments").val(procurementData.department || "");
+  
+                var supplierNames = response.supplier_names || [];
+
+                if (supplierNames.length > 0) {
+                    // Clear old selections first
+                    $('#source_of_supplies').val([]).trigger('change');
+
+                    // Now select the relevant options
+                    $('#source_of_supplies option').each(function() {
+                        var optionText = $(this).text().trim();
+
+                        if (supplierNames.includes(optionText)) {
+                            $(this).prop('selected', true);
+                        }
+                    });
+
+                    $('#source_of_supplies').trigger('change');
+                }
+
+                // --- Handle Budget Data ---
+                if (Array.isArray(budgetData) && budgetData.length > 0) {
+                    var budget = budgetData[0];
+                    $('#budget').val(budget.allocated_budget || "N/A");
+                    $('#remaining-budget').val(budget.remaining_budget-newestimatedvalue || "N/A");
+                    $('#remainingbudget').val(budget.remaining_budget|| "N/A");
+                    $('#budget-container').css('display', 'block');
+
+                    //$("#remaining-budget").val(budget.remaining_budget.toFixed(2)|| "N/A");
+                    //$("#remaining-budget")[0].defaultValue = budget.remaining_budget.toFixed(2)|| "N/A"
+                    
+                  // $("#remaining-budget").data("original", budget.remaining_budget|| "N/A"); 
+                    //$("#remaining-budget").data("id", budget.remaining_budget || "N/A");
+                    //$("#remaining-budget").attr("data-id", budget.remaining_budget || "N/A");
+                    mainbudgett = parseFloat(budget.remaining_budget-newestimatedvalue)
+                    prevestimated = null
+                } else {
+                    $('#budget').val("N/A");
+                    $('#remainingbudget').val("N/A");
+                    $('#remaining-budget').val("N/A");
+                    $('#budget-container').css('display', 'none');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("AJAX Error:", error);
+                showWarningAlert('Error searching: ' + error);
+            }
+        });
+    } else {
+      showAlert("Please select a procurement ID to search.");
+    }
+  }
+  //Function submit is used for submitting the procurements wither from draft,search or normally newly added particulars
+  function submitProcurements() {
+      ///debugger
+      var selectedProcurements = [];
+      var checkboxes = document.getElementsByClassName('procurement-checkbox');
+      // Debugging
+      var sourceOfSupplies = $('#source_of_supplies option:selected').map(function() {
+          return $(this).data('id');
+      }).get();
+      var make = document.getElementById('make').value
+      var quality_certificates_required = document.getElementById('quality_certificates_required').value
+      
+      if($("#attachment")[0].files.length != 0){
+        var acceptance_attach = $("#attachment")[0].files[0];
+      } else if(getdata != undefined){
+        // Clean the getdata string here before assigning
+        var acceptance_attach = getdata.replace(/(\/media)+/g, "/media");
+      } else {
+        var acceptance_attach = '';
+      }
+      
+      console.log(acceptance_attach,'acceptance_attach45678')
+      //var material_to_confirm_to_standard = document.getElementById('material_to_confirm_to_standard').value
+      var earlier_procurement_details = document.getElementById('earlier_procurement_details').value
+      var procurement_title = document.getElementById('procurement_title').value.trim()
+    // var special_conditions = document.getElementById('special_conditions').value
+      var locations = document.getElementById('location').value
+      var tendertype = $("#tender_type").val();
+      var category_events  = $("#category_events").val();
+      var importindigenous =$("#import_indigenous").val()
+      
+      var procurementtype = $("#procurement_type option:selected").data("type");
+      var project = $("#project").val()
+      var specification=$("#specifications").val()
+      var materialcode=$("#materialcode").val()
+      var department=$("#departments option:selected").data('id')
+      var delivery=$("#delivery").val()
+      var datacode = $("#tender_type option:selected").data("code")
+      var datacodeprtype=$("#procurement_type option:selected").data("prtype")
+      var datacodeimport=$("#import_indigenous option:selected").data("imp")
+      var dataimport=$("#import_indigenous option:selected").data("type")
+      var departments =$("#departments").val()
+      var dataproject = $("#project option:selected").data("code")
+      var dataprojectyear = $("#project option:selected").data("year")
+      var total_qty_required=$("#total_qty_required").val()
+      var unit=$("#unit").val()
+      var partno=$("#partno").val()
+      var role = $("#recommending_authority").val();
+      var selectedOption = $("#recommending_authority option:selected");
+      var selected_user_role = selectedOption.data("role");
+      var estimatedValue = document.getElementsByName('estimated_value')[0].value;
+      var isDelivered = $('input[name="is_delivered"]:checked').val();
+      var prevent = $('input[name="pr_event"]:checked').val();
+      console.log("Selected EMP ID:", role);
+      console.log("Selected User Role:", selected_user_role);
+
+      var id_draft_id = document.getElementById('id_draft_id').value;
+    
+
+
+      
+
+      const quantities = [];
+      const dates = [];
+      const data = [];
+      /////debugger
+      // Get all quantities
+      const quantityInputs = document.querySelectorAll('.checklist-input');
+      quantityInputs.forEach(input => {
+        quantities.push(input.value);
+      });
+
+      // Get all date fields (Items to be Positioned By)
+      const dateInputs = document.querySelectorAll('input[name="items_to_be_positioned_by"]');
+      dateInputs.forEach(input => {
+        dates.push(input.value);
+      });
+
+      for (let i = 0; i < quantities.length; i++) {
+        data.push({
+          quantity: quantities[i],
+          date: dates[i] || null  // Fallback in case there's no corresponding date
+        });
+      }
+
+
+    
+      for (var i = 0; i < checkboxes.length; i++) {
+        ///debugger
+        if (checkboxes[i].checked) {
+          var index = checkboxes[i].dataset.index;
+          selectedProcurements.push(particularsArray[index]);
+        }
+      }
+      if (selectedProcurements.length === 0) {
+        showAlert('Please create at least one particular to submit');
+        return;
+      }
+      if($("#paticularbod tr").length){
+        showAlert("please add particulars")
+        return;
+      }
+      if (pap != true) {
+        showAlert('Please preview the particulars before submitting.');
+      return;
+      }
+      if (!procurement_title || procurement_title == null || procurement_title === undefined) {
+        showAlert("Procurement Title is required. Please select a value.");
+        return;
+      }
+      
+      if (procurement_title.length > 50) {
+        showAlert("Procurement Title cannot exceed 50 characters.");
+        return;
+      }
+      console.log(selectedProcurements,'selectedProcurements')
+      var quantity = selectedProcurements[0].quantities;  // Extract quantities array
+
+        // Get today's date (set to midnight) for comparison
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);  // Set to midnight to compare only dates, not time
+
+        // Use map to check if any quantity date is in the past
+        const hasPastDate = quantity.map(item => {
+            const itemDateStr = item.date;  // Extract date from each quantity
+            const itemDate = new Date(itemDateStr);  // Convert to Date object
+            
+            // Log for debugging
+            console.log('Item Date:', itemDate);
+            console.log('Today:', today);
+
+            // Return true if the item date is in the past, otherwise false
+            return itemDate < today;
+        }).includes(true);  // Check if any date is in the past by looking for `true` in the array
+
+        // If any quantity date is in the past, show an alert
+        if (hasPastDate) {
+          showAlert('Please make sure all dates are today or in the future.');
+            return;  // Stop further execution if there's a past date
+        }
+        var remainingBudgetField = $("#remaining-budget");
+        var remainingBudgetField1 = $("#remainingbudget");
+        var currentRemainingBudget = parseFloat(remainingBudgetField.val()) || parseFloat(remainingBudgetField.data("original")) || 0;
+        var currentRemainingBudget1 = parseFloat(remainingBudgetField1.val()) || parseFloat(remainingBudgetField1.data("original")) || 0;
+        var updatedBudget = currentRemainingBudget - estimatedValue;
+        var updatedBudget1 = currentRemainingBudget1 - estimatedValue;
+        if (currentRemainingBudget < 0) {
+          showAlert("You cannot add this procurement because the remaining budget is negative.");
+            return;
+        }
+
+        // If no past date found, continue with the form submission
+        console.log('No past dates found. Proceeding...');
+
+        
+        showLoader();
+
+      let formData = new FormData();
+      formData.append("status", "submit");
+      formData.append("searched_procurement_id",$('#searched_procurement_id').val());
+      formData.append("id_draft_id", $("#id_draft_id").val());
+      formData.append("sourceOfSupplies", sourceOfSupplies);
+      formData.append("quality_certificates_required", quality_certificates_required);
+      formData.append("acceptance_attach", acceptance_attach);
+      formData.append("remaining_budget", $("#remaining-budget").val());
+      formData.append("earlier_procurement_details", earlier_procurement_details);
+      formData.append("procurement_title", procurement_title);
+      formData.append("location", locations);
+      formData.append("tendertype", tendertype);
+      formData.append("materialcode",materialcode);
+      formData.append("import", dataimport);
+      formData.append("importindigenous", importindigenous);
+      formData.append("procurementtype", procurementtype);
+      formData.append("project", project);
+      formData.append("dataprojectyear", dataprojectyear);
+      formData.append("category_events", category_events);
+      formData.append("datacode", datacode);
+      formData.append("datacodeprtype", datacodeprtype);
+      formData.append("datacodeimport", datacodeimport);
+      formData.append("departments", departments);
+      formData.append("dataproject", dataproject);
+      formData.append("department", department);
+      formData.append("role", role);
+      formData.append("selected_user_role", selected_user_role);
+      formData.append("delivery", isDelivered);
+      formData.append("pr_event", prevent);
+      formData.append("particular_length", selectedProcurements.length);
+      ///debugger
+      selectedProcurements.forEach((item, index) => {
+        // Append JSON data as a string
+        console.log(`Processing procurement item ${index}:`, item);
+        formData.append(`selectedProcurements_${index}`, JSON.stringify(item));
+
+        // Handle file separately (if exists)
+        if (item.specificationFile && item.specificationFile instanceof File) {
+            console.log(`Item ${index} has a file:`, item.specificationFile);
+            // If specificationFile is a file object, append it to FormData
+            formData.append(`specificationFile_${index}`, item.specificationFile);
+        } else if (item.specificationFile && typeof item.specificationFile === 'string') {
+            console.log(`Item ${index} has a URL:`, item.specificationFile);
+            // If specificationFile is a string (i.e., a URL), append it as a string
+            formData.append(`specificationFile_${index}`, item.specificationFile);
+        } else if (specdata != undefined) {
+            console.log(`Item ${index} uses specdata (URL or jnbhvgfsimilar):`, specdata);
+            // If `specdata` is defined (URL or similar), append it as a URL
+            formData.append(`specificationFile_${index}`, specdata);
+        } else {
+            console.log(`Item ${index} has no specification file and no specdata, using empty string.`);
+            // If no specificationFile and specdata is not defined, append an empty string or handle accordingly
+            formData.append(`specificationFile_${index}`, '');
+        }
+        
+
+        if (item.justification_file && item.justification_file instanceof File) {
+          console.log(`Item ${index} has a file:`, item.justification_file);
+          // If specificationFile is a file object, append it to FormData
+          formData.append(`justificationfile_${index}`, item.justification_file);
+      } else if (item.justification_file && typeof item.justification_file === 'string') {
+          console.log(`Item ${index} has a URL:`, item.justification_file);
+          // If specificationFile is a string (i.e., a URL), append it as a string
+          formData.append(`justificationfile_${index}`, item.justification_file);
+      } else if (justfile != undefined) {
+          console.log(`Item ${index} uses justificationdata (URL or jnbhvgfsimilar):`, justfile);
+          // If `specdata` is defined (URL or similar), append it as a URL
+          formData.append(`justificationfile_${index}`, justfile);
+      } else {
+          console.log(`Item ${index} has no justification file and no specdata, using empty string.`);
+          // If no specificationFile and specdata is not defined, append an empty string or handle accordingly
+          formData.append(`justificationfile_${index}`, '');
+      }
+
+
+      
+      if (item.quotation_upload && item.quotation_upload instanceof File) {
+        console.log(`Item ${index} has a file:`, item.quotation_upload);
+        // If specificationFile is a file object, append it to FormData
+        formData.append(`quotationfile_${index}`, item.quotation_upload);
+    } else if (item.quotation_upload && typeof item.quotation_upload === 'string') {
+        console.log(`Item ${index} has a URL:`, item.quotation_upload);
+        // If specificationFile is a string (i.e., a URL), append it as a string
+        formData.append(`quotationfile_${index}`, item.quotation_upload);
+    } else if (quotfile != undefined) {
+        console.log(`Item ${index} uses quotationdata (URL or jnbhvgfsimilar):`, quotfile);
+        // If `specdata` is defined (URL or similar), append it as a URL
+        formData.append(`quotationfile_${index}`, quotfile);
+    } else {
+        console.log(`Item ${index} has no quotation file and no specdata, using empty string.`);
+        // If no specificationFile and specdata is not defined, append an empty string or handle accordingly
+        formData.append(`quotationfile_${index}`, '');
+    }
+    });
+
+      $.ajax({
+        type: 'POST',
+        url: "{% url 'create_procurement' %}",
+        data: formData,
+        headers: {
+          'X-CSRFToken': '{{csrf_token}}' // CSRF token for protection
+        },
+        processData: false,
+        contentType: false,
+        success: function(data) {
+          hideLoader();
+          console.log(data, 'data');
+
+          if (data.success) {
+            console.log(data); // To understand the structure of data
+
+            showSuccessAlert(data.message).then(() => {
+              // Reload the page only after user clicks OK
+              location.reload();
+            });
+
+            // Insert the generated preview HTML into the preview content section
+            $('#previewContent').html(previewHtml).show();
+            $('#divbutton').show();
+
+            const { jsPDF } = window.jspdf;
+
+            // Select the container to capture content
+            const content = document.querySelector('#previewContent');
+
+            // Background image URL
+            const backgroundImage = '{% static "images/messylog.webp" %}';
+
+            const backgroundImageUrl = backgroundImage.slice(4, -1).replace(/"/g, ""); // Clean the url
+
+            // Create a PDF instance
+            const pdf = new jsPDF();
+
+            // Load the background image
+            const img = new Image();
+            img.src = backgroundImageUrl;
+
+            img.onload = async function() {
+              const canvas = document.createElement('canvas');
+              const ctx = canvas.getContext('2d');
+              const pdfWidth = pdf.internal.pageSize.getWidth();
+              const pdfHeight = pdf.internal.pageSize.getHeight();
+
+              canvas.width = pdfWidth;
+              canvas.height = pdfHeight;
+
+              // Draw background image with reduced opacity
+              ctx.globalAlpha = 0.75;
+              ctx.drawImage(img, 0, 0, pdfWidth, pdfHeight);
+
+              const backgroundImgData = canvas.toDataURL('image/png');
+
+              // Add background image to PDF
+              pdf.addImage(backgroundImgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
+
+              // Capture content as image
+              const contentCanvas = await html2canvas(content, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: null,
+                windowWidth: content.scrollWidth,
+                windowHeight: content.scrollHeight,
+              });
+
+              const contentImgData = contentCanvas.toDataURL('image/png');
+              const contentWidth = pdf.internal.pageSize.getWidth();
+              const contentHeight = (contentCanvas.height * contentWidth) / contentCanvas.width;
+
+              // Add content image on top of background
+              pdf.addImage(contentImgData, 'PNG', 0, 0, contentWidth, contentHeight);
+
+              // Save the PDF
+              pdf.save('procurement_preview.pdf');
+            };
+
+          } else {
+            alert('hi');
+          }
+        },
+        error: function(xhr, status, error) {
+          showWarningAlert('Error submitting procurements: ' + error);
+          
+          $("body").css("pointer-events", "auto");
+        }
+      });
+  }
+  //The function is used for selection of the suppliers based on the selection of tender type 
+  document.addEventListener('DOMContentLoaded', function () {
+    /////debugger;
+    const tenderTypeSelect = document.getElementById('tender_type');
+
+    const multipleSelectionTypes = [
+      '01',
+      '03',
+      '04',
+    ];
+
+    
+
+    tenderTypeSelect.addEventListener('change', function () {
+      /////debugger
+      const selectedTenderTypeName = $("#tender_type option:selected").data("id");
+
+      if (multipleSelectionTypes.includes(selectedTenderTypeName)) {
+
+        sourceOfSuppliesSelect.prop('multiple', true);
+        sourceOfSuppliesSelect.trigger('change'); 
+      } else {
+        
+        sourceOfSuppliesSelect.prop('multiple', false);
+        sourceOfSuppliesSelect.trigger('change');  
+      }
+    });
+  });
+  //If procurement type is selected as capital ,the project will be hide 
+  $(document).ready(function () {
+    $('#procurement_type').change(function () {
+      var selectedProcurementType = $('#procurement_type option:selected').text();
+
+      if (selectedProcurementType === 'capital') {
+        $('#project').closest('.col-3').hide();  // Changed from '.col-4' to '.col-3'
+      } else {
+        $('#project').closest('.col-3').show();  // Changed from '.col-4' to '.col-3'
+      }
+    });
+  });
+    
+  //Submit form function 
+  document.addEventListener('DOMContentLoaded', function() {
+    document.querySelector('form').addEventListener('submit', function(event) {
+      event.preventDefault();  
+      submitProcurements();  
+    });
+  });
+  //To open the attachments from the eye button
+  function previewFile() {
+    const fileInput = document.getElementById("attachment");
+    const viewBtn = document.getElementById("viewAttachment");
+    
+    if (fileInput.files.length > 0) {
+      fileUrl = URL.createObjectURL(fileInput.files[0]);
+      viewBtn.style.display = "inline-block"; // Show the button
+    } else {
+      fileUrl = "";
+      viewBtn.style.display = "none"; // Hide the button
+    }
+  }
+  //To open the attachments from the eye button
+  function viewFile() {
+    if (fileUrl) {
+      window.open(fileUrl, "_blank");
+    }
+  }
+  //This function is used for Enter key for the search bar in the procurement
+  document.addEventListener('DOMContentLoaded', function () {
+    const selectBox = document.getElementById('procurementselect'); // <-- updated ID
+
+    selectBox.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            searchProcurement();
+        }
+
+        if (e.key === 'Backspace') {
+            e.preventDefault();
+            if (selectBox.selectedIndex !== 0) {
+                selectBox.selectedIndex = 0;
+            }
+        }
+    });
+  });
+
+
+
+  
+  //It is used for toggle bar when the screen pixle is smaller for draft and serach
+  function toggleResponsiveSections() {
+    const sections = document.querySelectorAll('.responsive-toggle');
+    sections.forEach(section => {
+      if (section.classList.contains('d-none')) {
+        section.classList.remove('d-none');
+      } else {
+        section.classList.add('d-none');
+      }
+    });
+  }
+  $(document).ready(function () {
+    $('#is_delivered_checkbox').change(function () {
+      if ($(this).is(':checked')) {
+        $('#activeLabel').text('Active');
+      } else {
+        $('#activeLabel').text('Inactive');
+      }
+    });
+  });
+  document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function (el) {
+      new bootstrap.Tooltip(el);
+    });
+  });
+  
+
+</script>
+{% endblock scripts %}
+
+{% block mainblock %}
+    <!-- Toggle bar for search and draft when the screen size is smaller-->
+    <div class="d-block d-md-none p-2">
+      <button class="btn btn-outline-primary float-right" onclick="toggleResponsiveSections()" style="margin-left: 79%;
+      margin-bottom: 23px;">
+        &#9776;
+      </button>
+    </div>
+    <!-- Search bar for existing submitted procurements-->
+    <div class="p-4 responsive-toggle d-none d-md-block">
+      <div style="display: flex; gap: 10px; justify-content: flex-end; padding-right: 10px;">
+        <div class="input-group" style="max-width: 225px;">
+          <select id="procurementselect" class="form-select" aria-label="Select PR ID" style="margin-bottom: 10px;">
+            <option value="" disabled selected hidden>Select PR ID</option>
+
+            {% for procurement in procurementsearch %}
+              {% if procurement.procurement_id %}
+                <option value="{{ procurement.procurement_id }}">{{ procurement.procurement_id }}</option>
+              {% endif %}
+            {% endfor %}
+          </select>
+          
+          <button class="btn btn-light" type="button" onclick="searchProcurement()" id="searchButton" style="height: calc(2.25rem + 2px);">
+            <i class="fas fa-search"></i>
+          </button>
+      </div>
+        <input type="hidden" id="searched_procurement_id" name="searched_procurement_id" value="">
+    </div>
+  </div>
+    
+    <!-- Procurement form divided by 2 parts (Procurments/Particulars)-->
+    <form id="procurementForm"  enctype="multipart/form-data"  method="POST">
+      {% csrf_token %}
+
+      <div class='container-fluid' style="margin-left: 16px;margin-top: -61px;">
+        <h4 style="margin-bottom: 10px; margin-top:-47px; "><b>Purchase Requisition Form</b></h4>
+        <div class="row">
+
+          <div class='col-8 p-2' style='border: 1px solid #007080; width:82%;'>
+          
+            <h5 style="color:#007080; margin-top:10px;text-decoration: underline;"><b>Procurements</b></h5>
+          <div class ="row1">
+            <div class='row'>
+              <!-- Procurement types-->
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="procurement_type" class="form-label d-inline-flex align-items-center">
+                    <b>Select Procurement Type:</b><span class="text-danger ms-1">*</span>
+                    <i class="fas fa-info-circle ms-2"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="right"
+                       title="Capital – Procurement aimed at creating or improving the company’s long-term assets.
+                              Revenue – Procurement for routine use and day-to-day operational needs of the company."></i>
+                </label>
+            
+                <select id="procurement_type" name="procurement_type" class="form-select mt-1" required>
+                    <option value="" disabled selected hidden>Select Procurement Type</option>
+                    {% for type in procurement_types %}
+                        <option value="{{ type.Procurement_code }}" data-prtype="{{type.Procurement_code}}" data-type="{{ type.Procurement_name }}">
+                            {{ type.Procurement_name }}({{type.Procurement_code}})
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            
+            <!-- Departments -->
+            <div class="col-12 col-sm-6 col-lg-3 mt-2" id="dept">
+              <label for="departments" class="form-label"><b>Select Departments:</b><span class="text-danger">*</span>
+                <i class="fas fa-info-circle ms-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="The department related to the logged-in user will be automatically selected and displayed."></i>
+             
+              </label>
+              <select id="departments" name="departments" class="form-select" disabled required>
+                  <option value="" disabled selected hidden>Select Department  </option>
+                  {% for department in departments %}
+                    {%if department.id == mydep %}
+                      <option value="{{ department.id }}" selected data-id="{{ department.dept_code }}" data-type="{{ department.dept_name }}" data-depttype="{{ department.dept_code }}">
+                          {{ department.dept_name }} ({{ department.dept_code }})
+                      </option>
+                    {%else%}
+                    <option value="{{ department.id }}"  data-id="{{ department.dept_code }}" data-type="{{ department.dept_name }}" data-depttype="{{ department.dept_code }}">
+                      {{ department.dept_name }} ({{ department.dept_code }})
+                  </option>
+                    {%endif%}
+                  {% endfor %}
+              </select>
+            </div>
+          
+            <!--Import/Indigenous -->
+            <div class="col-12 col-sm-6 col-lg-3 mt-2">
+              <label for="import_indigenous" class="form-label"><b>Select (Import/Indigenous):</b><span class="text-danger">*</span>
+                <i class="fas fa-info-circle ms-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="Choose 'Import' if the product is from outside the country, or 'Indigenous' if it's sourced locally."></i>
+              </label>
+              
+              <select id="import_indigenous" name="import_indigenous" class="form-select" required>
+                <option value="" disabled selected hidden>Select Type  </option>
+
+                  {% for type in import_indigenous_types %}
+                      <option value="{{ type.source_code }}" data-id="{{ type.source_code }}" data-imp="{{type.source_code}}" data-type="{{ type.source_type }}">
+                          {{ type.source_type }}  ({{ type.source_code }})
+                      </option>
+                  {% endfor %}
+              </select> 
+            </div>
+          
+            <!-- Tender Types -->
+            {% comment %} <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="tender_type" class="form-label"><b>Select Tender Type:</b><span class="text-danger">*</span>
+                    <i class="fas fa-info-circle ms-2"
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="right"
+                      data-bs-html="true"
+                      title="Limited Tender – Only selected vendors are invited to submit bids.<br>
+                  Proprietary Tender – Single vendor chosen due to exclusive rights or product.<br>
+                  Open Tender – Open for all interested vendors to submit competitive bids.<br>
+                  Single Tender – Only one vendor invited, usually for urgency or specialized needs."></i>
+                </label>
+              <select id="tender_type" name="tender_type" class="form-select">
+                <option value="" disabled selected hidden>Select Tender Type  </option>
+                {% for tender in tender_types %}
+                  <option value="{{ tender.tender_code }}" data-id="{{ tender.tender_code }}" data-code="{{tender.tender_code}}" data-name="{{tender.tender_type}}">{{ tender.tender_type }}({{tender.tender_code}}) </option>
+                {% endfor %}
+              </select>
+            </div> {% endcomment %}
+
+            <!--Location -->
+            <div class="col-12 col-sm-6 col-lg-3 mt-2">
+              <label for="location" class="form-label"><b>Location:</b><span class="text-danger">*</span>
+                  <i class="fas fa-info-circle ms-2"
+                      data-bs-toggle="tooltip"
+                      data-bs-placement="right"
+                      title="Select the appropriate location from the available list.">
+                  </i>
+              </label>
+              <select id="location" name="location" class="form-select" required>
+                 <option value="" disabled selected hidden>Select Location</option>
+                 {% for location in locations %}
+                    <!-- <option value="{{ location.id }}" data-code="{{ location.location }}" data-name="{{ location.location }}">
+                        {{ location.location }}
+                    </option> -->
+                    <option value="{{ location.id }}" data-code="{{ location.location_label}}" data-name="{{ location.location_label }}">
+                        {{ location.location_label }}
+                    </option>
+                 {% endfor %}
+              </select>
+            </div>
+            
+            {% block pagecss %}
+            <link href="{% static 'default/css/select2.min.css' %}" rel="stylesheet" />
+            {% endblock pagecss %}
+
+            {% block pagejs %}
+            <script src="{% static 'default/js/select2.min.js' %}"></script>
+            <script>
+            $(document).ready(function () {
+                $('#location').select2({
+                    placeholder: "Select a location",
+                    width: '100%'
+                });
+            });
+            </script>
+            {% endblock pagejs %}
+
+
+            <!-- Projects -->
+            <div class="col-12 col-sm-6 col-lg-3 mt-2" id='proj'>
+              <label for="project" class="form-label"><b>Select Project: </b><span class="text-danger">*</span> 
+                <i class="fas fa-info-circle ms-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="Select the relevant project from the list."></i></label>
+              <select id="project" name="project" class="form-select" preValue="">
+                  <option value="" disabled selected hidden>Select Project  </option>
+                  {% for project in projects %}
+                      <option value="{{ project.project_id }}{{project.financial_year}}" data-code ="{{project.project_id}}" data-name="{{ project.name }}" data-year="{{project.financial_year}}">{{ project.name }} ({{project.project_id}})-{{project.financial_year}}</option>
+                  {% endfor %}
+              </select>
+            </div>
+
+            <!-- Display Allocated Budget -->
+            <div class="col-12 col-sm-6 col-lg-3 mt-2" id="budget-container" style="display:none;" >
+              <label for="budget" class="form-label" ><b>Allocated Budget:</b> 
+                <i class="fas fa-info-circle ms-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="The allocated budget is based on the selected project and its financial year."></i></label>
+              <input type="text" id="budget" value="" class="form-control" style="background-color: var(--bs-secondary-bg);" readonly/>
+            </div>
+
+            <!-- Display Remaining Budget -->
+            <div class="col-12 col-sm-6 col-lg-3 mt-2">
+              <label for="remaining-budget" class="form-label"><b>Remaining Budget:</b> 
+                <i class="fas fa-info-circle ms-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="The remaining budget will update based on the selected project and its related particulars."></i></label>
+              <input type="text" id="remainingbudget" value="" class="form-control" style="background-color: var(--bs-secondary-bg);" readonly />
+            </div>
+
+            <div class="col-12 col-sm-6 col-lg-3 mt-2">
+              <label class="form-label"><b>Online Order:</b><span class="text-danger">*</span>
+                <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Select Yes if the procurement items were ordered via an online website, otherwise select No."></i>
+              </label><br>
+
+              {% for code, display in pr_choices %}
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" 
+                        type="radio" 
+                        id="pr_event_{{ forloop.counter }}" 
+                        name="pr_event" 
+                        value="{{ code }}" 
+                        required
+                        {% if code == "Purchase_order" %}checked{% endif %}>
+                  <label class="form-check-label" for="pr_event_{{ forloop.counter }}">
+                    {% if code == "Online_order" %}
+                      Yes
+                    {% elif code == "Purchase_order" %}
+                      No
+                    {% else %}
+                      {{ display }}
+                    {% endif %}
+                  </label>
+                </div>
+              {% endfor %}
+            </div>
+            
+          <!-- Location -->
+          <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                  <label for="tender_type" class="form-label"><b>Select Tender Type:</b><span class="text-danger">*</span>
+                      <i class="fas fa-info-circle ms-2"
+                        data-bs-toggle="tooltip"
+                        data-bs-placement="right"
+                        data-bs-html="true"
+                        title="Limited Tender – Only selected vendors are invited to submit bids.<br>
+                    Proprietary Tender – Single vendor chosen due to exclusive rights or product.<br>
+                    Open Tender – Open for all interested vendors to submit competitive bids.<br>
+                    Single Tender – Only one vendor invited, usually for urgency or specialized needs."></i>
+                  </label>
+                <select id="tender_type" name="tender_type" class="form-select">
+                  <option value="" disabled selected hidden>Select Tender Type  </option>
+                  {% for tender in tender_types %}
+                    <option value="{{ tender.tender_code }}" data-id="{{ tender.tender_code }}" data-code="{{tender.tender_code}}" data-name="{{tender.tender_type}}">{{ tender.tender_type }}({{tender.tender_code}}) </option>
+                  {% endfor %}
+                </select>
+              </div> 
+          <!-- Source of Supplies -->
+          <div class="col-12 col-sm-6 col-lg-3 mt-2">
+            <label for="source_of_supplies" class="form-label"><b>Source of Supplies:</b> 
+              <i class="fas fa-info-circle ms-2"
+              data-bs-toggle="tooltip"
+              data-bs-placement="right"
+              title="Vendors can be selected as single or multiple based on the tender type."></i></label>
+            <select id="source_of_supplies" name="source_of_supplies" class="js-example-tags form-control" multiple="multiple" placeholder="Add tags">
+              {% comment %} <option value="" disabled >Select source of supplies</option> {% endcomment %}
+              {% for i in sourceofsupplies %}
+                <option value="{{ i.id }}" data-id="{{i.company_name1 }}" data-name="{{ i.company_name1 }}"  >{{i.company_name1}}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <!-- Earlier Procurement Details -->   
+          <div class="col-12 col-sm-6 col-lg-3 mt-2">
+            <label for="earlier_procurement_details" class="form-label"><b>Earlier Procurement Details:</b>
+              <i class="fas fa-info-circle ms-2"
+              data-bs-toggle="tooltip"
+              data-bs-placement="right"
+              title="Enter earlier procurement details here, if any."></i></label>
+            <input type="text" id="earlier_procurement_details" class="form-control">
+          </div>
+
+          <!-- Acceptance Criteria Required -->  
+          <div class="col-12 col-sm-6 col-lg-3 mt-2">
+            <label for="quality_certificates_required" class="form-label"><b>Acceptance Criteria Required:</b><span class="text-danger">*</span> 
+              <i class="fas fa-info-circle ms-2"
+              data-bs-toggle="tooltip"
+              data-bs-placement="right"
+              title="Provide procurement acceptance criteria here. You can also upload related files."></i></label>
+            <input type="text" id="quality_certificates_required" name="quality_certificates_required" class="form-control">
+          
+            <div class="d-flex align-items-center mt-2">
+              <input type="file" id="attachment" name="attachment" class="form-control file12" onchange="previewFile()">
+              <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12" id="viewAttachment" onclick="viewFile()" style="display: none;">
+                <i class="fas fa-eye"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="col-12 col-sm-6 col-lg-3 mt-2">
+            <label for="procurement_title" class="form-label"><b>Procurement Title:</b> 
+              <i class="fas fa-info-circle ms-2"
+              data-bs-toggle="tooltip"
+              data-bs-placement="right"
+              title="Should clearly describe the procurement purpose for easy search and be at least 50 characters long."></i></label>
+            <input type="text" id="procurement_title" class="form-control">
+          </div>
+          <!-- Select user -->  
+          <div class="col-12 col-sm-6 col-lg-3 mt-2">
+            <label for="recommending_authority" class="form-label"><b>Select User:</b><span class="text-danger">*</span> 
+              <i class="fas fa-info-circle ms-2"
+              data-bs-toggle="tooltip"
+              data-bs-placement="right"
+              title="After raising procurement, select the user it should go to."></i></label>
+              <select id="recommending_authority" name="recommending_authority" class="form-select"  required>
+                  <option value="" disabled selected hidden>Select User</option>
+                  {% for user in users %}
+                      <option value="{{ user.emp_id }}" data-firstname="{{ user.user__first_name }}" data-lastname="{{ user.user__last_name }}" data-role="{{user.role__role}}">
+                          {{ user.user__first_name }} {{ user.user__last_name }} ({{ user.emp_id }})
+                      </option>
+                  {% endfor %}
+              </select>
+          </div>
+            <!-- Delivery Section -->
+            <div class="col-12 col-sm-6 col-lg-3 mt-2">
+              <label for="delivery_status" style="display: block; font-weight: bold; margin-bottom: 4px;">
+                Post Facto: <span class="text-danger">*</span>
+                <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Select Yes if the procurement items have been delivered or the vendor has provided a quotation reference to the indentor; otherwise, select No."></i>
+              </label>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="is_delivered" id="delivered_yes" value="yes">
+                <label class="form-check-label" for="delivered_yes">Yes</label>
+              </div>
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="radio" name="is_delivered" id="delivered_no" value="no" checked>
+                <label class="form-check-label" for="delivered_no">No</label>
+              </div>
+            </div>
+
+            <!-- Online Order Section -->
+            {% comment %} <div class="col-12 col-sm-6 col-lg-3 mt-2">
+              <label class="form-label"><b>Online Order:</b><span class="text-danger">*</span>
+                <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Select Yes if the procurement items were ordered via an online website, otherwise select No."></i>
+              </label><br>
+
+              {% for code, display in pr_choices %}
+                <div class="form-check form-check-inline">
+                  <input class="form-check-input" 
+                        type="radio" 
+                        id="pr_event_{{ forloop.counter }}" 
+                        name="pr_event" 
+                        value="{{ code }}" 
+                        required
+                        {% if code == "Purchase_order" %}checked{% endif %}>
+                  <label class="form-check-label" for="pr_event_{{ forloop.counter }}">
+                    {% if code == "Online_order" %}
+                      Yes
+                    {% elif code == "Purchase_order" %}
+                      No
+                    {% else %}
+                      {{ display }}
+                    {% endif %}
+                  </label>
+                </div>
+              {% endfor %}
+            </div> {% endcomment %}
+
+            <div class="col-12 col-sm-6 col-lg-3 mt-2">
+              <label for="category_events" class="form-label"><b>Category Of Procurements:</b>
+                <span class="text-danger">*</span>
+                <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Select the category for procurement."></i>
+              </label>
+
+              <select id="category_events" name="category_events" class="form-select" required>
+                {% for value, label in category_choices %}
+                  <option value="{{ value }}" {% if value == 'None' %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+              </select>
+
+            </div>
+
+
+
+          
+          </div>
+          
+          
+          <div style='border: 1px solid#007080; width: 100%; margin-top: 20px;'></div>
+            <!-- Particulars Table -->
+          <h5 style="color:#007080; margin-top:10px;text-decoration: underline;"><b>Item Details</b></h5>
+          
+            <div class='row'>
+               <!-- Units -->  
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="unit" class="form-label"><b>Select Units:</b><span class="text-danger">*</span>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Select the measurement unit for the item."></i></label>
+                <select id="unit" name="unit" class="form-select">
+                    <option value="" disabled selected hidden>Select Units</option>
+                    {% for unit in units %}
+                        <option value="{{ unit.id }}" data-id="{{ unit.unit }}">
+                            {{ unit.unit }}
+                        </option>
+                    {% endfor %}
+                </select>
+              </div>
+             <!--Delivery Types  --> 
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="delivery" class="form-label"><b>Select Delivery Type:</b><span class="text-danger">*</span> 
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Select whether the particular is delivered in full or staggered (in multiple partial shipments) quantities"></i></label>
+                <select id="delivery" name="delivery" class="form-select">
+                    <option value="" disabled selected hidden>Select Delivery Type</option>
+                    {% for delivery in delivery %}
+                        <option value="{{ delivery.id }}" data-id="{{ delivery.delivery_name }}">
+                            {{ delivery.delivery_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+              </div>
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="product" class="form-label"><b>Select Product Type:</b><span class="text-danger">*</span> 
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Select whether the particular is delivered in full or staggered (in multiple partial shipments) quantities"></i></label>
+                <select id="product" name="product" class="form-select">
+                    <option value="" disabled selected hidden>Select Product Type</option>
+                    {% for product in product %}
+                        <option value="{{ product.id }}" data-id="{{ product.name }}" vendor-id="{{product.vendor}}">
+                            {{product.name}}-{{ product.code }} 
+                        </option>
+                    {% endfor %}
+                </select>
+              </div>
+              <!--Description--> 
+              {% comment %} <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="description" class="form-label"><b>Description:</b><span class="text-danger">*</span>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Provide a brief description of the procurement."></i></label>
+                <input type="text" name="description" id="descriptionid" class="form-control" style="margin-top: 1px;" required>
+              </div> {% endcomment %}
+              <!--Part/Model No.-->
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="partno" class="form-label"><b>Part/Model No.:</b><span class="text-danger">*</span>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Enter the part or model number of the item."></i></label>
+                <input type="text" name="partno" id="partno" class="form-control"  style="margin-top: 2px;"required>
+              </div>
+              <!--Make-->
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="make" class="form-label"><b>Make:</b><span class="text-danger">*</span>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Specify the material or composition of the item."></i></label>
+                <input type="text" id="make" class="form-control">
+              </div>
+
+              <!--Material Code-->
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="material" class="form-label"><b>Material Code:if known,</b>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Enter the material code if known."></i></label>
+                <input type="text" id="materialcode" class="form-control">
+              </div>
+              <!--Justification for Procurement-->
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="reasons_for_procurement" class="form-label">
+                  <b>Justification for Procurement:</b><span style="color:red;">*</span>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Provide the reason or purpose for this procurement."></i>
+                </label>
+                
+                <textarea name="reasons_for_procurement" id="reasons_for_procurement" class="form-control" required></textarea>
+              
+                <!-- Wrap file input and button in a flex container -->
+                <div class="d-flex align-items-center mt-2">
+                  <input type="file" name="justification_file" id="justification_file" class="form-control">
+                  <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12" id="justificationFile" style="display: none;">
+                    <i class="fas fa-eye"></i> 
+                  </button>
+                </div>
+                
+                <!-- Display selected file name -->
+               
+              </div>
+              
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="quotation_upload" class="form-label">
+                  <b>Quotation Reference:</b>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Attach the quotation if available; otherwise, select No."></i>
+                </label>
+               
+              
+                <!-- Wrap file input and button in a flex container -->
+                <div class="d-flex align-items-center mt-2">
+                  <input type="file" name="quotation_upload" id="quotation_upload" class="form-control">
+                  <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12" id="quotationupload" style="display: none;">
+                    <i class="fas fa-eye"></i> 
+                  </button>
+                </div>
+                
+                <!-- Display selected file name -->
+               
+              </div>
+              <!-- Total Quantity Required -->
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="total_qty_required" class="form-label"><b>Total Quantity Required:</b><span class="text-danger">*</span>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Enter the total quantity of items needed."></i></label>
+                <input type="number" name="total_qty_required" id="total_qty_required" class="form-control" required min="1">
+              </div>
+            
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="estimated_value" class="form-label"><b>Estimated Total Value (Inc. of taxes):</b><span class="text-danger">*</span>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Enter the estimated total cost including all taxes."></i></label>
+                <div class="input-group">
+                  <span class="input-group-text">₹</span>
+                  <input type="number" name="estimated_value" id="estimated_value" class="form-control" step="0.01" placeholder="Enter Value" required>
+                </div>
+              </div>
+            
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="remaining-budget" class="form-label"><b>Remaining Budget:</b>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="The remaining budget will update based on the selected project and its related particulars."></i></label>
+                <input type="text" id="remaining-budget" value="" class="form-control" style="background-color: var(--bs-secondary-bg);" readonly>
+              </div>
+            
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="specifications" class="form-label"><b>Specification:</b><span class="text-danger">*</span> 
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Provide detailed specifications; you can also upload a related file."></i></label>
+                <textarea name="Specification" id="specifications" class="form-control" style="height: 120px;" required></textarea>
+                <div class="d-flex align-items-center mt-2">
+                  <input type="file" id="file-upload" name="specificationFile" class="form-control">
+                  <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12" id="viewSpecification" style="display: none;">
+                    <i class="fas fa-eye"></i>
+                  </button>
+                </div>
+              </div>
+                <!-- Quantity Section -->
+                <div class="col-12 col-sm-6 col-lg-3 mt-2" id="forquantity">
+                  <label class="control-label" for="checklistInput"><b>Quantity:</b><span class="text-danger">*</span> 
+                    <i class="fas fa-info-circle ms-2"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="right"
+                    title="If delivery type is staggered, add multiple quantities with expected delivery dates."></i></label>
+                  <div id="checklistContainer">
+                    <div class="checklist-item mb-2">
+                      <input type="number" class="form-control checklist-input" id="quantity" placeholder="Quantity" required oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+                    </div>
+                  </div>
+                  <button type="button" class="btn btn-primary btn-sm AddQuant" style="display: none;background-color:#007080;border-color:#007080;color:white;">Add</button>
+                </div>
+
+                <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                  <label for="items_to_be_positioned_by" class="form-label ms-sm-3">
+                    <b style="margin-left:-9px;">Items Required by:</b> <span style="color:red;">*</span>
+                    <i class="fas fa-info-circle ms-2"
+                    data-bs-toggle="tooltip"
+                    data-bs-placement="right"
+                    title="Specify the date by which the items are required."></i>
+                  </label>
+                  <div id="dateFieldsContainer"  class="ms-sm-3">
+                    <div class="date-field-item mb-2">
+                      <input type="date" id="firstpositioned_by" name="items_to_be_positioned_by" class="form-control" required style="margin-left: -12px; margin-top: -9px;">
+                    </div>
+                  </div>
+                  
+                </div>
+
+              
+
+              <div class="row mt-2">
+                <div class="row mt-2">
+              
+              </div>
+              <div class="row mt-3">
+                <div class="col-12 d-flex justify-content-end">
+                  <button type="button" class="btn btn-success" onclick="addParticular()" id="addParticularBtn" style="background-color:#007080; border-color:#007080;">
+                    Add More Items
+                  </button>
+                </div>
+              </div>
+            </div>
+          
+         
+        </div>
+      </div>
+      </div>
+      <!-- Right Column for Draft Procurements -->
+        
+          <div class="col-2 responsive-toggle d-none d-md-block" style="border : 1px solid #007080;">
+            <h4 style="margin-bottom: 30px;margin-top: 10px;">Draft PR</h4>
+            <div style="overflow-x:auto; max-height: 400px; overflow-y: auto;">
+              <table id="draftTable" class="table">
+                <thead>
+                  <th>Procurement ID</th>
+                </thead>
+                <tbody>
+                  {% for i in draft_procurements %}
+                    <tr id="{{ i.procurement_id }}">
+                      <td data-procurement-id="{{ i.procurement_id }}" onclick="postAction(this)">{{ i.procurement_id }}</td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+
+            </div>
+            <input type="hidden" id="id_draft_id" name="draftprocurement_id" value="">
+          </div>
+        </div>
+      </div>
+    </form>
+    <!-- Particulars Table -->
+    <div style=" width:95%; margin-left:30px; ">
+      <h4 style="margin-top: 10px;"><b>Item Details</b></h4>
+      <div class="table-responsive">
+      <table id="particularsTable" class="table table-bordered table-striped">
+          <thead>
+              <tr>
+                  <th style="display:none;">Select</th>
+                  <th>S. No.</th>
+                  <th>Delivery Type</th>
+                  <th>Description</th>
+                  <th>Units</th>
+                  <th>Part/Model No.</th>
+                  <th>Make</th>
+                  <th>Total Quantity</th>
+                  <th>Estimated Value</th>
+                  <th>Justification</th>
+                  <th>Specification</th>
+                  {% comment %} <th>Quantity</th> {% endcomment %}
+                  <th>Items Required by</th>
+                  <th>Quotation Reference</th>
+                  <th>Action</th> 
+              </tr>
+          </thead>
+          <tbody id="paticularbody"></tbody>
+      </table>
+    </div>
+      <!-- Buttons For Savedraft,submit,Preview -->
+    <div class="preview d-flex gap-2" style="gap: 10px;margin-bottom:36px;">
+      <button type="button" class="btn btn-primary" onclick="previewAllParticulars()" style="background-color:#007080;border-color:#007080;color:white;">Preview PR</button>
+      <button type="button" class="btn btn-success" onclick="savedraft()" style="background-color:#007080;border-color:#007080;color:white;">Save Draft</button>
+      <button type="button" class="btn btn-primary" id="submit" onclick="submitProcurements()" style="background-color:#007080;border-color:#007080;color:white;">Submit</button>
+      <button id="updateButton" class="btn btn-primary ml-2" style="display:none;background-color:#007080;border-color:#007080;color:white;">Update</button>
+    </div>
+    
+      <!-- Preview Modal Popup -->
+      <div class="modal fade" id="previewModal" tabindex="-1" role="dialog" aria-labelledby="previewModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" role="document" style="max-width: 1200px; width: 90%;">
+
+          <div class="modal-content" style="width: 133%; background-image: url('{% static 'images/messylog.webp' %}'); background-size: 80%; background-repeat: no-repeat; background-position: center; ">
+            <div class="modal-header">
+              <h5 class="modal-title" id="previewModalLabel"><b>Purchase Requisition Preview</b></h5>
+          
+            </div>
+      
+            <div class="modal-body" id="previewContent" style="padding: 20px; max-height: 80vh; overflow-y: auto;">
+              <!-- The dynamic content will be injected here -->
+              <div id="previewContentHeader">
+                {% comment %} <h4 style="text-align: center; font-weight: bold; text-decoration: underline;">
+                  PURCHASE REQUISITION
+                </h4> {% endcomment %}
+                <h4 id="procurement_display"></h4>
+                <p id="project_display" ></p>
+                <p><b>To:<br></b>Head of IMM</p>
+              </div>
+      
+              <table class="table table-bordered" style="width: 100%; border-collapse: collapse; text-align: left;">
+                <thead>
+                  <tr>
+                    <th>S.No</th>
+                    <th>Delivery Type</th>
+                    <th>Description</th>
+                    <th>Units</th>
+                    <th>Part/Model No.</th>
+                    <th>Make</th>
+                    <th>Total Qty Required</th>
+                    <th>Estimated Value</th>
+                    <th>Justification</th>
+                    <th>Specification</th>
+                    <th>Items Required by</th>
+                    <th>Quotation Reference</th>
+                    
+                  </tr>
+                </thead>
+                <tbody id="particularsTableBody">
+                  <!-- Table rows will be dynamically inserted here -->
+                </tbody>
+              </table>
+      
+              <div id="previewContentFooter">
+                <!-- Additional footer content can go here -->
+              </div>
+            </div>
+      
+            <div class="modal-footer">
+              <button type="button" class="btn btn-secondary" style="margin-top:-8px;" data-bs-dismiss="modal">Close</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </hr>
+
+
+{% endblock %}
+
+{% block styleblock %}
+<style>
+
+   
+  .table-responsive {
+    -webkit-overflow-scrolling: touch;
+    
+    display: block;
+  }
+
+  /* Hide some columns on small screens (optional) */
+  @media (max-width: 768px) {
+      #particularsTable th:nth-child(4), /* Description */
+      #particularsTable th:nth-child(5), /* Units */
+      #particularsTable th:nth-child(6), /* Part/Model No. */
+      #particularsTable th:nth-child(7), /* Make */
+      #particularsTable th:nth-child(9), /* Justification */
+      #particularsTable th:nth-child(10), /* Specification */
+      #particularsTable th:nth-child(12), /* Items Required by */
+      #particularsTable td:nth-child(4),
+      #particularsTable td:nth-child(5),
+      #particularsTable td:nth-child(6),
+      #particularsTable td:nth-child(7),
+      #particularsTable td:nth-child(9),
+      #particularsTable td:nth-child(10),
+      #particularsTable td:nth-child(12) {
+          display: none;
+      }
+  }
+
+  /* Optional: Adjust buttons for mobile view */
+ 
+  .input-group {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+  
+  
+  
+    /* Ensure text wraps in Description and Reasons columns */
+  #particularsTable td:nth-child(2), /* Description column */
+  #particularsTable td:nth-child(5) { /* Reasons column */
+      white-space: normal;
+      word-wrap: break-word;
+      max-width: 200px; /* Optional: control max width of the column */
+  }
+
+  .table-bordered th,
+    .table-bordered td {
+    
+      padding: 8px;
+      {% comment %} text-align: center; {% endcomment %}
+    }
+    
+  #previewContent p {
+    margin: 5px 0;
+    font-size: 14px;
+  }
+   
+  #previewContent h4 {
+    font-size: 16px;
+  }
+  #procurement_type {
+    background-color: #f0f0f0; /* Light gray background */
+    color: #333; /* Dark text color for better contrast */
+  }
+
+  #procurement_type {
+    background-color: #ffffff; /* White background for options */
+    color: #333; /* Dark text color for options */
+  }
+    #import_indigenous {
+
+      background-size: 12px;
+      padding-right: 25px;
+  }
+  .container {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .left-column, .right-column {
+    width: 48%;
+  }
+
+  .left-column p, .right-column p {
+    margin: 0;
+    padding: 5px 0;
+  }
+  #quantitycontain {
+    min-height: 80px; 
+  }
+
+  #quantitycontain {
+    display: flex;
+    flex-direction: column; 
+    justify-content: flex-start;
+  }
+
+
+
+  #convert-btn {
+    width: 14%;
+    margin-top: 30px;
+    align-self: flex-start; /* This keeps the button in a fixed position */
+  }
+  #currency-container{
+    width: 25%;
+    margin-top: 10px;
+    align-self: flex-start;
+  }
+  #previewModal .modal-content {
+  height: 600px;  
+    background-image: url('{% static "images/messylog.webp" %}');
+    background-size: 80%; 
+    background-repeat: no-repeat;
+    background-position: center;"
+  }
+
+  .highlighted-row {
+    background-color: #f0f0f0; /* Light gray background */
+  }
+
+  .file-name-wrap {
+    max-width: 300px;       /* Adjust width as needed */
+    word-wrap: break-word;
+    white-space: normal;
+    overflow-wrap: break-word;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  table, th, td {
+    background-color: transparent !important;
+    border: 1px solid #ccc; /* Border to make table edges visible if needed */
+  }
+  th, td {
+    background-color: transparent !important; /* Make table headers and cells transparent */
+    color: #fff; /* Text color for better readability if needed */
+  }
+  /* Optional: To make borders less intrusive */
+  td, th {
+    border: 1px solid rgba(255, 255, 255, 0.5); /* Semi-transparent border */
+  }
+  .expandable-text {
+    word-wrap: break-word;
+    max-width: 250px;
+  }
+  {% comment %} .toggle-text {
+    color: blue;
+    cursor: pointer;
+    font-size: 0.85em;
+    display: inline-block;
+    margin-top: 4px;
+  } {% endcomment %}
+  .select2-container {
+    width: 100% !important;
+    margin-bottom: 10px;
+  }
+  .eye-help-icon {
+    font-size: 16px;
+    color: #888;
+    cursor: pointer;
+}
+
+  
+</style>
+{% endblock%}

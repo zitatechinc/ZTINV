@@ -1,0 +1,15 @@
+{%  if BreadCrumList %}
+<div class="row">
+ <div class="col-md-12">
+    <nav aria-label="breadcrumb">
+       <ol class="breadcrumb sz">
+       
+         {%  for eachbcm in BreadCrumList %}
+
+         <li class="breadcrumb-item {{eachbcm.status}}"><a {% if  eachbcm.url != '#' %}href="{{eachbcm.url}}"{%endif%}>{{eachbcm.name|safe}}</a></li>
+         {%endfor%}
+       </ol>
+     </nav>
+</div>
+</div>
+{%endif%}

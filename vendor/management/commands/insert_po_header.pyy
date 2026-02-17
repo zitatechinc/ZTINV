@@ -1,0 +1,84 @@
+from django.core.management.base import BaseCommand
+from catalog.models import (
+    Manufacturer, Languages, Brand, ProductType, Category, Product, ProductLinks, ProductGroup
+)
+from vendor.models import Vendor
+from inventory.models import PurchaseOrderStatus,PurchaseOrderType,PurchaseOrderType,PurchaseOrderHeader
+from accounts.models import User
+import random
+from location.models import Country
+from datetime import datetime
+from accounts.models import User
+import pandas as pd 
+from datetime import datetime
+from django.conf import settings
+import os
+
+
+class Command(BaseCommand):
+
+    help = "Insert master data and test products using update_or_create"
+    def handle(self, *args, **kwargs):
+
+        file_path = os.path.join(settings.BASE_DIR, 'media', 'Inventory_Application_Data.xlsx')
+        df = pd.read_excel(file_path,sheet_name='PO_HEADER')
+        
+        for index,row in df.iterrows():
+            #print(row['REQBY'])
+            print(row)
+
+            #break
+        
+           
+            try:
+                vendor = Vendor.objects.get(company_name1=row['VENDORNUMBER'].strip())
+            except Exception as e:
+                vendor_dict = {
+                "company_name1":row['VENDOR_NUMBER'].strip(),
+                "company_name2":row['VENDOR_NUMBER'].strip(),
+                "search_keywords":"electronics,items",
+                "house_number":f"1-12+{index}",
+                "street_name":f"USA Road Number{index}",
+                "phone_number_1":f"{9876543210+index}",
+                "email_1":f"vendor{index}@example.com",
+
+                }
+                vendor= Vendor.objects.create(**vendor_dict)
+
+            if vendor:
+                try:
+                    try:
+                        po_order_status=PurchaseOrderStatus.objects.get(name=row['POSTS'].strip().upper())
+                    except:
+                        po_order_status=PurchaseOrderStatus.objects.create(name=row['POSTS'].strip().upper(),code=f'{index}_{row['POSTS']}')
+                    try:
+                        po_type = PurchaseOrderType.objects.get(name=row['POTYP'].strip().upper())
+                        print(po_type)
+                    except:
+                        po_type = PurchaseOrderType.objects.create(name=row['POTYP'].strip().upper(),code=f'{index}_{row['POTYP']}')
+                    
+                    po_date = datetime.strptime(str(row['PODAT']), "%Y%m%d").date()
+                    requested_delivery_date = datetime.strptime(str(row['DLVDT']), "%Y%m%d").date()
+
+
+                    po_header_dict = {
+                    "code":row['EBELN'].strip().lower(),
+                    "vendor_id":vendor.pk,
+                    "po_date":po_date,
+                    "po_requested_by":user,
+                    "po_status":po_order_status,
+                    "requested_delivery_date":requested_delivery_date,
+                    "header_notes":row['NOTES'],
+                    'po_type':po_type,
+                    "status":1
+                    }
+                    PurchaseOrderHeader.objects.update_or_create(**po_header_dict)
+                except Exception as e:
+                    print(str(e))
+            else:
+                print("vendor is not available")
+
+
+            
+
+            

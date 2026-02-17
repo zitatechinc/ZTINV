@@ -1,0 +1,189 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+<div class="row">
+    <div class="col-12 col-md-12">
+        <div class="app-card app-card-settings shadow-md">
+            <div class="app-card-body p-4">
+                <!-- Search Form -->
+                <form method="post" action="{{ form_action_url }}" novalidate>
+                    {% csrf_token %}
+                    <div class="row">
+                        <div class="col-md-4 m-2">
+                            {{ form.project.label_tag }}
+                            {{ form.code }}
+                            {{ form.project }}
+                        </div>
+                    </div>
+                </form>
+
+                {% if po_obj %}
+                    <div class="row mt-4">
+                        <div class="col-md-12">
+                            <div class="accordion" id="accordionPanelsStayOpenExample">
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header">
+                                        <button class="accordion-button p-1" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true">
+                                            <span style="line-height: 2; margin-right: 0.4rem;">  <!-- Add margin-right here -->
+                                                {{ form.project.label }} :
+                                            </span>
+                                            <span style="font-weight: 600; line-height: 1.2; margin-left: 0.5rem;">  <!-- Add margin-left here -->
+                                                {{ ph_obj.project.project_id }} ({{ ph_obj.project.name }})
+                                            </span>
+                                        </button>
+                                    </h2>
+
+                                    <div id="panelsStayOpen-collapseOne" class="accordion-collapse collapse" aria-labelledby="panelsStayOpen-headingOne">
+                                        <div class="accordion-body" style="border: 1px solid rgba(0, 0, 0, .125) !important;">
+                                            <table class="table table-bordered">
+                                                <tbody>
+                                                    <tr>
+                                                        <th class="td-1">Created On</th>
+                                                        <th class="td-2">{{ ph_obj.created_at | date:"M.d,Y H:i" }}</th>
+                                                        <th class="td-1">Created by</th>
+                                                        <th class="td-2">{{ ph_obj.created_user.first_name }}</th>
+                                                        <th class="td-1">Project ID</th>
+                                                        <th class="td-2">{{ ph_obj.project.project_id }}</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="td-1">Last Modified on</th>
+                                                        <th class="td-2">{{ ph_obj.updated_at | date:"M.d,Y H:i" }}</th>
+                                                        <th class="td-1">Last Modified by</th>
+                                                        <th class="td-2">{{ ph_obj.updated_user.first_name }}</th>
+                                                        <th class="td-1">Project Name</th>
+                                                        <th class="td-2">{{ ph_obj.project.name }}</th>
+                                                    </tr>
+                                                    <tr>
+                                                        <th class="td-1">Customer</th>
+                                                        <th class="td-2">{{ ph_obj.customer }}</th>
+                                                        <th class="td-1">Status</th>
+                                                        <th class="td-2"><span class="badge {{ ph_obj.item_status | upper }}">{{ ph_obj.item_status }}</span></th>
+                                                        <th class="td-1">Budget</th>
+                                                        <th class="td-2">{{ bug_obj.allocated_budget | floatformat:0 }}</th>
+                                                    </tr>
+                                                </tbody>
+                                            </table>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Submitting Form Section -->
+                    <form method="post" action="{% url 'project_header_receipt' po_obj.pk %}" novalidate>
+                        <div class="row mt-1">
+                            <div class="col-md-12">
+                                <div class="table-responsive">
+                                    {% csrf_token %}
+                                    <table class="table table-bordered text-center">
+                                        <thead>
+                                            <tr class="td-3">
+                                                <th>Project Component ID</th>
+                                                <th>Component Type</th>
+                                                <th>Bom ID/Service ID/Product ID/Miscellaneous</th>
+                                                <th>Component QTY</th>
+                                                <th>Component Cost</th>
+                                                <th>Location</th>
+                                                <th>Created Time</th>
+                                                <th>Created User</th>
+                                                <th>Updated Time</th>
+                                                <th>Updated User</th>
+                                            </tr>
+                                        </thead>
+                                        {% if grouped_items %}
+                                        <tbody>
+                                            {% for eachItem in grouped_items %}
+                                                <tr>
+                                                    <td>{{ eachItem.code }}</td>
+                                                    <td>{{ eachItem.component_type }}</td>
+
+                                                    {% if eachItem.component_type == 'BOM' %}
+                                                        <td>{{ eachItem.bom }}</td>
+                                                    {% elif eachItem.component_type == 'SERVICE' %}
+                                                        <td>{{ eachItem.service }}</td>
+                                                    {% elif eachItem.component_type == 'MISCELLANEOUS' %}
+                                                        <td>{{ eachItem.miscellaneous_component }}</td>
+                                                    {% else %}
+                                                        <td>{{ eachItem.product }}</td>
+                                                    {% endif %}
+
+                                                    <td>{{ eachItem.component_qty }}</td>
+                                                    <td>{{ eachItem.component_cost }}</td>
+
+                                                    <td>
+                                                        {% if eachItem.project.location.city %}
+                                                            {{ eachItem.project.location.city }} ({{ eachItem.sub_location.code }})
+                                                        {% else %}
+                                                            {{ eachItem.sub_location.code }}
+                                                        {% endif %}
+                                                    </td>
+
+                                                    <td>{{ eachItem.created_at | date:"M d,Y H:i" }}</td>
+                                                    <td>{{ eachItem.created_user }}</td>
+                                                    <td>{{ eachItem.updated_at | date:"M d,Y H:i" }}</td>
+                                                    <td>{{ eachItem.updated_user }}</td>
+                                                </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                        {% else %}
+                                            <tfoot>
+                                                <tr>
+                                                    <th colspan="10">No Records Found</th>
+                                                </tr>
+                                            </tfoot>
+                                        {% endif %}
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+
+                {% endif %}
+
+                {% if post_po_obj == 'No Records' %}
+                    <div class="mt-2" style="border: 1px dashed #ccc; padding: 20px; text-align: center; color: #888; border-radius: 8px;">
+                        <h4> {{ message }} </h4>
+                        <p>Please try with existing PO number.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block pagejs %}
+<script>
+fetch("/project/projects_list")
+  .then(response => response.json())
+  .then(result => {
+    const select = document.getElementById("id_project");
+
+    select.innerHTML = '<option value="">Select Project</option>';
+
+    result.data.forEach(item => {
+      const option = document.createElement("option");
+      option.value = item.code;   // IMPORTANT: set project CODE
+      option.textContent = `${item.code} - ${item.name}`;
+      select.appendChild(option);
+    });
+  })
+  .catch(error => console.error(error));
+
+// 🔹 Auto-fill code field and submit form
+document.addEventListener("DOMContentLoaded", function () {
+  const projectSelect = document.getElementById("id_project");
+  const codeInput = document.getElementById("id_code");
+
+  projectSelect.addEventListener("change", function () {
+    if (this.value) {
+      codeInput.value = this.value; // set project code
+      codeInput.form.submit();      // submit the same form
+    }
+  });
+});
+</script>
+{% endblock %}

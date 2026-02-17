@@ -1,0 +1,210 @@
+{% load static %}
+{% if request.user %}
+{% if request.user.is_authenticated %}
+<nav id="app-nav-main" class="app-nav app-nav-main flex-grow-1">
+   <ul class="app-menu list-unstyled accordion" id="menu-accordion">
+      <li class="nav-item">
+         <a class="nav-link active" href="/dashboard/dashboard/">
+            <span class="nav-icon">
+                  <i class="fa fa-chart-pie"></i>
+            </span>
+            <span class="nav-link-text">Home</span>
+         </a>
+         <!--//nav-link-->
+      </li>
+
+      <!-- <li class="nav-item">
+         <a class="nav-link active" href="/">
+            <span class="nav-icon">
+               <i class="fa fa-home"></i>
+            </span>
+            <span class="nav-link-text">Home</span>
+         </a>
+      </li> -->
+         
+      <!--//nav-item-->
+      <li class="nav-item has-submenu">
+         
+         <a class="nav-link submenu-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#submenu-4" aria-expanded="false" aria-controls="submenu-1">
+            <span class="nav-icon">
+               <i class="fa fa-gear"></i>
+            </span>
+            <span class="nav-link-text">App Details</span>
+            <span class="submenu-arrow">
+               <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-chevron-down" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+               </svg>
+            </span>
+            <!--//submenu-arrow-->
+         </a>
+         <!--//nav-link-->
+         <div id="submenu-4" class="collapse submenu submenu-4" data-bs-parent="#menu-accordion">
+            <ul class="submenu-list list-unstyled">
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'app-list' %}">App Settings</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'theme-list' %}">Themes</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'user-list' %}">Users</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'logentry-list' %}">AuditLog</a></li>
+            </ul>
+         </div>
+      </li>
+     
+      <!--//nav-item-->
+      <li class="nav-item has-submenu">
+         
+         <a class="nav-link submenu-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#submenu-1" aria-expanded="false" aria-controls="submenu-1">
+            <span class="nav-icon">
+               <i class="fa fa-list-alt"></i>
+            </span>
+            <span class="nav-link-text">Masters List</span>
+            <span class="submenu-arrow">
+               <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-chevron-down" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+               </svg>
+            </span>
+            
+         </a>
+         
+         <div id="submenu-1" class="collapse submenu submenu-1" data-bs-parent="#menu-accordion">
+            <ul class="submenu-list list-unstyled">
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'product_type-list' %}">Proudct Type</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'product-group-list' %}">Proudct Group</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'category-list' %}">Product Category</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'vendor_type-list' %}">Vendor Type</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'brand-list' %}">Brand</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'manufacturer-list' %}">Manufacturer</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'attribute-list' %}">Attributes</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'country-list' %}">Country</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'location-list' %}">Location</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'sub-location-list' %}">Sub Location</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'languages-list' %}">Languages</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'purchase_order_type-list' %}">Purchase Order Type</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'purchase_order_status-list' %}">Purchase Order Status</a></li>
+            </ul>
+         </div>
+      </li>
+
+   
+      <li class="nav-item has-submenu">
+         
+         <a class="nav-link submenu-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#submenu-2" aria-expanded="false" aria-controls="submenu-2">
+            <span class="nav-icon">
+               <i class="fa fa-user-group"></i>
+            </span>
+            <span class="nav-link-text">Master Data</span>
+            <span class="submenu-arrow">
+               <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-chevron-down" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+               </svg>
+            </span>
+            
+         </a>
+         
+         <div id="submenu-2" class="collapse submenu submenu-2" data-bs-parent="#menu-accordion">
+            <ul class="submenu-list list-unstyled">
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'vendor-list' %}">Vendors</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'product-list' %}">Products</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'customer-list' %}">Customers</a></li>               
+               
+            </ul>
+         </div>
+      </li>
+
+
+       <li class="nav-item has-submenu">
+         
+         <a class="nav-link submenu-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#submenu-3" aria-expanded="false" aria-controls="submenu-3">
+            <span class="nav-icon">
+               <i class="fa-solid fa-file-arrow-up"></i>
+            </span>
+            <span class="nav-link-text">Bulk Uploads</span>
+            <span class="submenu-arrow">
+               <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-chevron-down" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+               </svg>
+            </span>
+            
+         </a>
+         
+         <div id="submenu-3" class="collapse submenu submenu-3" data-bs-parent="#menu-accordion">
+            <ul class="submenu-list list-unstyled">
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'vendor-upload-list' %}">Vendors Upload</a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'product-upload-list' %}">Products Upload</a></li>
+             
+               
+            </ul>
+         </div>
+      </li>
+
+      <li class="nav-item has-submenu">
+         
+         <a class="nav-link submenu-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#submenu-6" aria-expanded="false" aria-controls="submenu-6">
+            <span class="nav-icon">
+               <i class="fa fa-shopping-cart"></i>
+            </span>
+            <span class="nav-link-text">Procurement</span>
+            <span class="submenu-arrow">
+               <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-chevron-down" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+               </svg>
+            </span>
+            
+         </a>
+         
+         <div id="submenu-6" class="collapse submenu submenu-6" data-bs-parent="#menu-accordion">
+            <ul class="submenu-list list-unstyled">
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'project-header-list' %}">Project </a></li>
+              
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'bom-header-list' %}">BOM </a></li>
+               <!-- <li class="submenu-item"><a class="submenu-link" href="{% url 'bom-create' %}">BOM </a></li> -->
+               <!-- <li class="submenu-item"><a class="submenu-link" href="{% url 'voucher-search-create' %}">Issue Voucher</a></li> -->
+             
+               
+            </ul>
+         </div>
+      </li>
+      <li class="nav-item has-submenu">
+         
+         <a class="nav-link submenu-toggle" href="#" data-bs-toggle="collapse" data-bs-target="#submenu-5" aria-expanded="false" aria-controls="submenu-5">
+            <span class="nav-icon">
+               <i class="fa fa-cubes"></i>
+            </span>
+            <span class="nav-link-text">Inventory</span>
+            <span class="submenu-arrow">
+               <svg width="1em" height="1em" viewBox="0 0 16 16" class="bi bi-chevron-down" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path fill-rule="evenodd" d="M1.646 4.646a.5.5 0 0 1 .708 0L8 10.293l5.646-5.647a.5.5 0 0 1 .708.708l-6 6a.5.5 0 0 1-.708 0l-6-6a.5.5 0 0 1 0-.708z"/>
+               </svg>
+            </span>
+            
+         </a>
+         
+         <div id="submenu-5" class="collapse submenu submenu-5" data-bs-parent="#menu-accordion">
+            <ul class="submenu-list list-unstyled">
+               <!-- <li class="submenu-item"><a class="submenu-link" href="{% url 'create_po' %}">Create Purchase Order</a></li> -->
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'goods-receiver-create' %}">Goods Receipt </a></li>
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'quality-management-create' %}">Quality Management </a></li>
+               
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'inventory-search-create' %}">Inventory Search </a></li>
+
+               <li class="submenu-item"><a class="submenu-link" href="{% url 'po_report_create' %}">PO Report </a></li>
+               
+            </ul>
+         </div>
+      </li>
+
+   
+      <li class="nav-item has-submenu">
+         
+         <a class="nav-link" href="{% url 'logout' %}">
+            <span class="nav-icon">
+             <i class="fa fa-sign-out"></i>
+            </span>
+            <span class="nav-link-text">Logout</span>
+         </a>
+         
+      </li>
+      <!--//nav-item-->					    
+   </ul>
+   <!--//app-menu-->
+</nav>
+{%endif%}
+{%endif%}

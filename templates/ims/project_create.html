@@ -1,0 +1,554 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+
+{% block title %}Create Project{% endblock %}
+
+{% block styleblock %}
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Roboto', sans-serif;
+    }
+ 
+    .main-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-top: 5%;
+    }
+ 
+   .form-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    margin: 15px auto 0 auto; 
+   
+}
+.dataTables_filter {
+    margin-bottom: 12px;
+}
+
+#project-table td:last-child,
+#project-table th:last-child {
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+}
+
+.dataTables_filter label {
+    display: flex;
+    align-items: center;
+}
+
+
+ 
+    h2, h3 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #343a40;
+    }
+    .form-label {
+        font-size: 14px;
+        font-weight: bold;
+    }
+ 
+    .form-control {
+        padding: 8px;
+        font-size: 14px;
+        border-radius: 8px;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+ 
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
+    }
+ 
+    .btn-primary {
+        padding: 8px;
+        font-size: 14px;
+        border-radius: 8px;
+        margin-top:21px;
+    }
+ 
+   .form-row {
+    display: flex;
+    justify-content: space-between; /* space evenly between columns */
+    align-items: center;
+    gap: 15px;
+}
+
+.form-row .col-md-4 {
+    flex: 1 1 0;
+    max-width: none; /* remove max-width limiting */
+}
+
+ 
+    .form-row .col-md-4 input {
+        width: 100%;
+    }
+    .form-row .col-md-4:last-child {
+    flex: 0 0 auto; /* button column fits content */
+    max-width: 150px; /* or whatever width you want */
+}
+
+
+    .project-list-card {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e0e0e0;
+        margin-top: 30px;
+    }
+ 
+    .table th, .table td {
+        text-align: center;
+        vertical-align: middle;
+    }
+ 
+    .table th {
+        background-color:#007080;
+        color: white;
+    }
+ 
+    .table-striped tbody tr:nth-child(odd) {
+        background-color: #f9f9f9;
+    }
+ 
+    .table-striped tbody tr:nth-child(even) {
+        background-color: #ffffff;
+    }
+ 
+    .action-btns {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+ 
+    .action-btns button {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 5px;
+    }
+ 
+    .edit-btn {
+        color:#007080 !important;
+    }
+
+    .edit-btn:hover {
+        color: #0056b3;
+    }
+ 
+    .delete-btn {
+        color: #dc3545;
+    }
+ 
+    .delete-btn:hover {
+        color: #a71d2a;
+    }
+
+    .delete-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        color: #cccccc !important;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+ 
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+ 
+    .tooltip-inner {
+        background-color: #333;
+        color: #fff;
+        font-size: 12px;
+    }
+ 
+    .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+ 
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+   
+    .bs-tooltip-auto[data-popper-placement^=top] .tooltip-arrow::before,
+    .bs-tooltip-top .tooltip-arrow::before {
+        border-top-color: #333;
+    }
+</style>
+{% endblock %}
+
+{% block mainblock %}
+
+    <div class="form-container" style="border-color: #7cc2e6;">
+        <h4 class="mb-4 text-center" style="text-decoration: underline;"><b>Create Project</b></h4>
+        <form id="project-form" class="mb-4" style="margin: auto;">
+            {% csrf_token %}
+            <div class="form-row ">
+                <div class="col-md-4">
+                    <label for="project_id" class="form-label">Project Code:</label>
+                    <input type="text" class="form-control" id="project_id" name="project_id" maxlength="3" 
+                        oninput="validateProjectCode(this)" placeholder="">
+                    <div id="project_id_error" class="error-message"></div>
+                    <input type="hidden" id="original_project_id" name="existing_project_id" />
+                </div>
+                <div class="col-md-4">
+                    <label for="name" class="form-label">Project Name:</label>
+                    <input type="text" class="form-control" id="name" name="name"  maxlength="50">
+                    <div id="name_error" class="error-message"></div>
+                    
+                </div>
+                <div class="col-md-4" >
+                    <button type="submit" class="btn btn-primary"style="background-color: #007080; border-color: #007080;">Submit</button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <div class="container mt-4">
+        <div class="project-list-card" style="border-color: #7cc2e6; margin-bottom: 35px;">
+            <h4 class="mb-4 text-center" style="text-decoration: underline;"><b>Project List</b></h4>
+            <table id="project-table" class="table table-striped table-bordered display" >
+                <thead>
+                    <tr>
+                        <th>Project Code</th>
+                        <th>Project Name</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for project in projects %}
+                    <tr id="project-{{ project.project_id }}">
+                        <td>{{ project.project_id }}</td>
+                        <td>{{ project.name }}</td>
+                        <td>
+                            <div class="action-btns">
+                                <button class="edit-btn" data-id="{{ project.project_id }}" data-name="{{ project.name }}">
+                                    <i style="background-color: #007080; color: white; padding:5px;" class="fas fa-edit"></i>
+                                </button>
+                                <button class="delete-btn" data-id="{{ project.project_id }}"
+                                        {% if project.is_used_in_procurement %}disabled data-bs-toggle="tooltip" data-bs-placement="top" title="This project is in use and cannot be deleted"{% endif %}>
+                                    <i class="fas fa-trash-alt"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <div id="response" class="container mt-4"></div>
+    </div>
+
+{% endblock %}
+{% block scripts %}
+<script>
+   
+
+    //add project to table
+    function addProjectToTable(project) {
+        const table = $('#project-table').DataTable(); // Get the DataTable instance
+        const row = $(`#project-${project.project_id}`); // Find the row with the specified project ID
+        
+        if (row.length) {
+            // Update existing row
+            row.find('td:eq(0)').text(project.project_id); // Update project code
+            row.find('td:eq(1)').text(project.name); // Update project name
+            row.find('.edit-btn').data('id', project.project_id).data('name', project.name); // Update edit button data attributes
+            
+            // Update delete button
+            const deleteBtn = row.find('.delete-btn'); // Update delete button
+            deleteBtn.prop('disabled', project.is_used_in_procurement); // Disable if project is used in procurement
+            if (project.is_used_in_procurement) {
+                deleteBtn.attr('data-bs-toggle', 'tooltip');
+                deleteBtn.attr('data-bs-placement', 'top');
+                deleteBtn.attr('title', 'This project is in use and cannot be deleted');
+                deleteBtn.tooltip('dispose').tooltip();
+            } else {
+                deleteBtn.removeAttr('data-bs-toggle');
+                deleteBtn.removeAttr('data-bs-placement');
+                deleteBtn.removeAttr('title');
+                deleteBtn.tooltip('dispose');
+            }
+        } else {
+            // Add new row
+            const newRow = `
+                <tr id="project-${project.project_id}">
+                    <td>${project.project_id}</td>
+                    <td>${project.name}</td>
+                    <td>
+                        <div class="action-btns">
+                            <button class="edit-btn" data-id="${project.project_id}" data-name="${project.name}">
+                                <i class="fas fa-edit" style="background-color: #007080; color: white;border-color:#007080; padding: 5px;"></i>
+                            </button>
+                            <button class="delete-btn" data-id="${project.project_id}" 
+                                    ${project.is_used_in_procurement ? 'disabled data-bs-toggle="tooltip" data-bs-placement="top" title="This project is in use and cannot be deleted"' : ''}>
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            table.row.add($(newRow)).draw();
+            
+            // Initialize tooltip for new row if needed
+            if (project.is_used_in_procurement) {
+                $(`#project-${project.project_id} .delete-btn`).tooltip();
+            }
+        }
+    }
+    //remove project from table
+    function removeProjectFromTable(projectId) {
+        const table = $('#project-table').DataTable(); // Get the DataTable instance
+        table.row(`#project-${projectId}`).remove().draw(); // Remove the row with the specified project ID and redraw the table
+    }
+    //project list Initialization data table
+           document.addEventListener('DOMContentLoaded', function () {
+        // Initialize DataTable
+        var table = $('#project-table').DataTable({
+            "paging": true,
+            "ordering": true,
+            "info": true,
+            "lengthChange": true,
+            "pageLength": 10,
+            "language": {
+                "search": "Search :",
+                "lengthMenu": "Show _MENU_ entries",
+                "info": "Showing _START_ to _END_ of _TOTAL_ projects",
+                "emptyTable": "No projects available"
+            },
+            "stateSave": false,
+            "responsive": true,
+            "autoWidth": false
+        });
+        $('.nav-link').on('click', function () {
+            var table = $('#project-table').DataTable();
+            table.search('').draw();
+            $('div.dataTables_filter input[type="search"]').val('');
+        });
+        
+
+        // Initialize tooltips
+        $('[data-bs-toggle="tooltip"]').tooltip();
+
+        var originalProjectId = null; // Store original project ID for edit mode
+        var originalProjectName = null; // Store original project name for edit mode
+
+        // Edit button click handler
+        $(document).on('click', '.edit-btn', function () {
+            var project_id = $(this).data('id');  // Get project ID from data attribute
+            var project_name = $(this).data('name'); // Get project name from data attribute
+            $('#project_id').val(project_id); // Set project ID in input field
+            $('#original_project_id').val(project_id); // Store original project ID in hidden field
+            $('#name').val(project_name); // Set project name in input field
+            
+            $('#project_id_error').text(''); // Clear previous error message
+            $('#name_error').text('');
+            $('#project_id').removeClass('is-invalid'); // Remove invalid class from project ID input
+            $('#name').removeClass('is-invalid');  // Remove invalid class from project name input
+            
+            originalProjectId = project_id; // Store original project ID for edit mode
+            originalProjectName = project_name; // Store original project name for edit mode
+
+            $('html, body').animate({
+                scrollTop: $('.form-container').offset().top - 20 // Scroll to the form container
+            }, 300);
+        });
+
+        // Delete button click handler (only for enabled buttons)
+        $(document).on('click', '.delete-btn:not(:disabled)', function () {
+            var project_id = $(this).data('id');
+            
+            // Simple confirmation for deletable projects
+            showConfirmAlert('Are you sure you want to delete this project?')
+            .then((result) => {
+                if (result.isConfirmed) {
+                    // AJAX call to delete the project
+                    $.ajax({
+                        url: '{% url "project-create" %}', // Django view URL to handle project deletion
+                        type: 'POST',
+                        data: {
+                            csrfmiddlewaretoken: '{{ csrf_token }}', // CSRF token for security
+                            project_id: project_id,
+                            delete: true
+                        },
+                        success: function (response) { // Handle the response from the server
+                            if (response.success) {
+                                removeProjectFromTable(response.deleted_id);
+                                showSuccessAlert('Project deleted successfully.');
+
+                                if ($('#original_project_id').val() === project_id) {
+                                    $('#project-form')[0].reset();
+                                    $('#original_project_id').val('');
+                                }
+                            } else if (response.warning) {
+                                showWarningAlert('Warning: ' + response.warning); // Show warning message if provided
+                            } else {
+                                showAlert('Failed to delete project: ' + (response.error || 'Unknown error')); // Show error message if deletion failed
+                            }
+                        },
+                        error: function (xhr) {
+                            showAlert('Error deleting project: ' + xhr.responseText); // Show error message if AJAX call fails
+                        }
+                    });
+                }
+            })
+            .catch((error) => {
+                console.error('Confirmation alert error:', error);
+                showAlert('Something went wrong while confirming the action.'); // Show error message if confirmation fails
+            });
+
+        });
+
+        // Bind form submission event to the form with ID 'project-form'
+        $('#project-form').on('submit', function (event) {
+            event.preventDefault(); // Prevent the default form submission
+        
+            // Remove any previous validation error styles
+            $('#project_id').removeClass('is-invalid');
+            $('#name').removeClass('is-invalid');
+
+            let project_id = $('#project_id').val().trim(); // New/entered project code
+            let name = $('#name').val().trim(); // Project name
+            let existing_project_id = $('#original_project_id').val().trim(); // Existing ID (used in edit mode)
+            let isValid = true; // Validation flag
+            let errorMessages = []; // Array to hold all error messages
+
+              // ===== VALIDATION =====
+
+              // Validate project code (must be 3 digits and not '000')
+            if (!project_id) {
+                $('#project_id').addClass('is-invalid');
+                errorMessages.push('Project Code is required.');
+                isValid = false;
+            }  else if (project_id === '000') {
+                $('#project_id').addClass('is-invalid');
+                errorMessages.push('Project Code cannot be 000.');
+                isValid = false;
+            }
+
+             // Validate project name (must be present and ≤ 50 characters)
+            if (name.length === 0) {
+                $('#name').addClass('is-invalid');
+                errorMessages.push('Project Name is required.');
+                isValid = false;
+            } else if (name.length > 50) {
+                $('#name').addClass('is-invalid');
+                errorMessages.push('Project Name must be 50 characters or less.');
+                isValid = false;
+            }else if (project_id === '000') {
+                $('#project_id').addClass('is-invalid');
+                $('#project_id_error').text('');
+                showAlert('Project Code cannot be 000.');
+                return; // Stop form submission immediately
+            }else if (project_id === '00') {
+                $('#project_id').addClass('is-invalid');
+                $('#project_id_error').text('');
+                showAlert('Project Code cannot be 00.');
+                return; // Stop form submission immediately
+            }
+            else if (project_id === '0') {
+                $('#project_id').addClass('is-invalid');
+                $('#project_id_error').text('');
+                showAlert('Project Code cannot be 0.');
+                return; // Stop form submission immediately
+            }
+
+
+            // If any validation failed, show alert and exit
+            if (!isValid) {
+                showAlert(errorMessages.join('\n')); // Show all validation errors in a single alert
+                return;
+            }
+
+            // Detect no change when editing (i.e., user submitted without making any modifications)
+            if (existing_project_id && project_id === existing_project_id && name === originalProjectName) {
+                showWarningAlert('No changes detected.');
+                return;
+            }
+
+                // If editing and project code has changed, show confirmation dialog
+           /*if (existing_project_id && project_id !== existing_project_id) {
+                showConfirmAlert('You are changing the Project Code. This will replace the original one. Continue?')
+                .then((result) => {
+                    if (result.isConfirmed) {
+                        submitProjectForm(project_id, name, existing_project_id);
+                    }
+                }).catch((error) => {
+                    console.error('Confirmation error:', error);
+                    showAlert('Something went wrong while confirming the action.');
+                });
+            } else {
+                // Proceed directly if no confirmation needed
+                submitProjectForm(project_id, name, existing_project_id);
+            }*/
+            // === AJAX Call ===
+            
+            $.ajax({
+                url: '{% url "project-create" %}', // Django view URL to handle form submission
+                type: 'POST',
+                data: {
+                    project_id: project_id,
+                    name: name,
+                    existing_project_id: existing_project_id,
+                    csrfmiddlewaretoken: '{{ csrf_token }}' // CSRF token for security
+                },
+                success: function (response) {
+                    if (response.success) {
+                        // Update the table with the new/updated project
+                        addProjectToTable(response.project);
+                        
+                        // Handle case where project ID was changed
+                        if (response.action === 'replaced') {
+                            removeProjectFromTable(response.old_id);
+                        }
+                        
+                        // Clear the form
+                        $('#project-form')[0].reset();
+                        $('#original_project_id').val('');
+                        
+                        // Show success message
+                        const actionMsg = response.action === 'created' ? 'created' : 
+                                         response.action === 'updated' ? 'updated' : 'replaced';
+                        showSuccessAlert(`Project ${actionMsg} successfully.`);
+                        
+                    } else {
+                        if (response.errors) {
+                            // Display all validation errors
+                            if (response.errors.project_id) {
+                                $('#project_id_error').text(response.errors.project_id.join(', '));
+                                $('#project_id').addClass('is-invalid');
+                            }
+                            if (response.errors.project_name) {
+                                $('#name_error').text(response.errors.project_name.join(', '));
+                                $('#name').addClass('is-invalid');
+                            }
+                        } else {
+                            showAlert('Error: ' + (response.error || 'Something went wrong.'));
+                        }
+                    }
+                },
+                error: function(xhr) {
+                    showAlert('An error occurred: ' + xhr.responseText);
+                }
+            });
+        });
+    });
+</script>
+{% endblock scripts %}

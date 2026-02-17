@@ -1,0 +1,89 @@
+<div class="row">
+  <div class="col-md-12">
+    <form class="row gx-3 gy-2 align-items-center" method="get">
+
+      <!-- Search Field -->
+      <div class="col-sm-3">
+        <div class="form-floating mb-3">
+          <select name="FieldName" class="form-select">
+            <option value="">Select Field</option>
+            {% for each in FieldList %}
+              <option value="{{ each.0 }}" {% if each.0 == FieldName %}selected{% endif %}>
+                {{ each.1 }}
+              </option>
+            {% endfor %}
+          </select>
+          <label>Search Field</label>
+        </div>
+      </div>
+
+      <!-- Keyword + Active Checkbox -->
+      <div class="col-sm-6">
+        <div class="d-flex align-items-center gap-3">
+
+          <!-- Keyword -->
+          <div class="flex-grow-1">
+            <div class="form-floating mb-3">
+              <input type="text"
+                     name="Keyword"
+                     value="{{ Keyword }}"
+                     placeholder="Keyword"
+                     class="form-control">
+              <label>Search Keyword</label>
+            </div>
+          </div>
+
+          <!-- Active Checkbox -->
+          <!-- <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input"
+                     type="checkbox"
+                     name="RecordStatus"
+                     value="1"
+                     id="activeCheck"
+                     {% if RecordStatus == '1' %}checked{% endif %}>
+              <label class="form-check-label" for="activeCheck">
+                Active
+              </label>
+            </div>
+          </div> -->
+
+        </div>
+      </div>
+
+      <!-- Buttons -->
+      <div class="col-sm-3 mb-3">
+        <div class="button-group d-flex gap-2">
+          <button type="submit"
+                  class="btn app-btn-primary btn-sm"
+                  style="border:1px #ccc solid !important;">
+            <i class="fa fa-search"></i> Search
+          </button>
+
+          <a href="?"
+             class="btn btn-default btn-sm"
+             style="border:1px #ccc solid !important;">
+            <i class="fa fa-refresh"></i> Reset
+          </a>
+
+          <!-- {% if add_url %}
+            <a href="{% url add_url %}"
+              class="btn btn-sm app-btn-primary"
+              style="border:1px #ccc solid !important;">
+              <i class="fa fa-circle-plus fa-lg"></i> Add
+            </a>
+            {% endif %} -->
+
+          <!-- {% if add_url and model_name %}
+          <a href="{% url add_url %}"
+             class="btn btn-sm app-btn-primary"
+             style="border:1px #ccc solid !important;">
+            <i class="fa fa-circle-plus fa-lg"></i> Add {{ model_name }}
+          </a>
+          {% endif %} -->
+        </div>
+      </div>
+
+    </form>
+  </div>
+</div>

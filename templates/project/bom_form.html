@@ -1,0 +1,190 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+<div class="col-12 col-md-12">
+    <div class="app-card app-card-settings shadow-md">
+        <div class="app-card-body p-4">
+
+            <!-- Search Form -->
+            <form method="post" action="{{ form_action_url }}" novalidate>
+                {% csrf_token %}
+                <div class="row align-items-center mb-2">
+
+                    <div class="col-md-6 d-flex gap-2 align-items-center">
+                        <div class="form-floating flex-grow-1 mb-0">
+                            {{ form.code }}
+                            <label for="floatingCode">{{ form.code.label }}</label>
+                            {% if form.code.errors %}
+                            <ul class="errorlist list-unstyled mb-0">
+                                {% for error in form.code.errors %}
+                                <li class="text-danger">{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                            {% endif %}
+                        </div>
+
+                        <button type="submit" class="btn btn-sm app-btn-primary compact-btn">
+                            <i class="fa fa-search fa-lg"></i> Browse BOM
+                        </button>
+                    </div>
+
+                </div>
+            </form>
+
+            {% if po_obj %}
+            <!-- BOM Header Accordion -->
+            <div class="row mt-3">
+                <div class="col-md-12">
+                    <div class="accordion" id="accordionPanelsStayOpenExample">
+                        <div class="accordion-item">
+
+                            <h2 class="accordion-header">
+                                <!-- CLOSED BY DEFAULT -->
+                                <button class="accordion-button p-1" type="button" data-bs-toggle="collapse" data-bs-target="#panelsStayOpen-collapseOne" aria-expanded="true">
+                                    <span style="line-height: 2; margin-right: 0.3rem;">
+                                        {{ form.code.label }}:
+                                    </span>
+                                    <span style="font-weight: 600; line-height: 1.2;">
+                                        {{ po_obj.code }}
+                                    </span>
+                                </button>
+                            </h2>
+
+                            <div id="panelsStayOpen-collapseOne"
+                                 class="accordion-collapse collapse">
+                                <div class="accordion-body border p-2">
+                                    <table class="table table-bordered table-sm align-middle w-100 fixed-table">
+                                        <tbody>
+                                            <tr>
+                                                <th class="label-col">Created On</th>
+                                                <td class="value-col">{{ po_obj.created_at|date:"M d,Y H:i" }}</td>
+
+                                                <th class="label-col">Created By</th>
+                                                <td class="value-col">{{ po_obj.created_user.first_name }}</td>
+
+                                                <th class="label-col">Status</th>
+                                                <td class="value-col">
+                                                    {% if po_obj.status == 1 %}Active
+                                                    {% elif po_obj.status == -1 %}Inactive
+                                                    {% else %}Draft{% endif %}
+                                                </td>
+                                            </tr>
+
+                                            <tr>
+                                                <th class="label-col">Last Modified</th>
+                                                <td class="value-col">{{ po_obj.updated_at|date:"M d,Y H:i" }}</td>
+
+                                                <th class="label-col">Modified By</th>
+                                                <td class="value-col">{{ po_obj.updated_user.first_name }}</td>
+
+                                                <th class="label-col">BOM ID</th>
+                                                <td class="value-col">{{ po_obj.code }}</td>
+                                            </tr>
+
+                                            <tr>
+                                                <th class="label-col">Project</th>
+                                                <td class="value-col">{{ po_obj.project.project.project_id }}</td>
+
+                                                <th class="label-col">Description</th>
+                                                <td class="value-col">{{ po_obj.description }}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- BOM Items Table -->
+                    <div class="table-responsive mt-3">
+                        <table class="table table-bordered table-sm align-middle w-100 fixed-table">
+                            <thead>
+                                <tr>
+                                    <th>Component ID</th>
+                                    <th>Product ID</th>
+                                    <th>Quantity</th>
+                                    <th>UOM</th>
+                                    <th>Scrap</th>
+                                    <th>Created Time</th>
+                                    <th>Created User</th>
+                                    <th>Updated Time</th>
+                                    <th>Updated User</th>
+                                </tr>
+                            </thead>
+
+                            {% if grouped_items %}
+                            <tbody>
+                                {% for eachItem in grouped_items %}
+                                <tr>
+                                    <td>{{ eachItem.code }}</td>
+                                    <td>{{ eachItem.product.code }}</td>
+                                    <td>{{ eachItem.bom_quantity }}</td>
+                                    <td>{{ eachItem.bom_uom }}</td>
+                                    <td>{{ eachItem.scrap_percentage }}%</td>
+                                    <td>{{ eachItem.created_at|date:"M d,Y H:i" }}</td>
+                                    <td>{{ eachItem.created_user }}</td>
+                                    <td>{{ eachItem.updated_at|date:"M d,Y H:i" }}</td>
+                                    <td>{{ eachItem.updated_user }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            {% else %}
+                            <tfoot>
+                                <tr>
+                                    <th colspan="9">No Records Found</th>
+                                </tr>
+                            </tfoot>
+                            {% endif %}
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+
+<!-- CSS for compact layout and equal row alignment -->
+<style>
+.fixed-table {
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: collapse;
+    font-family: inherit;
+    font-size: 0.85rem;
+    line-height: 1.3;
+}
+
+.fixed-table th,
+.fixed-table td {
+    padding: 6px 8px;
+    vertical-align: middle;
+    word-break: break-word;
+}
+
+/* Label column */
+.fixed-table .label-col {
+    width: 16%;
+    font-weight: 600;
+    background-color: #f8f9fa;
+}
+
+/* Value column */
+.fixed-table .value-col {
+    width: 17%;
+    font-weight: normal;
+}
+
+/* Search input */
+.form-floating input {
+    padding: 0.35rem 0.5rem;
+    height: calc(1.5em + 0.7rem);
+    font-size: 0.85rem;
+}
+</style>
+
+{% endblock %}

@@ -1,0 +1,47 @@
+<div class="serial-number-table" style="background:#fff; padding:10px; border-radius:4px; font-size: 0.9rem;">
+  <div class="app-card-body p-2" style="background-color: #ffffff;">
+    <div class="table-responsive" style="max-height:360px; overflow:auto;">
+      <table class="table table-bordered mt-0">
+        <tr>
+          <th class="td-1">Product</th>
+          <td class="td-2">{% if product %}{{ product.code }}{% else %}-{% endif %}</td>
+          <th class="td-1">Product Name</th>
+          <td class="td-2">{% if product %}{{ product.name }}{% else %}-{% endif %}</td>
+          <th class="td-1">Location</th>
+          <td class="td-2">{% if location %}{{ location.code }}{% else %}-{% endif %}</td>
+          <th class="td-1">Location Name</th>
+          <td class="td-2">{% if location %}{{ location.name }}{% else %}-{% endif %}</td>
+          <th class="td-1">Sub Location</th>
+          <td class="td-2">{% if sub_location %}{{ sub_location.code }}{% else %}-{% endif %}</td>
+          <th class="td-1">Total Serials</th>
+          <td class="td-2">{{ total_count }}</td>
+        </tr>
+      </table>
+
+      <table id="app_table_data" class="table table-bordered mt-0">
+        <thead>
+          <tr class="td-3">
+            <th>Serial Number</th>
+            <th>PO Header</th>
+            <th>GM Document</th>
+            <th>Created At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% if serials %}
+            {% for s in serials %}
+              <tr>
+                <td>{{ s.serial_number }}</td>
+                <td>{% if s.po_header %}{{ s.po_header.code }}{% else %}-{% endif %}</td>
+                <td>{% if s.gm_header %}{{ s.gm_header.code }}{% else %}-{% endif %}</td>
+                <td>{{ s.created_at }}</td>
+              </tr>
+            {% endfor %}
+          {% else %}
+            <tr><td colspan="6"><em>No serial numbers found.</em></td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,133 @@
+
+{% extends 'core/base.html' %}
+
+{% block title %}Create Purchase Order{% endblock %}
+
+{% block content %}
+<div class="row mb-2 mt-2">
+<div class="col-6 col-md-6">
+   <h1 class="app-page-title">Create Purchase Order</h1>
+</div>
+<div class="col-6 col-md-6">
+   <div class="button-group" style="float:right;">
+     
+      <a href="{{CancelURL}}" class="btn btn-sm btn-default" ><i class="fa fa-arrow-circle-left fa-lg"></i> Home</a>
+   </div>
+</div>
+</div>
+<div class="row">
+      <div class="col-12 col-md-12">
+ <div class="app-card app-card-settings shadow-md" >
+      <div class="app-card-body p-4">
+        <div class="row">
+            <div class="col-md-12">
+        <h4 class="mb-4 ">
+          Purchase Order Redirection Flow
+        </h4>
+
+
+       <ol class="mb-4 ">
+          <li>
+            The <strong>Inventory App</strong> provides all necessary master data such as
+            items, vendors, and purchase configurations.
+          </li>
+          <li>
+            The <strong>Meslova App</strong> uses this master data to create and manage
+            new Purchase Orders (POs).
+          </li>
+          <li>
+            Once a PO is created and approved in the <strong>Meslova App</strong>,
+            it is automatically synchronized and returned to the <strong>Inventory App</strong>
+            for further inventory processing or tracking.
+          </li>
+        </ol>
+
+        <div class="alert alert-info">
+          <h5 class="alert-heading">App URLs</h5>
+          <ul class="list-unstyled mb-0">
+            <li>
+              <strong>Inventory App:</strong>
+              <a href="http://123.176.44.83:81" target="_blank" class="text-decoration-none">
+                http://123.176.44.83:81
+              </a>
+            </li>
+            <li>
+              <strong>Meslova App:</strong>
+              <a href="http://192.168.10.245:8070/" target="_blank" class="text-decoration-none">
+                http://192.168.10.245:8070/
+              </a>
+            </li>
+          </ul>
+        </div>
+
+        <div class="text-center my-5">
+          <p class="fs-5 fw-semibold mb-4">Visual Redirect Flow:</p>
+          <div class="d-flex justify-content-center align-items-center flex-wrap gap-4">
+            <div class="flow-step">
+              <i class="bi bi-box-seam flow-icon"></i>
+              <span class="fw-semibold text-primary">Inventory App (Master Data)</span>
+            </div>
+            <i class="bi bi-arrow-right arrow"></i>
+            <div class="flow-step">
+              <i class="bi bi-globe2 flow-icon success"></i>
+              <span class="fw-semibold text-success">Meslova App (Create PO)</span>
+            </div>
+            <i class="bi bi-arrow-right arrow"></i>
+            <div class="flow-step">
+              <i class="bi bi-box-seam flow-icon"></i>
+              <span class="fw-semibold text-primary">Inventory App (Approved PO)</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex justify-content-center gap-3">
+          <a href="http://123.176.44.83:81" target="_blank" class="btn btn-primary btn-lg text-white">
+            Go to Inventory App
+          </a>
+          <a href="http://192.168.10.245:8070/" target="_blank" class="btn btn-success btn-lg text-white">
+            Go to Meslova App
+          </a>
+        </div>
+
+        <div class="mt-5 text-muted small">
+          <p class="mb-0">
+            ⚙️ Ensure redirect URLs are configured correctly in both apps.
+            Preserve authentication/session tokens during redirection and
+            validate redirect parameters to prevent open redirect vulnerabilities.
+          </p>
+        </div>
+     
+    </div>
+</div>
+</div>
+</div>
+{% endblock %}
+{% block pagecss %}
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css"
+  >
+<style>
+    
+    .flow-step {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+/*      gap: 6px;*/
+      text-align: center;
+      width: 160px;
+    }
+    .flow-icon {
+      font-size: 2rem;
+      color: #0d6efd;
+    }
+    .arrow {
+      font-size: 1.8rem;
+      color: #6c757d;
+    }
+    strong {font-size: 16px !important;font-weight:bold !important;}
+.fs-4{font-size: 12px; !impportant}
+  </style>
+
+{% endblock %}

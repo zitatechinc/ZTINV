@@ -1,0 +1,85 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+<form method="post" action="{{ form_action_url }}" novalidate>
+    {% csrf_token %}
+    
+    <!-- Edit Button (small, top-right) -->
+    <div class="row mb-2 mt-0">
+        <div class="col-6 col-md-6">
+            <!-- You can leave this section empty as per your requirement -->
+        </div>
+        <div class="col-6 col-md-6">
+            <div class="button-group" style="float:right;">
+                <a title="Issue Voucher" href="{% url 'project-issue-voucher' object.pk %}" class="btn btn-sm btn-default" >Issue Voucher</a>
+                <button type="button" title="Edit" 
+                        class="btn btn-sm app-btn-primary edit-link"
+                        data-url="{% url 'project-header-update' object.pk %}">
+                    <i class="fa fa-edit"></i> Edit
+                </button>  
+            </div>
+        </div>
+    </div>
+
+    <!-- Content Section -->
+    <div class="row">
+        <div class="col-12 col-md-12">
+            <div class="app-card app-card-settings shadow-md">
+                {% include 'project/project_menu.html' %}
+                <br>
+                {% include 'core/auditlog.html' %}
+            </div>
+        </div>
+    </div>
+</form>
+{% endblock %}
+
+{% block pagecss %}
+<style type="text/css">
+    label.required::after { display: none !important; }
+    label { font-weight: bold !important; }
+</style>
+{% endblock %}
+
+{% block pagejs %}
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script type="text/javascript">
+    document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.edit-link').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                const url = e.currentTarget.dataset.url;
+
+                Swal.fire({
+                    text: "Do you want to edit this project header?",
+                    showCancelButton: true,
+                    confirmButtonText: 'Yes, Edit',
+                    cancelButtonText: 'Cancel',
+                    allowOutsideClick: false,
+                    width: 350
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        window.location.href = url;
+                    }
+                });
+            });
+        });
+    });
+
+    var room = 1;
+    function product_url_fields() {
+        room++;
+        var objTo = document.getElementById('product_url_fields')
+        var divtest = document.createElement("div");
+        divtest.setAttribute("class", "form-group removeclass-"+room);
+        var rdiv = 'removeclass'+room;
+        divtest.innerHTML = '<div class="row"><div class="form-floating mb-2 col-md-11"><input placeholder="Specify URL" type="text" name="url" value="" maxlength="100" class="form-control" ><label for="floatingName" class="form-label"><label for="id_url" >URL</label></label></div><div class="col-md-1 mt-3"><button class="btn btn-danger btn-sm" type="button"  onclick="remove_product_url_fields('+ room +');"> <span class="fa fa-minus" aria-hidden="true"></span></button></div></div>';
+
+        objTo.appendChild(divtest);
+    }
+
+    function remove_product_url_fields(rid) {
+        $('.removeclass-'+rid).remove();
+    }
+</script>
+{% endblock %}

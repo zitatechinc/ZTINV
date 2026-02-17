@@ -1,0 +1,4170 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+{% load tz %}
+
+
+{% block previewcontent %}
+<div class="container-fluid amazon-tracker-container">
+    <div class="row">
+
+        <div class="tracking-view-container">
+            <div class="amazon-tracking-view" style="display: none;">
+                <div class="amazon-header">
+                    <div class="header-top">
+                        <div>
+                            <h2 class="tracking-id-header"></h2>
+                            <div class="created-date"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enhanced Horizontal Tracking Timeline -->
+                <div class="tracking-timeline-container">
+                    <div class="timeline-with-branches">
+                        <div class="tracking-timeline" data-procurement-id="{{ procurement.procurement_id }}">
+                            <!-- Main timeline is injected here by JS -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stage Details Card -->
+                <div class="stage-details-card" style="display: none;">
+                    <button class="close-details"><i class="fas fa-times"></i></button>
+                    <div class="details-content"></div>
+                </div> 
+            </div>
+
+            <div class="empty-state" >
+               <div class="empty-icon">
+                    <i class="fas fa-search"></i>
+                </div>
+                <h3>Select a PR ID to view tracking details</h3>
+                <p>Click on any PR ID from the left sidebar to see its detailed approval progress</p> 
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{% for procurement in procurements %}
+    {% with "stages_"|add:procurement.procurement_id as script_id %}
+        {{ procurement.stages_with_status|json_script:script_id }}
+    {% endwith %}
+{% endfor %}
+
+<script>
+    $(document).ready(function() {
+        var myrole = "{{request.session.active_role|safe}}" // Fetching the role from session
+        console.log("myrole-->"+myrole)
+        // to seggregate role based notifications
+        const roleToFieldMap = {
+        'Indentor': 'user',
+        'Recommending Authority': 'ra_user',
+        'Purchase Assistant': 'imm_user',
+        'IMM': 'imm_user',
+        'Accounts': 'account_user',
+        'Approving Authority': 'aa_user',
+        };
+        
+        // fetch role from session and get the mapping
+        const myUserField = roleToFieldMap[myrole] || null;
+        
+        // Prepare the procurements data for JavaScript
+       window.procurementsData = {
+        {% for procurement in procurements %}
+            "{{ procurement.procurement_id }}": {
+                stages: JSON.parse(document.getElementById("stages_{{ procurement.procurement_id }}").textContent),
+                all_stages_completed: {{ procurement.all_stages_completed|yesno:"true,false" }},
+                latest_update: "{{ procurement.latest_update|default:'' }}",
+                created_datetime: "{{ procurement.created_datetime }}",
+                users: {
+                    user: {
+                        name: "{{ procurement.users.user.name|default:'N/A'|escapejs }}",
+                        emp_id: "{{ procurement.users.user.emp_id|default:'N/A'|escapejs }}"
+                    },
+                    ra_user: {
+                        name: "{{ procurement.users.ra_user.name|default:'N/A'|escapejs }}",
+                        emp_id: "{{ procurement.users.ra_user.emp_id|default:'N/A'|escapejs }}"
+                    },
+                    imm_user: {
+                        name: "{{ procurement.users.imm_user.name|default:'N/A'|escapejs }}",
+                        emp_id: "{{ procurement.users.imm_user.emp_id|default:'N/A'|escapejs }}"
+                    },
+                    account_user: {
+                        name: "{{ procurement.users.account_user.name|default:'N/A'|escapejs }}",
+                        emp_id: "{{ procurement.users.account_user.emp_id|default:'N/A'|escapejs }}"
+                    },
+                    aa_user: {
+                        name: "{{ procurement.users.aa_user.name|default:'N/A'|escapejs }}",
+                        emp_id: "{{ procurement.users.aa_user.emp_id|default:'N/A'|escapejs }}"
+                    },
+                    ri_user: {
+                        name: "{{ procurement.users.ri_user.name|default:'N/A'|escapejs }}",
+                        emp_id: "{{ procurement.users.ri_user.emp_id|default:'N/A'|escapejs }}"
+                    }
+                },
+                is_multiple_roles: {{ procurement.is_multiple_roles|yesno:"true,false" }}
+            }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+        };
+            
+        // Search functionality
+        $('#prSearch').on('keyup', function() {
+            const searchText = $(this).val().toLowerCase();
+            let matchFound = false;
+        
+            $('#procurementSidebar .list-group-item').each(function() {
+                const prId = $(this).find('.view-pr-id').text().trim().toLowerCase();
+                if (prId.includes(searchText)) {
+                    $(this).show();
+                    matchFound = true;
+                } else {
+                    $(this).hide();
+                }
+            });
+        
+            if (!matchFound && searchText !== '') {
+                showAlert("PR ID is not available");
+                $(this).val('');
+                $('#procurementSidebar .list-group-item').show();
+            }
+        });
+
+        
+
+        // Update the tracking timeline - Main horizontal timeline with vertical branches
+        // Update the tracking timeline - Main horizontal timeline with vertical branches
+        function updateTrackingTimeline(procurementId, procurement) {
+            const timeline = $('.tracking-timeline');
+            timeline.empty();
+
+            if (!procurement.stages) {
+                timeline.html(`
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        No tracking information available yet
+                    </div>
+                `);
+                return;
+            }
+
+            const stagesData = procurement.stages;
+
+            timeline.html(`
+                <div class="branch-timeline-container">
+                    <div class="main-timeline">
+                        <div class="main-timeline-steps"></div>
+                    </div>
+                    <div class="branch-section-container" style="display:none;"></div>
+                </div>
+            `);
+
+            const mainTimelineSteps = timeline.find('.main-timeline-steps');
+            const mainStages = stagesData.procurement || [];
+
+            // helper to parse your "DD-MM-YYYY HH:mm:ss" strings to Date objects
+            function parseStageDatetime(dt) {
+                if (!dt || typeof dt !== 'string') return new Date(0);
+                const [datePart = '', timePart = '00:00:00'] = dt.trim().split(' ');
+                const [day, month, year] = datePart.split('-');
+                if (!day || !month || !year) return new Date(0);
+                // produce ISO-like string for Date constructor
+                return new Date(`${year}-${month}-${day}T${timePart}`);
+            }
+
+            // Render main stages
+            mainStages.forEach((stage, index) => {
+                const stepHtml = createMainTimelineStep(stage, index, mainStages.length);
+                mainTimelineSteps.append(stepHtml);
+            });
+
+            // === DECIDE WHETHER TO SHOW BRANCH CONNECTOR ===
+            // Find latest stage7 entry (chronologically)
+            const stage7Entries = (stagesData.procurement || []).filter(s => s.stage === 'stage7');
+            stage7Entries.sort((a, b) => parseStageDatetime(a.datetime) - parseStageDatetime(b.datetime));
+            const latestStage7 = stage7Entries.length ? stage7Entries[stage7Entries.length - 1] : null;
+
+            // Find latest stage2 entry (chronologically)
+            const stage2Entries = (stagesData.procurement || []).filter(s => s.stage === 'stage2');
+            stage2Entries.sort((a, b) => parseStageDatetime(a.datetime) - parseStageDatetime(b.datetime));
+            const latestStage2 = stage2Entries.length ? stage2Entries[stage2Entries.length - 1] : null;
+
+            // Only show branch connector IF:
+            // 1) latestStage7 exists AND status is the CST approval (exact match 'cst_approval')
+            // 2) latestStage2 exists AND latestStage2.datetime > latestStage7.datetime (chronologically)
+            if (latestStage7 && latestStage2
+                && typeof latestStage7.status === 'string'
+                && latestStage7.status.toLowerCase() === 'cst_approval'
+                && parseStageDatetime(latestStage2.datetime) > parseStageDatetime(latestStage7.datetime)
+            ) {
+                // Attach vertical line to the last rendered main-step for stage2 (visual match)
+                const allStage2Steps = mainTimelineSteps.find('.main-step').filter(function() {
+                    return $(this).data('stage') === 'stage2';
+                });
+
+                const lastStage2Dom = allStage2Steps.last();
+
+                if (lastStage2Dom.length) {
+                    const branchSection = timeline.find('.branch-section-container');
+                    branchSection.show().html(`
+                        <div class="branch-section">
+                            <div class="vertical-line"></div>
+                            <div class="cards-container">
+                                <div class="horizontal-line"></div>
+                                    <div class="vertical-line"></div>
+                                <div class="particulars-wrapper"></div>
+                            </div>
+                        </div>
+                    `);
+
+                    // Build the particulars/vendors only when the connector is required
+                    addBranchTimelines(branchSection.find(".particulars-wrapper"), stagesData);
+                } else {
+                    // If DOM not found, warn instead of throwing — avoids that "No matching DOM element" error
+                    console.warn('No matching DOM element found for latest Stage 2 — branch connector skipped.');
+                }
+            } else {
+                // Conditions not met — do not render branch connector or particulars section
+                console.log('Branch connector not rendered: either Stage7 approval missing or Stage2 is not after Stage7.');
+            }
+
+            // === UPDATED: Create dynamic connecting line from Stage 7 → Stage 1 → Stage 2 ===
+            const stage7 = mainTimelineSteps.find('.main-step[data-stage="stage7"]').last();
+
+            if (stage7.length) {
+                // Find stage1 and stage2 that appear *after* this stage7
+                const stage1 = stage7.nextAll('.main-step[data-stage="stage1"]').first();
+                const stage2 = stage1.nextAll('.main-step[data-stage="stage2"]').first();
+
+                if (stage1.length && stage2.length) {
+                    // Case 1: Both stage1 and stage2 exist after stage7
+                    const stage7Offset = stage7.position().left + stage7.width() / 2;
+                    const stage2Offset = stage2.position().left + stage2.width() / 2;
+                    const topOffset = stage7.position().top + 80; // offset for line start
+                    
+                    // Create horizontal connecting line
+                    /*const connectingLine = $(`
+                        <div class="stage7-connecting-line" style="
+                            position: absolute;
+                            top: ${topOffset}px;
+                            left: ${stage7Offset}px;
+                            width: ${stage2Offset - stage7Offset}px;
+                            height: 2px;
+                            background: #3498db;
+                            z-index: 0;
+                        "></div>
+                    `);*/
+
+                    // Append the connecting line after the main timeline
+                    //timeline.find('.main-timeline').append(connectingLine);
+                } else {
+                    // Case 2: No stage1 and stage2 after stage7 - Show vendor branch directly
+                    console.log('No stage1 and stage2 after stage7 - showing vendor branch directly');
+                    
+                    const branchSection = timeline.find('.branch-section-container');
+                    branchSection.show().html(`
+                        <div class="branch-section">
+                            <div class="vertical-line"></div>
+                            <div class="cards-container">
+                                <div class="horizontal-line"></div>
+                                <div class="vertical-line"></div>
+                                <div class="particulars-wrapper"></div>
+                            </div>
+                        </div>
+                    `);
+
+                    // Build the particulars/vendors directly from stage7
+                    addBranchTimelines(branchSection.find(".particulars-wrapper"), stagesData);
+                }
+            }
+
+            animateTimelineSteps();
+        }
+
+        // ✅ Add the branch timelines - FIRST ALL PARTICULARS CARDS, THEN VENDOR BRANCHES
+        // ✅ CORRECTED: Add the branch timelines with proper vendor mapping
+        function addBranchTimelines(container, stagesData) {
+            const hasParticulars = stagesData.particulars && Object.keys(stagesData.particulars).length > 0;
+            const hasVendors = stagesData.vendors && Object.keys(stagesData.vendors).length > 0;
+            const allParticulars = stagesData.all_particulars || [];
+
+            container.empty();
+            container.append(`
+                <div class="branch-connector-line"></div>
+                <div class="all-particulars-cards-container" style="display: none;"></div>
+                <div class="all-branches-container"></div>
+            `);
+
+            const allParticularsContainer = container.find('.all-particulars-cards-container');
+            const allBranchesContainer = container.find('.all-branches-container');
+
+            // === STEP 1: CREATE COMPREHENSIVE VENDOR MAPPING ===
+            const vendorToParticularsMap = {};
+            const particularToVendorMap = {};
+            const vendorStagesMap = {};
+            const vendorIdToNameMap = {};
+
+            console.log('=== VENDOR MAPPING ANALYSIS ===');
+
+            // First, map vendor IDs to vendor names from vendors data
+            if (hasVendors) {
+                Object.entries(stagesData.vendors).forEach(([vendorId, stages]) => {
+                    if (stages && stages.length > 0) {
+                        const vendorName = stages[0].vendor_name || `Vendor ${vendorId}`;
+                        vendorIdToNameMap[vendorId] = vendorName;
+                        vendorStagesMap[vendorName] = stages;
+                        console.log(`Vendor ID ${vendorId} mapped to name: ${vendorName}`);
+                    }
+                });
+            }
+
+            // Map particulars to vendors using vendor_id
+            if (hasParticulars) {
+                Object.entries(stagesData.particulars).forEach(([particularId, stages]) => {
+                    if (stages && stages.length > 0) {
+                        const firstStage = stages[0];
+                        const itemName = firstStage.item_name || `Particular ${particularId}`;
+                        const vendorId = firstStage.vendor_id;
+                        const vendorName = vendorIdToNameMap[vendorId] || firstStage.vendor_name || 'No Vendor';
+
+                        console.log(`Particular "${itemName}" (ID: ${particularId}) has vendor_id: ${vendorId}, mapped to vendor: "${vendorName}"`);
+
+                        // Map particular to vendor
+                        particularToVendorMap[itemName] = vendorName;
+
+                        // Map vendor to particulars
+                        if (!vendorToParticularsMap[vendorName]) {
+                            vendorToParticularsMap[vendorName] = new Set();
+                        }
+                        vendorToParticularsMap[vendorName].add(itemName);
+                    }
+                });
+            }
+
+            // Also check for vendor_id in vendor stages to ensure all vendors are captured
+            if (hasVendors) {
+                Object.entries(stagesData.vendors).forEach(([vendorId, stages]) => {
+                    stages.forEach(stage => {
+                        const vendorName = stage.vendor_name || vendorIdToNameMap[vendorId] || `Vendor ${vendorId}`;
+                        
+                        // Handle particulars array in vendor stages
+                        if (stage.particulars && Array.isArray(stage.particulars)) {
+                            stage.particulars.forEach(particularName => {
+                                if (!vendorToParticularsMap[vendorName]) {
+                                    vendorToParticularsMap[vendorName] = new Set();
+                                }
+                                vendorToParticularsMap[vendorName].add(particularName);
+                                particularToVendorMap[particularName] = vendorName;
+                                console.log(`From vendor stage: Mapped particular "${particularName}" to vendor "${vendorName}"`);
+                            });
+                        }
+                    });
+                });
+            }
+
+            console.log('Final vendor to particulars map:', Object.fromEntries(
+                Object.entries(vendorToParticularsMap).map(([vendor, particulars]) => [vendor, Array.from(particulars)])
+            ));
+            console.log('Final particular to vendor map:', particularToVendorMap);
+            console.log('Vendor stages map:', Object.keys(vendorStagesMap));
+
+            // === STEP 2: RENDER ALL PARTICULARS AS CARDS ===
+            if (allParticulars && allParticulars.length > 0) {
+                console.log('Rendering all particulars cards:', allParticulars);
+                
+                allParticularsContainer.addClass('all-particulars-grid');
+                
+                allParticulars.forEach((particular, index) => {
+                    const vendorName = particularToVendorMap[particular.name] || 'Not Assigned';
+                    const isAssigned = vendorName !== 'Not Assigned';
+                    
+                    const particularCard = $(`
+                        <div class="particular-overview-card ${isAssigned ? 'assigned' : ''}" 
+                            data-particular-id="${particular.id}" 
+                            data-particular-name="${particular.name}"
+                            data-vendor="${vendorName}">
+                            <div class="particular-overview-header">
+                                <i class="fas fa-box-open"></i>
+                                <h5 class="particular-overview-name">${particular.name}</h5>
+                            </div>
+                            <div class="particular-overview-id">ID: ${particular.id}</div>
+                            <div class="particular-overview-status">
+                                <span class="status-badge ${isAssigned ? 'assigned' : 'pending'}">
+                                    ${isAssigned ? `Assigned to: ${vendorName}` : 'Not Assigned'}
+                                </span>
+                            </div>
+                        </div>
+                    `);
+                    
+                    allParticularsContainer.append(particularCard);
+                });
+                
+                console.log(`Rendered ${allParticulars.length} particulars overview cards`);
+            } else {
+                allParticularsContainer.html(`
+                    <div class="no-data-message">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No particulars found for this procurement</p>
+                    </div>
+                `);
+            }
+
+            // === STEP 3: GROUP DATA BY VENDOR ===
+            const vendorGroups = {};
+
+            // Group particulars by vendor
+            if (hasParticulars) {
+                Object.entries(stagesData.particulars).forEach(([particularId, stages]) => {
+                    if (stages && stages.length > 0) {
+                        const firstStage = stages[0];
+                        const itemName = firstStage.item_name || `Particular ${particularId}`;
+                        const vendorId = firstStage.vendor_id;
+                        const vendorName = vendorIdToNameMap[vendorId] || firstStage.vendor_name || 'No Vendor';
+
+                        console.log(`Grouping particular "${itemName}" under vendor: "${vendorName}"`);
+
+                        if (!vendorGroups[vendorName]) {
+                            vendorGroups[vendorName] = {
+                                particulars: [],
+                                vendorStages: vendorStagesMap[vendorName] || []
+                            };
+                        }
+
+                        vendorGroups[vendorName].particulars.push({
+                            particularId,
+                            itemName,
+                            stages
+                        });
+                    }
+                });
+            }
+
+            // Ensure all vendors exist in vendorGroups, even without particulars
+            if (hasVendors) {
+                Object.entries(stagesData.vendors).forEach(([vendorId, stages]) => {
+                    if (stages && stages.length > 0) {
+                        const vendorName = stages[0].vendor_name || vendorIdToNameMap[vendorId] || `Vendor ${vendorId}`;
+                        
+                        if (!vendorGroups[vendorName]) {
+                            console.log(`Vendor "${vendorName}" has no particulars, adding vendor stages only.`);
+                            vendorGroups[vendorName] = {
+                                particulars: [],
+                                vendorStages: stages
+                            };
+                        } else {
+                            // Merge vendor stages if vendor already exists
+                            vendorGroups[vendorName].vendorStages = stages;
+                        }
+                    }
+                });
+            }
+
+            console.log('Final vendor groups:', Object.keys(vendorGroups));
+
+            // === STEP 4: RENDER VENDOR BRANCHES ===
+            if (Object.keys(vendorGroups).length > 0) {
+                console.log('Rendering vendor groups:', Object.keys(vendorGroups));
+                
+                Object.entries(vendorGroups).forEach(([vendorName, vendorData]) => {
+                    const { particulars, vendorStages } = vendorData;
+                    const hasVendorStages = vendorStages && vendorStages.length > 0;
+                    const hasParticulars = particulars && particulars.length > 0;
+                    
+                    console.log(`Rendering vendor "${vendorName}":`, { 
+                        hasParticulars: hasParticulars, 
+                        particularsCount: particulars ? particulars.length : 0,
+                        hasVendorStages: hasVendorStages
+                    });
+                    
+                    // Only render if vendor has particulars OR vendor stages
+                    if (hasParticulars || hasVendorStages) {
+                        const vendorGroup = $(`
+                            <div class="vendor-particular-group" data-vendor="${vendorName}">
+                                ${hasParticulars ? `
+                                <!-- PARTICULARS ROW - Side by side -->
+                                <div class="particulars-row">
+                                    <div class="section-label">Particulars for ${vendorName}</div>
+                                    <div class="particulars-container"></div>
+                                </div>
+                                
+                                <!-- VENDOR CONNECTION LINES -->
+                                <div class="vendor-connection-container">
+                                    <div class="connection-lines"></div>
+                                </div>
+                                ` : ''}
+                                
+                                <!-- VENDOR CARD -->
+                                <div class="vendor-card-container">
+                                    <div class="vendor-branch-card" data-vendor-name="${vendorName}">
+                                        <div class="vendor-card-header">
+                                            <div class="vendor-avatar">${getVendorInitials(vendorName)}</div>
+                                            <div class="vendor-info">
+                                                <h5 class="vendor-name">${vendorName}</h5>
+                                                ${hasParticulars ? `
+                                                <p class="vendor-particulars-count">
+                                                    <i class="fas fa-boxes"></i> Supplies <b>${particulars.length} Particular(s)</b>
+                                                </p>
+                                                ` : `
+                                                <p class="vendor-particulars-count">
+                                                    <i class="fas fa-info-circle"></i> No assigned particulars
+                                                </p>
+                                                `}
+                                            </div>
+                                        </div>
+                                        ${hasVendorStages ? `
+                                        <div class="vendor-progress-container">
+                                            <div class="vendor-steps"></div>
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                </div>
+                            </div>
+                        `);
+
+                        // Render particulars if they exist
+                        if (hasParticulars) {
+                            const particularsContainer = vendorGroup.find('.particulars-container');
+                            
+                            particulars.forEach((particularData, particularIndex) => {
+                                const { particularId, itemName, stages } = particularData;
+                                
+                                const particularCard = $(`
+                                    <div class="particular-branch-card" data-id="${particularId}" data-vendor="${vendorName}">
+                                        <div class="particular-card-header">
+                                            <div class="particular-info">
+                                                <i class="fas fa-box-open"></i>
+                                                <div>
+                                                    <h5 class="particular-name">${itemName}</h5>
+                                                    <div class="assigned-vendor">Vendor: <span>${vendorName}</span></div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="particular-steps"></div>
+                                    </div>
+                                `);
+
+                                const stepsContainer = particularCard.find('.particular-steps');
+
+                                stages.forEach(stage => {
+                                    const statusLower = (stage.status || '').toLowerCase();
+                                    const stepClass = getStepClass(statusLower);
+                                    const icon = getStepIcon(statusLower);
+                                    const name = getStageName(stage.stage, stage) || stage.next_user.role || '';
+
+                                    let finalClass = stepClass;
+                                    if (statusLower.includes('approval') || statusLower.includes('approved') ||
+                                        statusLower.includes('recommended') || statusLower.includes('generated') ||
+                                        statusLower.includes('completed')) {
+                                        finalClass = 'completed';
+                                    }
+                                    
+                                    console.log(stage, "finalClass-->", finalClass);
+                                    stepsContainer.append(`
+                                        <div class="particular-step ${finalClass}" data-stage='${JSON.stringify(stage)}'>
+                                            <div class="step-marker"><i class="fas ${icon}"></i></div>
+                                            <div class="step-info">
+                                                <div class="step-title">${name}</div>
+                                                <div class="step-status">${stage.status || ''}</div>
+                                                <div class="step-date">${stage.datetime || ''}</div>
+                                            </div>
+                                        </div>
+                                    `);
+                                });
+
+                                particularsContainer.append(particularCard);
+                            });
+                        }
+
+                        // Render vendor stages if available
+                        if (hasVendorStages) {
+                            const vendorStepsContainer = vendorGroup.find('.vendor-steps');
+                            vendorStepsContainer.addClass('vendor-clean-timeline');
+
+                            vendorStepsContainer.append('<div class="timeline-line"></div>');
+
+                            vendorStages.forEach((stage, index) => {
+                                const statusLower = (stage.status || '').toLowerCase();
+                                const stepClass = getStepClass(statusLower);
+                                const icon = getStepIcon(statusLower);
+
+                                vendorStepsContainer.append(`
+                                    <div class="timeline-step ${stepClass}">
+                                        <div class="timeline-marker">
+                                            <div class="marker-circle ${stepClass}">
+                                                <i class="fas ${icon}"></i>
+                                            </div>
+                                            
+                                            ${stage.datetime ? `<div class="timeline-time">${stage.datetime}</div>` : ''}
+                                        </div>
+                                        <div class="timeline-info">
+                                        <div class="timeline-title" data-stage='${JSON.stringify(stage)}'>
+                                                ${
+                                                    stage.status === 'pending'
+                                                        ? (stage.next_user?.role || 'Pending User')
+                                                        : (
+                                                            stage.stage === 'po_approval'
+                                                                ? `${getStageName(stage.stage, stage)} - (${stage.action_user.role}) || ${stage.next_user?.role || ''}`
+                                                                : (getStageName(stage.stage, stage) || stage.next_user?.role || '')
+                                                        )
+                                                }
+                                            </div>
+
+                                            <div class="timeline-status ${stepClass}">${getStatusText(stage.status, stage.stage)}</div>
+                                        </div>
+                                    </div>
+                                `);
+                            });
+                        }
+
+                        allBranchesContainer.append(vendorGroup);
+                        console.log(`Successfully rendered vendor group for "${vendorName}"`);
+                    }
+                });
+
+                // Create connection lines after DOM is rendered
+                setTimeout(() => {
+                    createVendorConnectionLines();
+                    createParticularsToVendorConnections();
+                }, 100);
+            } else {
+                // No vendor data
+                allBranchesContainer.html(`
+                    <div class="no-data-message">
+                        <i class="fas fa-info-circle"></i>
+                        <p>No vendor data available for this procurement</p>
+                    </div>
+                `);
+            }
+        }
+        // Handle click on vendor stage title to show details card
+        $(document).on('click', '.timeline-title', function () {
+            const stageData = $(this).data('stage'); // stored stage object
+            showVendorStageCard(stageData);
+        });
+        $(document).on('click', '.particular-step ', function () {
+            const stageData = $(this).data('stage'); // stored stage object
+            console.log("stageData-->",stageData);
+            showParticularStageCard(stageData);
+        });
+        function showParticularStageCard(stage) {
+            // Remove any existing particular stage card
+            $('.particular-stage-card').remove();
+
+            // Build the particular stage detail card dynamically
+            const particularCard = `
+                <div class="particular-stage-card">
+                    <div class="particular-header">
+                        ${(stage.status === 'pending' ? stage.next_user?.name : stage.action_user?.name) || 'N/A'}
+                    </div>
+                    <div class="particular-body">
+                        <p><strong>Status:</strong> ${stage.status || 'N/A'}</p>
+                        <p><strong>Date:</strong> ${stage.datetime || 'N/A'}</p>
+                        ${
+                            stage.status === 'pending'
+                                ? `<p><strong>Next User:</strong> ${stage.next_user?.name || 'N/A'} (${stage.next_user?.emp_id || 'N/A'}) - ${stage.next_user?.role || 'N/A'}</p>`
+                                : `<p><strong>Approved by:</strong> ${stage.action_user?.name || 'N/A'} (${stage.action_user?.emp_id || 'N/A'}) - ${stage.action_user?.role || 'N/A'}</p>`
+                        }
+                    </div>
+                    <button class="particular-close-btn">&times;</button>
+                </div>
+            `;
+
+            
+
+            $('body').append(particularCard);
+
+            // Close button action
+            $('.particular-stage-card .particular-close-btn').on('click', function () {
+                $('.particular-stage-card').fadeOut(200, function () { $(this).remove(); });
+            });
+        }
+        function showVendorStageCard(stage) {
+            // Remove any existing vendor stage card
+            $('.vendor-stage-card').remove();
+
+            // Build the vendor stage detail card dynamically
+            const vendorCard = `
+                <div class="vendor-stage-card">
+                    <div class="vendor-header">
+                        ${(stage.status === 'pending' ? stage.next_user?.name : stage.action_user?.name) || 'N/A'}
+                    </div>
+                    <div class="vendor-body">
+                        <p><strong>Status:</strong> ${stage.status || 'N/A'}</p>
+                        <p><strong>Date:</strong> ${stage.datetime || 'N/A'}</p>
+                        ${
+                            stage.status === 'pending'
+                                ? `<p><strong>Next User:</strong> ${stage.next_user?.name || 'N/A'} (${stage.next_user?.emp_id || 'N/A'}) - ${stage.next_user?.role || 'N/A'}</p>`
+                                : `<p><strong>Approved by:</strong> ${stage.action_user?.name || 'N/A'} (${stage.action_user?.emp_id || 'N/A'}) - ${stage.action_user?.role || 'N/A'}</p>`
+                        }
+                    </div>
+                    <button class="vendor-close-btn">&times;</button>
+                </div>
+            `;
+
+            
+
+            $('body').append(vendorCard);
+
+            // Close button action
+            $('.vendor-stage-card .vendor-close-btn').on('click', function () {
+                $('.vendor-stage-card').fadeOut(200, function () { $(this).remove(); });
+            });
+        }
+
+
+        // NEW FUNCTION: Create connections between particulars overview cards and vendor branches
+        function createParticularsToVendorConnections() {
+            const allParticularsCards = $('.particular-overview-card.assigned');
+            
+            allParticularsCards.each(function() {
+                const particularCard = $(this);
+                const vendorName = particularCard.attr('data-vendor');
+                const particularName = particularCard.attr('data-particular-name');
+                
+                if (vendorName) {
+                    // Find the corresponding particular branch card in vendor group
+                    const particularBranchCard = $(`.particular-branch-card[data-vendor="${vendorName}"][data-id*="${particularName}"]`);
+                    
+                    if (particularBranchCard.length) {
+                        // Create connection line from overview card to branch card
+                        createParticularConnectionLine(particularCard, particularBranchCard);
+                    }
+                }
+            });
+        }
+
+        // NEW FUNCTION: Create individual connection line between overview card and branch card
+        function createParticularConnectionLine(fromCard, toCard) {
+            const container = $('.branch-section-container');
+            const fromRect = fromCard[0].getBoundingClientRect();
+            const toRect = toCard[0].getBoundingClientRect();
+            const containerRect = container[0].getBoundingClientRect();
+            
+            const startX = fromRect.right - containerRect.left;
+            const startY = fromRect.top + fromRect.height / 2 - containerRect.top;
+            const endX = toRect.left - containerRect.left;
+            const endY = toRect.top + toRect.height / 2 - containerRect.top;
+            
+            const connectionLine = $(`
+                <svg class="particular-connection-line" style="position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; z-index:1;">
+                    <path d="M ${startX} ${startY} C ${(startX + endX) / 2} ${startY}, ${(startX + endX) / 2} ${endY}, ${endX} ${endY}" 
+                        stroke="#3498db" stroke-width="2" fill="none" stroke-dasharray="5,5"/>
+                </svg>
+            `);
+            
+            container.append(connectionLine);
+        }
+
+        // Create connection lines between particulars and vendor
+        function createVendorConnectionLines() {
+            $('.vendor-particular-group[data-vendor!="No Vendor"]').each(function() {
+                const vendorGroup = $(this);
+                const vendorCard = vendorGroup.find('.vendor-branch-card');
+                const particulars = vendorGroup.find('.particular-branch-card');
+                const connectionContainer = vendorGroup.find('.connection-lines');
+                
+                if (particulars.length > 0 && vendorCard.length > 0 && connectionContainer.length > 0) {
+                    // Create SVG for connection lines
+                    const svg = $(`
+                        <svg class="vendor-connections-svg" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1;"></svg>
+                    `);
+                    connectionContainer.append(svg);
+                    
+                    // Wait for DOM to calculate positions
+                    setTimeout(() => {
+                        const vendorRect = vendorCard[0].getBoundingClientRect();
+                        const containerRect = connectionContainer[0].getBoundingClientRect();
+                        
+                        particulars.each(function() {
+                            const particularRect = this.getBoundingClientRect();
+                            
+                            const startX = particularRect.left + particularRect.width / 2 - containerRect.left;
+                            const startY = particularRect.bottom - containerRect.top;
+                            const endX = vendorRect.left + vendorRect.width / 2 - containerRect.left;
+                            const endY = vendorRect.top - containerRect.top;
+                            
+                            // Create curved connection line
+                            const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+                            const controlY = startY + (endY - startY) / 2;
+                            
+                            path.setAttribute("d", `M ${startX} ${startY} C ${startX} ${controlY} ${endX} ${controlY} ${endX} ${endY}`);
+                            path.setAttribute("stroke", "#007bff");
+                            path.setAttribute("stroke-width", "2");
+                            path.setAttribute("fill", "none");
+                            path.setAttribute("stroke-dasharray", "5,5");
+                            path.setAttribute("opacity", "0.6");
+                            
+                            svg[0].appendChild(path);
+                        });
+                    }, 50);
+                }
+            });
+        }
+        // Helper function to get vendor initials
+        function getVendorInitials(vendorName) {
+            return vendorName
+                .split(" ")
+                .map(word => word[0])
+                .join("")
+                .substring(0, 2)
+                .toUpperCase();
+        }
+
+        function createMainTimelineStep(stage, index, totalSteps) {
+            const statusLower = (stage.status || '').toLowerCase();
+            const stepClass = getStepClass(statusLower);
+            const icon = getStepIcon(statusLower);
+            
+            const stepHtml = `
+                <div class="main-step ${stepClass}"
+                    data-stage="${stage.stage || stage.next_user.role || ''}"
+                    data-status="${stage.status || ''}"
+                    data-date="${stage.datetime || ''}"
+                    data-comment="${stage.comment || ''}"
+                    data-procurement-id="${stage.procurement_id || ''}"
+                    data-action-user='${JSON.stringify(stage.action_user || {})}'
+                    data-next-user='${JSON.stringify(stage.next_user || {})}'
+                    data-action-type="${stage.action_type || ''}">
+                    
+                    <div class="step-connector"></div>
+                    
+                    <div class="step-content">
+                        <div class="step-marker">
+                            <div class="marker-icon"><i class="fas ${icon}"></i></div>
+                            ${['approval', 'pr_raised', 'enquiry_approval', 'cst_approval', 'dpo_approval', 'negotiation_approval', 'po'].includes(statusLower) ? '<div class="marker-pulse"></div>' : ''}
+                        </div>
+                        
+                        <div class="step-info">
+                            <div class="step-title">${getStageName(stage.stage, stage) || stage.next_user.role || ''}</div>
+                            <div class="step-status ${stepClass}">${getStatusText(stage.status, stage.stage)}</div>
+                            <div class="step-date">${stage.datetime || ''}</div>
+                            
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            return stepHtml;
+        }
+
+        // Animate timeline steps
+        function animateTimelineSteps() {
+            $('.main-step').each(function(index) {
+                const $step = $(this);
+                $step.delay(index * 100).fadeIn(400).addClass('animate-in');
+
+                // Smooth transition color animation for the connecting line
+                setTimeout(() => {
+                    const statusClass = $step.attr('class');
+                    if (statusClass.includes('completed')) {
+                        $step.addClass('completed');
+                    } else if (statusClass.includes('rejected')) {
+                        $step.addClass('rejected');
+                    } else if (statusClass.includes('modified')) {
+                        $step.addClass('modified');
+                    }
+                }, 200);
+            });
+        }
+
+
+        // Get step CSS class based on status
+        function getStepClass(status) {
+            const completedStatuses = ['approval', 'pr_raised', 'enquiry_approval', 'cst_approval', 'dpo_approval', 'negotiation_approval', 'po'];
+            const rejectedStatuses = ['reject', 'enquiry_return', 'cst_return', 'dpo_return', 'negotiation_return'];
+            const modifiedStatuses = ['modified', 'enquiry_modified', 'cst_modified', 'negotiation_modified', 'dpo_modified'];
+
+            if (completedStatuses.includes(status)) return 'completed';
+            if (rejectedStatuses.includes(status)) return 'rejected';
+            if (modifiedStatuses.includes(status)) return 'modified';
+            return 'pending';
+        }
+
+        // Get step icon based on status
+        function getStepIcon(status) {
+            if (status.includes('approval') || status === 'pr_raised' || status === 'po') return 'fa-check-circle';
+            if (status.includes('reject') || status.includes('return')) return 'fa-times-circle';
+            if (status.includes('modified')) return 'fa-sync-alt';
+            if (status.includes('pending')) return 'fa-clock';
+            if (status === 'negotiation') return 'fa-handshake';
+            if (status === 'cst') return 'fa-file-alt';
+            if (status === 'enquiry generated') return 'fa-envelope';
+            if (status === 'dpo') return 'fa-file-invoice';
+            return 'fa-circle';
+        }
+
+        // Human-readable stage names
+        function getStageName(stageCode, stage) {
+            const stageMap = {
+                "stage1": "Indentor",
+                "stage2": "RA",
+                "stage3": "IMM",
+                "stage4": "Accounts",
+                "stage5": "AA",
+                "stage6": "IMM",
+                "stage7": "IMM",
+                "stage8": "IMM",
+                "stage9": "IMM",
+                "stage10": "IMM"
+            };
+            
+            if (stageCode === 'stage6' || stageCode === 'stage7' || stageCode === 'stage8' || stageCode === 'stage9' || stageCode === 'stage10') {
+                if (stage.action_user && stage.action_user.role === 'Purchase Assistant') {
+                    return "Purchase Assistant";
+                } else {
+                    return stageMap[stageCode] || stageCode;
+                }
+            } else {
+                return stageMap[stageCode] || stageCode;
+            }
+        }
+
+        // Function to get status text based on stage and status
+        function getStatusText(status, stage) {
+            const statusLower = status.toLowerCase();
+            if (statusLower === 'approval') return "Recommended";
+            if (statusLower === 'pr_raised') return "PR Raised";
+            if (statusLower === 'pending') return "Pending";
+            if (statusLower === 'returned') return "Returned";
+            if (statusLower === 'reject') return "Returned";
+            if (statusLower === 'modified') return "Modified";
+            if (statusLower === 'enquiry generated') return "Enquiry Generated";
+            if (statusLower === 'enquiry_approval') return "Enquiry Approval";
+            if (statusLower === 'enquiry_return') return "Enquiry Return";
+            if (statusLower === 'enquiry_modified') return "Enquiry Modified";
+            if (statusLower === 'cst') return "CST";
+            if (statusLower === 'cst_modified') return "CST Modified";
+            if (statusLower === 'cst_return') return "CST Return";
+            if (statusLower === 'cst_approval') return "CST Approval";
+            if (statusLower === 'negotiation') return "Negotiation";
+            if (statusLower === 'negotiation_approval') return "Negotiation Approval";
+            if (statusLower === 'negotiation_return') return "Negotiation Return";
+            if (statusLower === 'negotiation_modified') return "Negotiation Modified";
+            if (statusLower === 'dpo') return "DPO";
+            if (statusLower === 'dpo_approval') return "DPO Approval";
+            if (statusLower === 'dpo_return') return "DPO Return";
+            if (statusLower === 'dpo_modified') return "DPO Modified";
+            if (statusLower === 'po') return "PO";
+            return status;
+        }
+
+        // When a PR ID is clicked
+        $(document).on('click', '.view-pr-id', function(e) {
+            e.preventDefault();
+            const procurementId = $(this).data('id') || $(this).closest('.list-group-item').attr('id').replace('procurement-', '');
+            const procurement = window.procurementsData[procurementId];
+            
+            console.log('Procurement data:', procurement);
+            
+            if (!procurement || !procurement.stages) {
+                console.error('No procurement data found for ID:', procurementId);
+                return;
+            }
+            
+            $('.list-group-item').removeClass('active-pr-id');
+            $('.pr-id-item').removeClass('active-pr-id');
+            $(this).closest('.pr-id-item, .list-group-item').addClass('active-pr-id');
+            
+            $('.empty-state').fadeOut(300, function() {
+                $('.amazon-tracking-view').hide().slideDown(400);
+                $('.stage-details-card').hide();
+            });
+            
+            $('.tracking-id-header').html(`PR #${procurementId}`);
+            $('.created-date').text(`Created: ${procurement.created_datetime}`);
+
+            $('.tracking-timeline').html(`
+                <div class="loading-animation">
+                    <div class="spinner"></div>
+                </div>
+            `);
+
+            setTimeout(function() {
+                updateTrackingTimeline(procurementId, procurement);
+            }, 800);
+        });
+
+        // Click handler for timeline steps
+        $('.tracking-timeline').on('click', '.main-step, .branch-step', function() {
+            const stage = $(this).data('stage');
+            const status = $(this).data('status');
+            const date = $(this).data('date');
+            const comment = $(this).data('comment');
+            const particularId = $(this).data('particular-id');
+            const procurementId = $(this).data('procurement-id');
+            const actionUser = $(this).data('action-user') || {};
+            const nextUser = $(this).data('next-user') || {};
+
+            const actionType = $(this).data('action-type');
+            const itemName = $(this).data('item-name');
+            const isBranchStep = $(this).hasClass('branch-step');
+
+            const stageName = getStageName(stage, {action_user: actionUser});
+            const statusText = getStatusText(status, stage);
+            const statusLower = (status || '').toLowerCase();
+
+            const stepClass = getStepClass(statusLower);
+
+            let userDetails = '';
+            let actionText = '';
+
+            // Determine action text based on action type
+            if (actionType === 'reject') {
+                actionText = 'Returned by';
+            } else if (statusLower.includes('approval')) {
+                actionText = 'Approved by';
+            } else if (statusLower.includes('modified')) {
+                actionText = 'Modified by';
+            } else {
+                actionText = 'Processed by';
+            }
+
+            // Action user details
+            if (actionUser && actionUser.name && actionUser.name !== 'N/A') {
+                userDetails = `
+                    <div class="meta-item">
+                        <i class="fas fa-user${actionType === 'reject' ? '-times' : ''}"></i>
+                        <span>${actionText}: <b>${actionUser.name} (${actionUser.emp_id || ''}) - ${actionUser.role || ''}</b></span>
+                    </div>
+                `;
+            }
+
+            // Particular info if available
+            const particularInfo = isBranchStep ? `
+                <div class="meta-item">
+                    <i class="fas fa-tag"></i>
+                    <span>Particular: <b>${itemName}</b></span>
+                </div>
+            ` : '';
+
+            $('.stage-details-card .details-content').html(`
+                <div class="stage-header ${stepClass}">
+                    <h4>
+                        ${
+                            status === 'pending'
+                                ? `${nextUser.name || 'N/A'} (${nextUser.emp_id || 'N/A'}) - ${nextUser.role || 'N/A'}`
+                                : (stageName || 'N/A')
+                        }
+                    </h4>
+
+                    <div class="stage-status">${statusText}</div>
+                </div>
+
+                <div class="stage-meta">
+                    <div class="meta-item">
+                        <i class="fas fa-calendar-alt"></i>
+                        <span>${date || 'N/A'}</span>
+                    </div>
+                    ${particularInfo}
+                    ${userDetails}
+                    ${
+                        comment
+                            ? `
+                                <div class="stage-comment">
+                                    <div class="comment-label">Comments:</div>
+                                    <div class="comment-text">${comment}</div>
+                                </div>
+                            `
+                            : ''
+                    }
+                </div>
+            `);
+
+
+            $('.stage-details-card').slideDown(300);
+        });
+
+        // Close details card
+        $('.close-details').click(function() {
+            $('.stage-details-card').slideUp(300);
+        });
+
+        // WebSocket connection
+        (function() {
+            const ws_scheme = window.location.protocol === "https:" ? "wss" : "ws";
+            const ws_url = `${ws_scheme}://${window.location.host}/ws/sidebar/tracking/`;
+            const tracking_socket = new WebSocket(ws_url);
+            
+            tracking_socket.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                console.log('WebSocket message received:', data);
+                
+                if (data.action === "update") {
+                    const procurementId = data.procurement_id;
+                    const fullProcurementData = data.data;
+                    
+                    window.procurementsData[procurementId] = {
+                        stages: fullProcurementData.stages_with_status,
+                        users: fullProcurementData.users,
+                        created_datetime: fullProcurementData.created_datetime,
+                        latest_update: data.datetime,
+                        all_stages_completed: fullProcurementData.all_stages_completed || false
+                    };
+
+                    const dateObj = new Date(data.datetime);
+                    let formattedDatetime = '';
+                    
+                    if (!isNaN(dateObj)) {
+                        const pad = num => String(num).padStart(2, '0');
+                        const day = pad(dateObj.getDate());
+                        const month = pad(dateObj.getMonth() + 1);
+                        const year = dateObj.getFullYear();
+                        const hours = pad(dateObj.getHours());
+                        const minutes = pad(dateObj.getMinutes());
+                        const seconds = pad(dateObj.getSeconds());
+                        formattedDatetime = `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
+                    }
+
+                    const existingItem = $(`#procurement-${procurementId}`);
+                    if (existingItem.length > 0) {
+                        existingItem.find('.view-pr-id').html(`
+                            <div class="pr-id" style="font-weight: 500; font-size: 14px; color: black;">
+                                ${procurementId}
+                            </div>
+                            <div class="pr-date" style="font-size: 11px; color: black;">
+                                ${formattedDatetime}
+                            </div>
+                        `);
+                        existingItem.css('background-color', data.background_color || '#CCE5F0');
+                        existingItem.data('statuses', data.statuses || '');
+                        existingItem.prependTo('#procurementSidebar');
+                    } else {
+                        const statusesString = data.statuses || '';
+                        const backgroundColor = data.background_color || '#CCE5F0';
+
+                        const newListItem = `
+                        <li id="procurement-${procurementId}" class="list-group-item" data-statuses="${statusesString}"
+                            style="background-color: ${backgroundColor}; border: 1px solid #ddd; border-radius: 4px; margin-bottom: 10px; transition: background-color 0.3s ease, box-shadow 0.3s ease; margin-top:7px;">
+                            <a href="#" class="view-pr-id" data-id="${procurementId}" style="text-decoration: none; color: inherit; display: block;">
+                            <div class="pr-id" style="font-weight: 500; font-size: 14px; color: black;">
+                                ${procurementId}
+                            </div>
+                            <div class="pr-date" style="font-size: 11px; color: black;">
+                                ${fullProcurementData.created_datetime}
+                            </div>
+                            </a>
+                        </li>
+                        `;
+
+                        $('#procurementSidebar').prepend(newListItem);
+                    }
+
+                    if ($('.active-pr-id').find('.view-pr-id').data('id') === procurementId) {
+                        updateTrackingTimeline(procurementId, window.procurementsData[procurementId]);
+                    }
+
+                    $('#statusFilter').trigger('change');
+                }
+            };
+
+            tracking_socket.onopen = function() {
+                console.log("Tracking sidebar WebSocket opened.");
+            };
+
+            tracking_socket.onclose = function() {
+                console.warn("Tracking sidebar WebSocket closed.");
+                setTimeout(function() {
+                    console.log("Attempting to reconnect WebSocket...");
+                    tracking_socket = new WebSocket(ws_url);
+                }, 5000);
+            };
+        })();
+    });
+</script>
+{% endblock scripts %}
+
+{% block styleblock %}
+
+
+<style>
+.particular-stage-card {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 340px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    padding: 15px 20px;
+    z-index: 9999;
+    animation: particularSlideIn 0.3s ease-out;
+    font-family: 'Poppins', sans-serif;
+}
+
+.particular-stage-card .particular-header {
+    font-weight: 600;
+    font-size: 18px;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.particular-stage-card .particular-body p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.particular-stage-card .particular-close-btn {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #888;
+}
+
+.particular-stage-card .particular-close-btn:hover {
+    color: #000;
+}
+
+@keyframes particularSlideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+.vendor-stage-card {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 340px;
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    padding: 15px 20px;
+    z-index: 9999;
+    animation: vendorSlideIn 0.3s ease-out;
+    font-family: 'Poppins', sans-serif;
+}
+
+.vendor-stage-card .vendor-header {
+    font-weight: 600;
+    font-size: 18px;
+    color: #007bff;
+    margin-bottom: 10px;
+}
+
+.vendor-stage-card .vendor-body p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #333;
+}
+
+.vendor-stage-card .vendor-close-btn {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    cursor: pointer;
+    color: #888;
+}
+
+.vendor-stage-card .vendor-close-btn:hover {
+    color: #000;
+}
+
+@keyframes vendorSlideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+   /* All Particulars Overview Cards */
+.all-particulars-grid {
+    display: flex;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 15px;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: #f8f9fa;
+    border-radius: 10px;
+    border: 1px solid #e9ecef;
+}
+
+.particular-overview-card {
+    background: white;
+    border: 2px solid #e9ecef;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.particular-overview-card.assigned {
+    border-color: #3498db;
+    background: #f8fafc;
+}
+
+.particular-overview-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.particular-overview-header i {
+    color: #6c757d;
+    font-size: 16px;
+}
+
+.particular-overview-name {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.particular-overview-id {
+    font-size: 12px;
+    color: #6c757d;
+    margin-bottom: 8px;
+}
+
+.status-badge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+}
+
+.status-badge.pending {
+    background: #fff3cd;
+    color: #856404;
+    border: 1px solid #ffeaa7;
+}
+
+.status-badge.assigned {
+    background: #d1ecf1;
+    color: #0c5460;
+    border: 1px solid #bee5eb;
+}
+
+/* Connection lines */
+.particular-connection-line {
+    animation: dash 2s linear infinite;
+}
+
+@keyframes dash {
+    to {
+        stroke-dashoffset: -10;
+    }
+} 
+/* =======================================
+   PARTICULAR STEP COLORS (GREEN / RED / BLUE / YELLOW)
+======================================= */
+
+/* Default connector */
+.particular-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    width: calc(100% + 50px);
+    height: 3px;
+    background: #ccc;
+    z-index: 0;
+    transition: background 0.3s ease;
+}
+
+/* ✅ Green - Recommended / Approved / Completed */
+.particular-step.completed:not(:last-child)::after {
+    background: #28a745;
+    animation: glowLineGreen 2s ease-in-out infinite;
+}
+
+/* 🔴 Red - Returned / Rejected */
+.particular-step.rejected:not(:last-child)::after {
+    background: #dc3545;
+    animation: glowLineRed 2s ease-in-out infinite;
+}
+
+/* 🔵 Blue - Modified */
+.particular-step.modified:not(:last-child)::after {
+    background: #007bff;
+    animation: glowLineBlue 2s ease-in-out infinite;
+}
+
+/* 🟡 Yellow - Pending */
+.particular-step.pending:not(:last-child)::after {
+    background: #f39c12;
+}
+
+/* Step marker default */
+.particular-step .step-marker {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+/* ✅ Green */
+.particular-step.completed .step-marker {
+    background: #28a745 !important;
+    border-color: #28a745 !important;
+    color: #fff !important;
+}
+
+/* 🔴 Red */
+.particular-step.rejected .step-marker {
+    background: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+/* 🔵 Blue */
+.particular-step.modified .step-marker {
+    background: #007bff !important;
+    border-color: #007bff !important;
+    color: #fff !important;
+}
+
+/* 🟡 Yellow */
+.particular-step.pending .step-marker {
+    background: #fff !important;
+    border-color: #f39c12 !important;
+    color: #f39c12 !important;
+}
+
+/* Icons inside */
+.particular-step.completed .step-marker i,
+.particular-step.rejected .step-marker i,
+.particular-step.modified .step-marker i {
+    color: #fff !important;
+}
+.particular-step.pending .step-marker i {
+    color: #f39c12 !important;
+}
+
+
+
+    /* Default neutral line */
+.main-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 22px;
+    left: 38%;
+    width: calc(100% + 28px);
+    height: 3px;
+    background: #ccc;
+    z-index: 0;
+    transition: background 0.3s ease;
+}
+
+/* Color-coded connectors */
+.main-step.completed:not(:last-child)::after {
+    background: #28a745; /* Recommended - Green */
+}
+.main-step.rejected:not(:last-child)::after {
+    background: #dc3545; /* Returned - Red */
+}
+.main-step.modified:not(:last-child)::after {
+    background: #007bff; /* Modified - Blue */
+}
+
+/* ===== Vendor clean vertical timeline line (dashed) ===== */
+.vendor-clean-timeline .timeline-line {
+    position: absolute;
+    top: 25px;
+    left: 38px;
+    width: 2px;
+    height: calc(100% - 20px);
+    border-left: 2px dashed #b2bec3;   /* dashed vertical line */
+    z-index: 0;
+}
+
+/* Step marker (circle) */
+.timeline-marker {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+.marker-circle {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    margin-left: -98px;
+    transition: all 0.3s ease;
+}
+.marker-circle i {
+    font-size: 12px;
+    color: #555;
+}
+
+/* time shown below marker */
+.timeline-time {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+    margin-top: 2px;
+    text-align: center;
+    font-weight: 600;
+    margin-left: 12px;
+}
+
+/* color states */
+.marker-circle.completed { background: #27ae60; border-color: #27ae60; color: white; }
+.marker-circle.rejected { background: #e74c3c; border-color: #e74c3c; color: white; }
+.marker-circle.modified { background: #3498db; border-color: #3498db; color: white; }
+.marker-circle.pending { background: #fff; border-color: #27ae60; color: #27ae60; }
+
+.marker-circle.completed i,
+.marker-circle.rejected i,
+.marker-circle.modified i { color: white; }
+.marker-circle.pending i { color: #27ae60; }
+
+/* line subtle animation for real-time flow */
+@keyframes dashFlow {
+    to { background-position: 0 100%; }
+}
+.vendor-clean-timeline .timeline-line {
+    border-left: 2px dashed #b2bec3;
+    animation: dashFlow 4s linear infinite;
+    background: repeating-linear-gradient(
+        to bottom,
+        #b2bec3 0px,
+        #b2bec3 6px,
+        transparent 6px,
+        transparent 12px
+    );
+}
+
+
+    /* =======================================
+   VENDOR CARD — SCROLLABLE WITH CONNECTED TIMELINE
+======================================= */
+
+/* outer vendor box */
+.vendor-branch-card {
+    background: #fff;
+    border: 1px solid #e3e6ea;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-left: 4px solid #28a745;
+    position: relative;
+    max-height: 320px;         /* limit height */
+    overflow-y: auto;          /* scroll on full card */
+    transition: all 0.3s ease;
+}
+
+/* smooth scroll + scrollbar styling */
+.vendor-branch-card::-webkit-scrollbar {
+    width: 6px;
+}
+.vendor-branch-card::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 3px;
+}
+.vendor-branch-card::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* vendor card header (image + name + info) */
+.vendor-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.vendor-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+}
+.vendor-info h5 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+.vendor-particulars-count {
+    margin: 4px 0 0;
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+/* progress container (no scroll, just layout) */
+.vendor-progress-container {
+    background: transparent;
+    border: none;
+    padding: 0;
+}
+
+/* vertical timeline inside the card */
+.vendor-steps {
+    position: relative;
+    padding-left: 35px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+
+
+/* each vendor step */
+.vendor-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    position: relative;
+    animation: fadeInStep 0.4s ease forwards;
+    opacity: 0;
+    transform: translateY(10px);
+}
+
+/* timeline marker (circle) */
+.vendor-step .step-marker {
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+.vendor-step .step-marker i {
+    font-size: 12px;
+    color: #555;
+}
+
+/* circle color states */
+.vendor-step.completed .step-marker { background: #27ae60; border-color: #27ae60; color: white; }
+.vendor-step.rejected .step-marker { background: #e74c3c; border-color: #e74c3c; color: white; }
+.vendor-step.modified .step-marker { background: #3498db; border-color: #3498db; color: white; }
+.vendor-step.pending .step-marker { background: #fff; border-color: #f39c12; color: #f39c12; }
+
+/* right-side info */
+.step-details {
+    flex: 1;
+}
+.step-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    margin-left: 11px;
+}
+.step-status {
+    display: inline-block;
+    margin: 4px 0;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+.step-status.completed { background: #d5f4e6; color: #27ae60; }
+.step-status.rejected { background: #fdeaea; color: #e74c3c; }
+.step-status.modified { background: #e3f2fd; color: #3498db; }
+.step-status.pending { background: #fef5e7; color: #27ae60; }
+
+.step-datetime {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+    margin-top: 3px;
+}
+.step-comment {
+    font-size: 0.75rem;
+    color: #5d6d7e;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-top: 5px;
+    border-left: 3px solid #dee2e6;
+    max-height: 40px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: max-height 0.3s ease;
+    cursor: pointer;
+}
+
+.step-comment:hover {
+    max-height: 120px; /* expands smoothly on hover */
+    overflow-y: auto;
+}
+
+
+/* hover + animation */
+.vendor-step .step-marker:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+@keyframes fadeInStep {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+    /* ===============================
+   VENDOR CLEAN SINGLE-BOX TIMELINE
+=============================== */
+
+
+
+/* single vertical connector line */
+.vendor-clean-timeline {
+    position: relative;
+    padding-left: 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+
+
+/* each step */
+.timeline-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 15px;
+    position: relative;
+    animation: fadeIn 0.4s ease;
+}
+
+/* circular markers */
+.marker-circle {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+    background: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+.marker-circle i {
+    font-size: 11px;
+    color: #555;
+}
+
+/* stage info (aligned right side of line) */
+.timeline-info {
+    flex: 1;
+    margin-left: -44px;
+}
+.timeline-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    cursor: pointer;
+}
+.timeline-status {
+    display: inline-block;
+    margin: 4px 0;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 10px;
+    font-weight: 500;
+}
+.timeline-date {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+.timeline-comment {
+    font-size: 0.7rem;
+    color: #5d6d7e;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 5px 10px;
+    border-radius: 6px;
+    margin-top: 5px;
+    border-left: 3px solid #dee2e6;
+}
+
+/* colors for states */
+.marker-circle.completed { background: #27ae60; border-color: #27ae60; }
+.marker-circle.rejected { background: #e74c3c; border-color: #e74c3c; }
+.marker-circle.modified { background: #3498db; border-color: #3498db; }
+.marker-circle.pending { background: #fff; border-color: #27ae60; }
+
+.marker-circle.completed i,
+.marker-circle.rejected i,
+.marker-circle.modified i { color: white; }
+.marker-circle.pending i { color: #27ae60; }
+
+.timeline-status.completed { background: #d5f4e6; color: #27ae60; }
+.timeline-status.rejected { background: #fdeaea; color: #e74c3c; }
+.timeline-status.modified { background: #e3f2fd; color: #3498db; }
+.timeline-status.pending { background: #fef5e7; color: #27ae60; }
+
+/* subtle scroll */
+.vendor-progress-container::-webkit-scrollbar {
+    width: 6px;
+}
+.vendor-progress-container::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+.vendor-progress-container::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* smooth entry animation */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===============================
+   STANDALONE VENDORS (NO PARTICULARS)
+=============================== */
+
+.vendors-only-section {
+    margin-bottom: 40px;
+}
+
+.vendors-branches-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.standalone-vendor {
+    border-left: 4px solid #6c757d !important;
+}
+
+.standalone-vendor .vendor-particulars-count {
+    color: #6c757d;
+    font-style: italic;
+}  
+/* ===============================
+   VENDOR-PARTICULAR GROUP LAYOUT
+=============================== */
+
+..vendor-particular-group {
+    margin-bottom: 100px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Particulars row - side by side */
+.particulars-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.section-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 20px;
+    padding: 10px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #007bff;
+}
+
+.particulars-container {
+    display: flex;
+    gap: 25px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+}
+
+/* Individual particular cards */
+.particular-branch-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e3e6ea;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+    min-width: 320px;
+    max-width: 380px;
+    flex: 1;
+}
+
+.particular-branch-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* Vendor connection container */
+.vendor-connection-container {
+    position: relative;
+    height: 60px;
+    margin: 10px 0;
+}
+
+.connection-lines {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+
+/* Vendor card container */
+.vendor-card-container {
+    display: flex;
+    justify-content: center;
+}
+
+.vendor-branch-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e3e6ea;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+    border-left: 4px solid #28a745;
+    min-width: 400px;
+    max-width: 500px;
+}
+
+.vendor-branch-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+/* ===============================
+   PARTICULAR CARD STYLES
+=============================== */
+
+.particular-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.particular-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+}
+
+.particular-info i {
+    color: #007bff;
+    font-size: 18px;
+    margin-top: 2px;
+}
+
+.particular-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin: 0 0 5px 0;
+}
+
+.assigned-vendor {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.assigned-vendor span {
+    color: #007bff;
+    font-weight: 500;
+}
+
+/* ===============================
+   PARTICULAR STEPS TIMELINE
+=============================== */
+
+.particular-steps {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 30px;
+    overflow-x: auto;
+    padding: 15px 0;
+}
+
+.particular-steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #ecf0f1;
+    z-index: 0;
+}
+
+.particular-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    min-width: 120px;
+}
+
+.particular-step .step-marker {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid #bdc3c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.particular-step.completed .step-marker {
+    background: #27ae60;
+    border-color: #27ae60;
+}
+
+.particular-step.rejected .step-marker {
+    background: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.particular-step.modified .step-marker {
+    background: #3498db;
+    border-color: #3498db;
+}
+
+.particular-step.pending .step-marker {
+    border-color: #f39c12;
+    background: #fff;
+}
+
+.particular-step .marker-icon {
+    color: #fff;
+    font-size: 14px;
+}
+
+.particular-step.pending .marker-icon {
+    color: #f39c12;
+}
+
+.particular-step .step-info {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.particular-step .step-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.particular-step .step-status {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.particular-step .step-status.completed {
+    background: #d5f4e6;
+    color: #27ae60;
+}
+
+.particular-step .step-status.rejected {
+    background: #fdeaea;
+    color: #e74c3c;
+}
+
+.particular-step .step-status.modified {
+    background: #e3f2fd;
+    color: #3498db;
+}
+
+.particular-step .step-status.pending {
+    background: #fef5e7;
+    color: #27ae60;
+}
+
+.particular-step .step-date {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+
+.particular-step .step-comment {
+    font-size: 0.7rem;
+    color: #5d6d7e;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-top: 5px;
+    border-left: 3px solid #dee2e6;
+}
+
+/* ===============================
+   RESPONSIVE DESIGN
+=============================== */
+
+@media (max-width: 768px) {
+    .particulars-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .particular-branch-card {
+        min-width: 100%;
+        max-width: 100%;
+    }
+    
+    .vendor-branch-card {
+        min-width: 100%;
+        max-width: 100%;
+    }
+    
+    .particular-steps {
+        gap: 15px;
+    }
+    
+    .particular-step {
+        min-width: 100px;
+    }
+    
+    .section-label {
+        font-size: 1rem;
+        padding: 8px 15px;
+    }
+}
+/* ===============================
+   VENDOR CARD STYLES
+=============================== */
+
+.vendor-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.vendor-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.vendor-info {
+    flex: 1;
+}
+
+.vendor-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.vendor-particulars-count {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 3px 0;
+}
+
+/* ===============================
+   PARTICULAR STEPS TIMELINE
+=============================== */
+
+.particular-steps {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 30px;
+    overflow-x: auto;
+    padding: 15px 0;
+}
+
+.particular-steps::before {
+    content: '';
+    position: absolute;
+    top: 20px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #ecf0f1;
+    z-index: 0;
+}
+
+.particular-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    min-width: 120px;
+}
+
+.particular-step .step-marker {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid #bdc3c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.particular-step.completed .step-marker {
+    background: #27ae60;
+    border-color: #27ae60;
+}
+
+.particular-step.rejected .step-marker {
+    background: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.particular-step.modified .step-marker {
+    background: #3498db;
+    border-color: #3498db;
+}
+
+.particular-step.pending .step-marker {
+    border-color: #f39c12;
+    background: #fff;
+}
+
+.particular-step .marker-icon {
+    color: #fff;
+    font-size: 14px;
+}
+
+.particular-step.pending .marker-icon {
+    color: #f39c12;
+}
+
+.particular-step .step-info {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.particular-step .step-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.particular-step .step-status {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.particular-step .step-status.completed {
+    background: #d5f4e6;
+    color: #27ae60;
+}
+
+.particular-step .step-status.rejected {
+    background: #fdeaea;
+    color: #e74c3c;
+}
+
+.particular-step .step-status.modified {
+    background: #e3f2fd;
+    color: #3498db;
+}
+
+.particular-step .step-status.pending {
+    background: #fef5e7;
+    color: #27ae60;
+}
+
+.particular-step .step-date {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+
+.particular-step .step-comment {
+    font-size: 0.7rem;
+    color: #5d6d7e;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-top: 5px;
+    border-left: 3px solid #dee2e6;
+}
+
+/* ===============================
+   VENDOR STEPS
+=============================== */
+
+
+
+
+
+.vendor-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vendor-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.vendor-step:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.vendor-step.completed {
+    border-left-color: #28a745;
+}
+
+.vendor-step.rejected {
+    border-left-color: #dc3545;
+}
+
+.vendor-step.modified {
+    border-left-color: #ffc107;
+}
+
+.vendor-step.pending {
+    border-left-color: #6c757d;
+}
+
+.vendor-step .step-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid #dee2e6;
+}
+
+.vendor-step.completed .step-marker {
+    background: #28a745;
+    border-color: #28a745;
+}
+
+.vendor-step.rejected .step-marker {
+    background: #dc3545;
+    border-color: #dc3545;
+}
+
+.vendor-step.modified .step-marker {
+    background: #ffc107;
+    border-color: #ffc107;
+}
+
+.vendor-step.pending .step-marker {
+    background: #6c757d;
+    border-color: #6c757d;
+}
+
+.vendor-step .step-marker i {
+    color: white;
+    font-size: 14px;
+}
+
+.vendor-step .step-details {
+    flex: 1;
+}
+
+.vendor-step .step-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    margin-bottom: 2px;
+}
+
+.vendor-step .step-status {
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.vendor-step.completed .step-status {
+    background: #d4edda;
+    color: #155724;
+}
+
+.vendor-step.rejected .step-status {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.vendor-step.modified .step-status {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.vendor-step.pending .step-status {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.vendor-step .step-datetime {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.vendor-step .step-comment {
+    font-size: 0.8rem;
+    color: #495057;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border-left: 3px solid #dee2e6;
+}
+
+/* ===============================
+   VENDORS ONLY SECTION
+=============================== */
+
+.vendors-only-section {
+    margin-bottom: 40px;
+}
+
+.vendors-branches-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+/* ===============================
+   ANIMATIONS
+=============================== */
+
+.vendor-particular-group {
+    animation: slideInUp 0.5s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.vendor-particular-group:nth-child(1) { animation-delay: 0.1s; }
+.vendor-particular-group:nth-child(2) { animation-delay: 0.2s; }
+.vendor-particular-group:nth-child(3) { animation-delay: 0.3s; }
+
+@keyframes slideInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ===============================
+   RESPONSIVE DESIGN
+=============================== */
+
+@media (max-width: 768px) {
+    .particulars-container {
+        flex-direction: column;
+        align-items: center;
+    }
+    
+    .particular-branch-card {
+        min-width: 100%;
+        max-width: 100%;
+    }
+    
+    .vendor-branch-card {
+        min-width: 100%;
+        max-width: 100%;
+    }
+    
+    .particular-steps {
+        gap: 15px;
+    }
+    
+    .particular-step {
+        min-width: 100px;
+    }
+}
+/* =======================
+   BASE + LAYOUT
+======================= */
+.amazon-tracker-container {
+    font-family: 'Amazon Ember', Arial, sans-serif;
+    background-color: #fafafa;
+    padding: 10px;
+    min-height: calc(100vh - 40px);
+}
+body {
+    overflow-x: hidden;
+}
+.row { height: 100%; }
+
+/* =======================
+   SIDEBAR
+======================= */
+.pr-id-sidebar {
+    overflow-y: scroll;
+    max-height: 650px;
+    background: linear-gradient(to right, #e0f7fa, #b3e5fc, #c5cae9, #d1c4e9, #f3e5f5);
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    padding: 10px;
+}
+.search-box {
+    position: relative;
+    margin-bottom: 10px;
+}
+.search-box i {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #999;
+}
+.search-box input {
+    width: 100%;
+    padding: 8px 10px 8px 35px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+}
+.search-box input:focus {
+    outline: none;
+    border-color: #00B2CC;
+    box-shadow: 0 0 0 2px rgba(0,178,204,0.2);
+}
+
+/* =======================
+   MAIN CONTENT
+======================= */
+.tracking-view-container {
+    padding-left: 20px;
+}
+.amazon-tracking-view {
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    padding: 25px;
+    border: 1px solid #e0e0e0;
+    position: relative;
+}
+.empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    border: 1px solid #e0e0e0;
+    position: relative;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 99%;
+}
+.empty-icon {
+    background: #f1f8fe;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+.empty-icon i { font-size: 30px; color: #0066c0; }
+
+/* =======================
+   HEADER
+======================= */
+.header-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+    margin-bottom: 25px;
+}
+.tracking-id-header {
+    color: #007080;
+    font-size: 1.6rem;
+    font-weight: 700;
+}
+.created-date {
+    font-size: 0.85rem;
+    color: #666;
+}
+
+/* =======================
+   MAIN TIMELINE (HORIZONTAL)
+======================= */
+.tracking-timeline-container {
+    overflow-x: auto;
+}
+.tracking-timeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: max-content;
+}
+.branch-timeline-container {
+    width: 100%;
+    background: white;
+    border-radius: 12px;
+    padding: 25px;
+    border: 1px solid #e1e5e9;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+.timeline-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 25px;
+}
+.timeline-header h4 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #2c3e50;
+    font-weight: 600;
+}
+.header-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(to right, #3498db, #9b59b6);
+    border-radius: 2px;
+}
+
+/* =======================
+   MAIN STEPS (STAGE 1–10)
+======================= */
+.main-timeline-steps {
+    display: flex;
+    align-items: flex-start;
+    gap: 22px;
+    position: relative;
+}
+/* =======================
+   DYNAMIC CONNECTOR LINE (Animated Flow)
+======================= */
+.dynamic-connector {
+    filter: drop-shadow(0 0 6px rgba(39, 174, 96, 0.6));
+    animation: connectorGlow 3s ease-in-out infinite;
+}
+
+.animated-curve {
+    stroke-dasharray: 900;
+    stroke-dashoffset: 900;
+    animation: drawCurve 2s ease-out forwards, flowPulse 4s ease-in-out infinite;
+}
+
+/* Smooth "draw-in" effect */
+@keyframes drawCurve {
+    from { stroke-dashoffset: 900; opacity: 0; }
+    to { stroke-dashoffset: 0; opacity: 1; }
+}
+
+/* Soft breathing glow */
+@keyframes connectorGlow {
+    0%, 100% { filter: drop-shadow(0 0 6px rgba(39,174,96,0.6)); }
+    50% { filter: drop-shadow(0 0 12px rgba(39,174,96,0.9)); }
+}
+
+/* Flowing light pulse along the curve */
+@keyframes flowPulse {
+    0% { stroke-width: 3; opacity: 0.8; }
+    50% { stroke-width: 5; opacity: 1; }
+    100% { stroke-width: 3; opacity: 0.8; }
+}
+
+.main-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    flex-shrink: 0;
+}
+.main-step:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    top: 22px;
+    left: 38%;
+    width: calc(100% + 28px);
+    height: 3px;
+    background: #ccc;
+    z-index: 0;
+    transition: background 0.3s ease;
+}
+.main-step.completed:not(:last-child)::after { background: #27ae60; }
+.step-marker {
+    width: 45px; height: 45px;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+    display: flex; align-items: center; justify-content: center;
+    background: #fff;
+    transition: 0.3s;
+}
+/* =======================================
+   FIXED MAIN STEP MARKER COLOR STATES
+======================================= */
+
+/* Default circle */
+.main-step .step-marker {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    transition: all 0.3s ease;
+}
+
+/* ✅ Recommended */
+.main-step.completed .step-marker {
+    background: #28a745 !important;
+    border-color: #28a745 !important;
+    color: #fff !important;
+}
+
+/* ❌ Returned */
+.main-step.rejected .step-marker {
+    background: #dc3545 !important;
+    border-color: #dc3545 !important;
+    color: #fff !important;
+}
+
+/* 🔄 Modified */
+.main-step.modified .step-marker {
+    background: #007bff !important;
+    border-color: #007bff !important;
+    color: #fff !important;
+}
+
+/* ⏳ Pending */
+.main-step.pending .step-marker {
+    background: #fff !important;
+    border-color: #27ae60 !important;
+    color: #27ae60 !important;
+}
+.main-step.completed .marker-icon,
+.main-step.rejected .marker-icon,
+.main-step.modified .marker-icon {
+    color: #fff !important;
+}
+.main-step.pending .marker-icon {
+    color: #27ae60 !important;
+}
+
+.marker-icon { color: white; font-size: 18px; }
+
+/* =======================
+   BRANCH SECTION (PARTICULARS)
+======================= */
+.branch-timelines {
+    display: flex;
+    flex-direction: row;
+    gap: 60px;
+    margin-top: 60px;
+    position: absolute;
+}
+/* Individual Branch Container */
+.branch-timeline {
+    position: absolute;
+    background: #fafafa;
+    border-radius: 10px;
+    padding: 20px 30px;
+    border-left: 5px solid #e74c3c;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+/* Branch Header (Particular Name) */
+.branch-header {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 15px;
+    margin-bottom: 30px;
+}
+
+.branch-label {
+    background: linear-gradient(90deg, #e74c3c, #c0392b);
+    color: #fff;
+    padding: 8px 18px;
+    border-radius: 25px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Each branch timeline horizontal line */
+.branch-steps {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    position: relative;
+    overflow-x: auto;
+    padding: 20px 10px;
+    gap: 70px;
+}
+/* Step node within each particular */
+.branch-step {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0;
+    min-width: 140px;
+}
+
+/* connector between each branch step */
+/* Default line color */
+.branch-step:not(:last-child)::after,
+.branch-step::before {
+    background: #ccc;
+    transition: background 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* ✅ Green for Recommended */
+.branch-step.completed:not(:last-child)::after,
+.branch-step.completed::before {
+    background: #28a745;
+    animation: glowLineGreen 2s ease-in-out infinite;
+}
+
+/* 🔴 Red for Returned */
+.branch-step.rejected:not(:last-child)::after,
+.branch-step.rejected::before {
+    background: #dc3545;
+    animation: glowLineRed 2s ease-in-out infinite;
+}
+
+/* 🔵 Blue for Modified */
+.branch-step.modified:not(:last-child)::after,
+.branch-step.modified::before {
+    background: #007bff;
+    animation: glowLineBlue 2s ease-in-out infinite;
+}
+.branch-step:first-child::before {
+    display: none;
+}
+
+/* Dynamic line colors based on stage status */
+.branch-step.completed::before {
+    background: #27ae60;
+}
+.branch-step.rejected::before {
+    background: #e74c3c;
+}
+.branch-step.modified::before {
+    background: #3498db;
+}
+.branch-step.pending::before {
+    background: #f39c12;
+}
+
+/* Circle styling */
+.branch-step .step-marker {
+    width: 40px;
+    height: 40px;
+    background: white;
+    border-radius: 50%;
+    border: 3px solid #bbb;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.branch-step.completed .step-marker {
+    border-color: #27ae60;
+    background-color: #27ae60;
+}
+.branch-step.rejected .step-marker {
+    border-color: #e74c3c;
+    background-color: #e74c3c;
+}
+.branch-step.modified .step-marker {
+    border-color: #3498db;
+    background-color: #3498db;
+}
+.branch-step.pending .step-marker {
+    border-color: #f39c12;
+    background-color: white;
+}
+
+.branch-step .marker-icon {
+    color: white;
+    font-size: 16px;
+}
+.branch-step.pending .marker-icon {
+    color: #f39c12;
+}
+
+/* Step info under each circle */
+.branch-step .step-info {
+    text-align: left;
+    margin-top: 10px;
+    max-width: 130px;
+}
+
+.step-title {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+.step-status {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 10px;
+    display: inline-block;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.step-status.completed {
+    background: #d5f4e6;
+    color: #27ae60;
+}
+.step-status.rejected {
+    background: #fdeaea;
+    color: #e74c3c;
+}
+.step-status.modified {
+    background: #e3f2fd;
+    color: #3498db;
+}
+.step-status.pending {
+    background: #fef5e7;
+    color: #27ae60;
+}
+
+.step-date {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+{% comment %} .step-comment {
+    font-size: 0.7rem;
+    color: #5d6d7e;
+    font-style: italic;
+    line-height: 1.2;
+} {% endcomment %}
+
+/* Hover effect */
+.branch-step:hover .step-marker {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.branch-step:hover .step-info {
+    transform: translateY(-3px);
+}
+
+/* Scrollbar */
+.branch-steps::-webkit-scrollbar {
+    height: 6px;
+}
+.branch-steps::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+.branch-steps::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* Animation for step appearance */
+.branch-step {
+    opacity: 0;
+    transform: translateY(15px);
+}
+.branch-step.animate-in {
+    opacity: 1;
+    transform: translateY(0);
+    transition: all 0.5s ease;
+}
+.branch-connector {
+    flex: 1;
+    height: 3px;
+    background: linear-gradient(to right, #e74c3c, #c0392b);
+    border-radius: 2px;
+}
+.branch-step-connector {
+    position: absolute;
+    top: 20px;
+    left: calc(-50% + 20px);
+    width: 100%;
+    height: 3px;
+    background: #ccc;
+}
+.branch-step:first-child .branch-step-connector { display: none; }
+.branch-step .step-marker {
+    width: 40px;
+    height: 40px;
+}
+.branch-step.completed .step-marker {
+    border-color: #27ae60;
+    background: #27ae60;
+}
+.branch-step.rejected .step-marker {
+    border-color: #e74c3c;
+    background: #e74c3c;
+}
+.branch-step.pending .step-marker {
+    border-color: #f39c12;
+    background: white;
+}
+.branch-step .marker-icon {
+    font-size: 16px;
+    color: white;
+}
+
+/* =======================
+   BRANCH CONNECTION
+======================= */
+.branch-section-container {
+    position: relative;
+    text-align: center;
+    margin-right: 50px;
+}
+.branch-section {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    position: relative;
+}
+.vertical-line {
+    position: relative;
+    width: 3px;
+    height: 80px; /* slightly longer for perfect touch */
+    background: linear-gradient(to bottom, #7f8c8d, #95a5a6);
+    border-radius: 3px;
+    margin-bottom: 0; /* remove any default spacing */
+    animation: growDown 0.8s ease-in-out;
+}
+@keyframes growDown {
+    from { height: 0; opacity: 0; }
+    to { height: 80px; opacity: 1; }
+}
+.cards-container {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.horizontal-line {
+    position: relative;
+    top: -1px; /* makes them overlap by 1px for perfect connection */
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(to right, #7f8c8d, #95a5a6);
+    border-radius: 3px;
+    z-index: 1;
+    animation: slideLine 1s ease-in-out;
+}
+@keyframes slideLine {
+    from { width: 0; opacity: 0; }
+    to { width: 100%; opacity: 1; }
+}
+.particulars-wrapper {
+    display: flex;
+    justify-content: flex-start;
+    align-items: flex-start;
+    gap: 40px;
+    padding-top: 15px;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    padding-bottom: 10px;
+}
+.particulars-wrapper::-webkit-scrollbar { height: 6px; }
+.particulars-wrapper::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+}
+
+/* =======================
+   PARTICULAR CARD
+======================= */
+.particular-branch {
+    background: #fdfdfd;
+    border-radius: 12px;
+    padding: 25px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+    border: 1px solid #e3e6ea;
+    width: 340px;
+    flex: 0 0 auto;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    position: relative;
+}
+.particular-branch:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+.particular-header {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+.particular-header i { color: #007bff; }
+
+/* =======================
+   INTERNAL TIMELINE INSIDE PARTICULAR
+======================= */
+.particular-steps {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 60px;
+    overflow-x: auto;
+    padding: 10px 0;
+}
+.particular-steps::-webkit-scrollbar { height: 6px; }
+.particular-steps::-webkit-scrollbar-thumb {
+    background: #bbb;
+    border-radius: 3px;
+}
+.particular-steps::before {
+    content: '';
+    position: absolute;
+    top: 23px;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: #ccc;
+    z-index: 0;
+}
+.particular-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    transition: all 0.4s ease;
+    opacity: 0;
+    transform: translateY(15px);
+    animation: fadeUp 0.8s forwards;
+}
+.particular-step:nth-child(1) { animation-delay: 0.2s; }
+.particular-step:nth-child(2) { animation-delay: 0.4s; }
+.particular-step:nth-child(3) { animation-delay: 0.6s; }
+@keyframes fadeUp {
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* markers inside cards */
+.particular-step .step-marker {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid #ccc;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+.particular-step.completed .step-marker {
+    background: #27ae60; border-color: #27ae60;
+}
+.particular-step.pending .step-marker {
+    border-color: #f39c12;
+}
+.particular-step.rejected .step-marker {
+    background: #e74c3c; border-color: #e74c3c;
+}
+.particular-step .marker-icon {
+    color: #fff; font-size: 16px;
+}
+.particular-step.pending .marker-icon { color: #f39c12; }
+
+/* labels under each circle */
+.particular-step .step-info {
+    text-align: center;
+    margin-top: 10px;
+}
+.step-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #2c3e50;
+}
+.step-status {
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 12px;
+    margin-top: 4px;
+}
+.step-status.completed {
+    background: #d5f4e6; color: #27ae60;
+}
+.step-status.pending {
+    background: #fef5e7; color: #27ae60;
+}
+.step-status.rejected {
+    background: #fdeaea; color: #e74c3c;
+}
+main-step.pending:not(:last-child)::after {
+    background: #27ae60;
+}
+
+/* hover glow */
+.particular-step:hover .step-marker {
+    transform: scale(1.1);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+}
+.particular-step:hover .step-info {
+    transform: translateY(-3px);
+}
+
+/* =======================
+   NEW LAYOUT: PARTICULARS FIRST, THEN VENDORS
+=============================== */
+
+.all-branches-container {
+    display: flex;
+    flex-direction: row-reverse;
+    gap: 40px;
+    padding: 20px 0;
+}
+
+.particulars-section,
+.vendors-section {
+    position: relative;
+}
+
+.section-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 10px;
+    border-left: 4px solid #007bff;
+}
+
+.section-header h4 {
+    margin: 0;
+    color: #2c3e50;
+    font-weight: 600;
+}
+
+.section-header i {
+    color: #007bff;
+    font-size: 1.2rem;
+}
+
+.particulars-branches-wrapper,
+.vendors-branches-wrapper {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 20px;
+    position: relative;
+}
+
+/* ===============================
+   PARTICULAR BRANCH CARDS
+=============================== */
+
+.particular-branch-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e3e6ea;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+}
+
+.particular-branch-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.particular-card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 15px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.particular-info {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    flex: 1;
+}
+
+.particular-info i {
+    color: #007bff;
+    font-size: 18px;
+    margin-top: 2px;
+}
+
+.particular-name {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: #2c3e50;
+    margin: 0 0 5px 0;
+}
+
+.assigned-vendor {
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+.assigned-vendor span {
+    color: #007bff;
+    font-weight: 500;
+}
+
+.vendor-connection-indicator {
+    background: #e3f2fd;
+    border: 1px solid #bbdefb;
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 0.8rem;
+    color: #1976d2;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.vendor-connection-indicator i {
+    font-size: 12px;
+}
+
+/* ===============================
+   VENDOR BRANCH CARDS
+=============================== */
+
+.vendor-branch-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border: 1px solid #e3e6ea;
+    transition: all 0.3s ease;
+    position: relative;
+    z-index: 2;
+    border-left: 4px solid #28a745;
+    width: 32%;
+}
+
+.vendor-branch-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+}
+
+.vendor-card-header {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.vendor-avatar {
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 16px;
+    color: white;
+    flex-shrink: 0;
+}
+
+.vendor-info {
+    flex: 1;
+}
+
+.vendor-name {
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+.vendor-dpo,
+.vendor-items {
+    font-size: 0.9rem;
+    color: #6c757d;
+    margin: 3px 0;
+}
+
+/* ===============================
+   VENDOR CONNECTION LINES
+=============================== */
+
+.vendor-connections-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ===============================
+   PARTICULAR STEPS TIMELINE
+=============================== */
+
+.particular-steps {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 30px;
+    overflow-x: auto;
+    padding: 15px 0;
+}
+
+.particular-steps::before {
+    content: '';
+    position: absolute;
+    top: 34px;
+    left: 40px;
+    width: 113%;
+    height: 3px;
+    background: #ecf0f1;
+    z-index: 0;
+}
+
+.particular-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    z-index: 1;
+    min-width: 120px;
+}
+
+.particular-step .step-marker {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid #bdc3c7;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    z-index: 2;
+    transition: all 0.3s ease;
+}
+
+.particular-step.completed .step-marker {
+    background: #27ae60;
+    border-color: #27ae60;
+}
+
+.particular-step.rejected .step-marker {
+    background: #e74c3c;
+    border-color: #e74c3c;
+}
+
+.particular-step.modified .step-marker {
+    background: #3498db;
+    border-color: #3498db;
+}
+
+.particular-step.pending .step-marker {
+    border-color: #f39c12;
+    background: #fff;
+}
+
+.particular-step .marker-icon {
+    color: #fff;
+    font-size: 14px;
+}
+
+.particular-step.pending .marker-icon {
+    color: #f39c12;
+}
+
+.particular-step .step-info {
+    text-align: center;
+    margin-top: 10px;
+}
+
+.particular-step .step-title {
+    font-weight: 600;
+    font-size: 0.85rem;
+    color: #2c3e50;
+    margin-bottom: 5px;
+}
+
+.particular-step .step-status {
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-block;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.particular-step .step-status.completed {
+    background: #d5f4e6;
+    color: #27ae60;
+}
+
+.particular-step .step-status.rejected {
+    background: #fdeaea;
+    color: #e74c3c;
+}
+
+.particular-step .step-status.modified {
+    background: #e3f2fd;
+    color: #3498db;
+}
+
+.particular-step .step-status.pending {
+    background: #fef5e7;
+    color: #27ae60;
+}
+
+.particular-step .step-date {
+    font-size: 0.7rem;
+    color: #7f8c8d;
+}
+
+.particular-step .step-comment {
+    font-size: 0.7rem;
+    color: #5d6d7e;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    margin-top: 5px;
+    border-left: 3px solid #dee2e6;
+}
+
+/* ===============================
+   VENDOR STEPS
+=============================== */
+
+
+
+.vendor-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.vendor-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px;
+    background: white;
+    border-radius: 8px;
+    border-left: 4px solid #dee2e6;
+    transition: all 0.3s ease;
+}
+
+.vendor-step:hover {
+    transform: translateX(5px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.vendor-step.completed {
+    border-left-color: #28a745;
+}
+
+.vendor-step.rejected {
+    border-left-color: #dc3545;
+}
+
+.vendor-step.modified {
+    border-left-color: #ffc107;
+}
+
+.vendor-step.pending {
+    border-left-color: #6c757d;
+}
+
+.vendor-step .step-marker {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border: 2px solid #dee2e6;
+}
+
+.vendor-step.completed .step-marker {
+    background: #28a745;
+    border-color: #28a745;
+}
+
+.vendor-step.rejected .step-marker {
+    background: #dc3545;
+    border-color: #dc3545;
+}
+
+.vendor-step.modified .step-marker {
+    background: #ffc107;
+    border-color: #ffc107;
+}
+
+.vendor-step.pending .step-marker {
+    background: #6c757d;
+    border-color: #6c757d;
+}
+
+.vendor-step .step-marker i {
+    color: white;
+    font-size: 14px;
+}
+
+.vendor-step .step-details {
+    flex: 1;
+}
+
+.vendor-step .step-title {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: #2c3e50;
+    margin-bottom: 2px;
+}
+
+.vendor-step .step-status {
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 2px 8px;
+    border-radius: 10px;
+    display: inline-block;
+    margin-bottom: 4px;
+}
+
+.vendor-step.completed .step-status {
+    background: #d4edda;
+    color: #155724;
+}
+
+.vendor-step.rejected .step-status {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.vendor-step.modified .step-status {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.vendor-step.pending .step-status {
+    background: #e2e3e5;
+    color: #383d41;
+}
+
+.vendor-step .step-datetime {
+    font-size: 0.75rem;
+    color: #6c757d;
+    margin-bottom: 4px;
+}
+
+.vendor-step .step-comment {
+    font-size: 0.8rem;
+    color: #495057;
+    font-style: italic;
+    background: #f8f9fa;
+    padding: 6px 10px;
+    border-radius: 6px;
+    border-left: 3px solid #dee2e6;
+}
+
+/* ===============================
+   NO DATA MESSAGE
+=============================== */
+
+.no-data-message {
+    text-align: center;
+    padding: 40px 20px;
+    color: #6c757d;
+}
+
+.no-data-message i {
+    font-size: 3rem;
+    margin-bottom: 15px;
+    opacity: 0.5;
+}
+
+.no-data-message p {
+    margin: 0;
+    font-size: 1rem;
+}
+
+/* =======================
+   ANIMATIONS
+======================= */
+@keyframes slideIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.particular-branch-card,
+.vendor-branch-card {
+    animation: slideInUp 0.5s ease-out forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.particular-branch-card:nth-child(1) { animation-delay: 0.1s; }
+.particular-branch-card:nth-child(2) { animation-delay: 0.2s; }
+.particular-branch-card:nth-child(3) { animation-delay: 0.3s; }
+.vendor-branch-card:nth-child(1) { animation-delay: 0.4s; }
+.vendor-branch-card:nth-child(2) { animation-delay: 0.5s; }
+
+@keyframes slideInUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =======================
+   STAGE DETAIL CARD
+======================= */
+/* =========================================
+   MODERN REAL-TIME STAGE DETAILS CARD
+/* ===== Stage Details Card (Modern UI) ===== */
+.stage-details-card {
+    position: fixed;
+    bottom: 25px;
+    right: 25px;
+    width: 380px;
+    max-height: 70vh;
+    overflow-y: auto;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(12px);
+    border-radius: 16px;
+    box-shadow: 0 8px 28px rgba(0, 0, 0, 0.15),
+                0 0 12px rgba(40, 167, 69, 0.12);
+    border: 1px solid rgba(230, 230, 230, 0.8);
+    z-index: 999;
+    padding: 22px 25px 20px;
+    animation: fadeSlideUp 0.4s ease-out;
+    transition: all 0.3s ease-in-out;
+}
+
+/* green accent border */
+.stage-details-card::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 5px;
+    background: linear-gradient(180deg, #28a745, #20c997);
+    border-top-left-radius: 16px;
+    border-bottom-left-radius: 16px;
+}
+
+/* header section */
+.stage-details-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    border-bottom: 1px solid #e9ecef;
+    padding-bottom: 8px;
+}
+
+.stage-details-header .title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 1.05rem;
+    font-weight: 600;
+    color: #2f3640;
+}
+
+.stage-details-header .title i {
+    color: #28a745;
+    font-size: 1.25rem;
+}
+
+/* close button */
+.stage-details-close {
+    background: transparent;
+    border: none;
+    color: #6c757d;
+    font-size: 1.2rem;
+    transition: all 0.25s ease;
+    cursor: pointer;
+}
+
+.stage-details-close:hover {
+    color: #dc3545;
+    transform: rotate(90deg) scale(1.1);
+}
+
+/* body content */
+.stage-details-body {
+    font-size: 0.9rem;
+    color: #495057;
+    line-height: 1.55;
+}
+
+.stage-details-body strong {
+    color: #212529;
+}
+
+/* metadata section */
+.stage-meta {
+    margin-top: 10px;
+}
+
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    color: #555;
+    font-size: 0.88rem;
+}
+
+.meta-item i {
+    color: #28a745;
+    font-size: 0.95rem;
+}
+
+/* comments section */
+.stage-comment {
+    margin-top: 10px;
+    background: #f8f9fa;
+    border-left: 3px solid #28a745;
+    border-radius: 8px;
+    padding: 8px 10px;
+    max-height: 100px;
+    overflow-y: auto;
+    transition: all 0.3s ease;
+}
+
+.comment-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #495057;
+    margin-bottom: 3px;
+}
+
+.comment-text {
+    font-size: 0.83rem;
+    color: #6c757d;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* scroll styling */
+.stage-comment::-webkit-scrollbar {
+    width: 6px;
+}
+.stage-comment::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 6px;
+}
+.stage-comment::-webkit-scrollbar-thumb:hover {
+    background: #999;
+}
+
+/* live status pulse */
+.stage-details-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #28a745;
+    margin-top: 10px;
+}
+
+.stage-details-status::before {
+    content: "";
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background-color: #28a745;
+    animation: pulse 1.5s infinite;
+}
+
+/* animations */
+@keyframes fadeSlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.3);
+    }
+}
+.stage-comment:hover {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+
+/* animated entry */
+@keyframes slideUp {
+    from {
+        transform: translateY(40px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* subtle glowing pulse for live indicator */
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(40,167,69, 0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(40,167,69, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(40,167,69, 0); }
+}
+
+/* hover glow */
+.stage-details-card:hover {
+    box-shadow:
+        0 10px 30px rgba(0,0,0,0.12),
+        0 0 20px rgba(40,167,69,0.25);
+    transform: translateY(-3px);
+}
+
+/* responsive tweak */
+@media (max-width: 576px) {
+    .stage-details-card {
+        width: 90%;
+        right: 5%;
+        bottom: 15px;
+    }
+}
+
+@keyframes slideUp {
+    from { transform: translateY(100px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+.close-details {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: none;
+    background: none;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+/* =======================
+   RESPONSIVE
+======================= */
+@media (max-width: 992px) {
+    .main-timeline-steps, .branch-steps { gap: 40px; }
+    .particulars-branches-wrapper,
+    .vendors-branches-wrapper {
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    }
+}
+@media (max-width: 768px) {
+    .main-timeline-steps, .branch-steps { gap: 25px; }
+    .step-title { font-size: 0.8rem; }
+    .particulars-branches-wrapper,
+    .vendors-branches-wrapper {
+        grid-template-columns: 1fr;
+    }
+    
+    .particular-card-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+    
+    .vendor-connection-indicator {
+        align-self: flex-start;
+    }
+    
+    .particular-steps {
+        gap: 15px;
+    }
+    
+    .particular-step {
+        min-width: 100px;
+    }
+    
+    .section-header {
+        padding: 12px 15px;
+    }
+    
+    .tracking-view-container {
+        padding-left: 0;
+    }
+}
+
+/* =======================
+   LOADING ANIMATION
+======================= */
+.loading-animation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #f3f3f3;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* =======================
+   ALERT STYLES
+======================= */
+.alert {
+    padding: 12px 16px;
+    border-radius: 6px;
+    margin: 10px 0;
+    border: 1px solid transparent;
+}
+
+.alert-info {
+    background-color: #d1ecf1;
+    border-color: #bee5eb;
+    color: #0c5460;
+}
+
+.alert-info i {
+    margin-right: 8px;
+}
+
+/* =======================
+   UTILITY CLASSES
+======================= */
+.hidden-branch {
+    display: none;
+}
+
+.hidden-particular {
+    display: none;
+}
+
+.text-center {
+    text-align: center;
+}
+
+.mt-20 {
+    margin-top: 20px;
+}
+
+.mb-20 {
+    margin-bottom: 20px;
+}
+
+/* =======================
+   SCROLLBAR STYLING
+======================= */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #c1c1c1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #a8a8a8;
+}
+</style>
+{% endblock %}

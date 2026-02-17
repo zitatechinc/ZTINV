@@ -1,0 +1,553 @@
+{% extends 'ims/index.html' %}
+{% load static %}
+
+{% block title %}Create Project{% endblock %}
+
+{% block styleblock %}
+<style>
+    body {
+        background-color: #f8f9fa;
+        font-family: 'Roboto', sans-serif;
+    }
+ 
+    .main-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        margin-top: 5%;
+    }
+ 
+   .form-container {
+    width: 100%;
+    max-width: 800px;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e0e0e0;
+    margin: 15px auto 0 auto; 
+   
+}
+.dataTables_filter {
+    margin-bottom: 12px;
+}
+
+#project-table td:last-child,
+#project-table th:last-child {
+    padding-left: 15px;
+    padding-right: 15px;
+    text-align: center;
+}
+
+.dataTables_filter label {
+    display: flex;
+    align-items: center;
+}
+
+
+ 
+    h2, h3 {
+        text-align: center;
+        margin-bottom: 20px;
+        color: #343a40;
+    }
+    .form-label {
+        font-size: 14px;
+        font-weight: bold;
+    }
+ 
+    .form-control {
+        padding: 8px;
+        font-size: 14px;
+        border-radius: 8px;
+        box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+    }
+ 
+    .form-control:focus {
+        border-color: #80bdff;
+        box-shadow: 0 0 0 0.2rem rgba(38, 143, 255, 0.25);
+    }
+ 
+    .btn-primary {
+        padding: 8px;
+        font-size: 14px;
+        border-radius: 8px;
+        margin-top:21px;
+    }
+ 
+   .form-row {
+    display: flex;
+    justify-content: space-between; /* space evenly between columns */
+    align-items: center;
+    gap: 15px;
+}
+
+.form-row .col-md-4 {
+    flex: 1 1 0;
+    max-width: none; /* remove max-width limiting */
+}
+
+ 
+    .form-row .col-md-4 input {
+        width: 100%;
+    }
+    .form-row .col-md-4:last-child {
+    flex: 0 0 auto; /* button column fits content */
+    max-width: 150px; /* or whatever width you want */
+}
+
+
+    .project-list-card {
+        background-color: #ffffff;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e0e0e0;
+        margin-top: 30px;
+    }
+ 
+    .table th, .table td {
+        text-align: center;
+        vertical-align: middle;
+    }
+ 
+    .table th {
+        background-color:#007080;
+        color: white;
+    }
+ 
+    .table-striped tbody tr:nth-child(odd) {
+        background-color: #f9f9f9;
+    }
+ 
+    .table-striped tbody tr:nth-child(even) {
+        background-color: #ffffff;
+    }
+ 
+    .action-btns {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+ 
+    .action-btns button {
+        background: none;
+        border: none;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 5px;
+    }
+    .list-group-item.active {
+        background-color: #00B2CC !important; /* Light blue for highlighting */
+        border: 3px solid white;
+        position: relative;
+        overflow: hidden;
+        animation: glow-shadow 2s linear infinite;
+      }
+       .list-group-item:hover {
+        transform: translateX(2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    .edit-btn {
+        color:#007080 !important;
+    }
+
+    .edit-btn:hover {
+        color: #0056b3;
+    }
+ 
+    .delete-btn {
+        color: #dc3545;
+    }
+ 
+    .delete-btn:hover {
+        color: #a71d2a;
+    }
+
+    .delete-btn:disabled {
+        cursor: not-allowed;
+        opacity: 0.6;
+        color: #cccccc !important;
+    }
+
+    .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+ 
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+ 
+    .tooltip-inner {
+        background-color: #333;
+        color: #fff;
+        font-size: 12px;
+    }
+ 
+    .error-message {
+        color: #dc3545;
+        font-size: 12px;
+        margin-top: 5px;
+    }
+ 
+    .is-invalid {
+        border-color: #dc3545 !important;
+    }
+   
+    .bs-tooltip-auto[data-popper-placement^=top] .tooltip-arrow::before,
+    .bs-tooltip-top .tooltip-arrow::before {
+        border-top-color: #333;
+    }
+
+.card {
+    border-radius: 10px;
+}
+
+label.form-label {
+    font-weight: 600;
+}
+
+</style>
+{% endblock %}
+
+{% block previewcontent%}
+
+<div id="previewContent" style="padding: 20px;"></div>
+<!-- === FORM SECTION === -->
+ <div class="po-form-container" >
+<div class="container mt-4" >
+    <div class="card shadow-sm mb-4" style="border-color: #7cc2e6;width: 80%;">
+        <div class="card-body">
+            <h4 class="text-center mb-4" style="text-decoration: underline;"><strong>Create PO</strong></h4>
+
+       <form id="project-form" enctype="multipart/form-data" method="post">
+    {% csrf_token %}
+    <input type="hidden" id="procurement_id" name="procurement_id" />
+    <input type="hidden" id="original_project_id" name="existing_project_id" />
+
+    <div class="row g-4 align-items-end" style="min-height: 60px;">
+        <!-- PO ID -->
+        <div class="col-md-3 col-lg-2">
+            <label for="project_id" class="form-label"><b>PO Number:</b><span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" id="project_id" name="project_id" required>
+            <div id="project_id_error" class="text-danger small"></div>
+        </div>
+        <div class="col-md-3 col-lg-2">
+            <label for="name" class="form-label"><b>Basic Value:</b><span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" id="basic_value" name="basic_value" required>
+            <div id="name_error" class="text-danger small"></div>
+        </div>
+        <div class="col-md-3 col-lg-2">
+            <label for="name" class="form-label"><b>GST (%):</b><span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" id="gst" name="gst" required>
+            <div id="name_error" class="text-danger small"></div>
+        </div>
+
+        <!-- PO Grand Total -->
+        <div class="col-md-3 col-lg-2">
+            <label for="name" class="form-label"><b>PO Grand Total:</b><span class="text-danger">*</span></label>
+            <input type="text" class="form-control form-control-sm" id="name" name="name" required>
+            <div id="name_error" class="text-danger small"></div>
+        </div>
+
+
+        <!-- File Upload -->
+        <div class="col-md-4 col-lg-3">
+            <label for="file_upload" class="form-label"><b>Upload File:</b><span class="text-danger">*</span></label>
+            <input type="file" class="form-control" id="file_upload" name="file_upload" required>
+            <div id="file_upload_error" class="text-danger small"></div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="col-md-2 col-lg-3">
+            <div class="d-flex align-items-end" style="height: 100%;">
+                <button type="submit" class="btn" style="background-color:#007080; color: white;     width: 43%;">
+                    <strong>Submit</strong>
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+        </div>
+    </div>
+</div>
+<div>
+
+<!-- === TABLE SECTION === -->
+<div class="container" id="po-table-container" style="display: none;">
+    <div class="card shadow-sm mb-5">
+        <div class="card-body">
+            <h5 class="mb-3"><strong>Existing POs for this Procurement</strong></h5>
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped" id="po-table">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>PO Number</th>
+                            <th>Basic Value</th>
+                            <th>GST (%)</th>
+                            <th>Grand Total</th>
+                            <th>File</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <!-- Dynamically inserted rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endblock %}
+{% block scripts %}
+<script>
+   function getFileName(filePath) {
+    if (!filePath) return '';
+    return filePath.split('/').pop(); // Get the last segment of the URL
+}
+// === Auto-calculate PO Grand Total ===
+$(document).ready(function() {
+    function calculateTotal() {
+        let basicValue = parseFloat($('#basic_value').val()) || 0;
+        let gst = parseFloat($('#gst').val()) || 0;
+        let total = basicValue + (basicValue * gst / 100);
+        $('#name').val(total.toFixed(2)); // set PO Grand Total with 2 decimals
+    }
+
+    // Recalculate when either field changes or user types
+    $('#basic_value, #gst').on('input', calculateTotal);
+});
+
+
+let previousSelected = null;
+$(document).ready(function() {
+      $('.po-form-container').hide();
+
+$("#procurementSidebar").on('click', '.view-pr-id', function (e) {
+    e.preventDefault();
+    debugger;
+   
+    showLoader();
+   
+
+    const procurementId = $(this).data('id');
+    if (previousSelected) {
+                    previousSelected.className = "list-group-item"; 
+                }
+            
+                this.parentElement.className = "list-group-item active";
+                
+            
+                previousSelected = this.parentElement;
+                
+  $.ajax({
+    url: '', // same view (POCreateView)
+    type: 'POST',
+    data: {
+        procurement_id: procurementId,
+        stage_action: 'getdata',
+        csrfmiddlewaretoken: '{{ csrf_token }}'
+    },
+    success: function (data) {
+    // ✅ Set hidden procurement_id
+    $('#procurement_id').val(data.procurement_id);
+
+    // ✅ Show the form
+    $('.po-form-container').show();
+
+    const poTableContainer = $('#po-table-container');
+    const poTable = $('#po-table');
+
+    // ✅ Destroy DataTable if it exists
+    if ($.fn.DataTable.isDataTable('#po-table')) {
+        poTable.DataTable().destroy();  // Clear data and destroy instance
+    }
+
+    const poTableBody = poTable.find('tbody');
+    poTableBody.empty(); // ✅ Clear existing <tr> rows
+
+    // ✅ Re-populate table rows
+    if (data.purchase_orders && data.purchase_orders.length > 0) {
+        data.purchase_orders.forEach(function (po) {
+            let row = `
+                <tr>
+                    <td>${po.po_number}</td>
+                    <td>${po.po_basic_value}</td>
+                    <td>${po.po_gst_value}</td>
+                    <td>${po.po_grandtotal}</td>
+                    <td>
+                        ${po.po_file 
+                            ? `<a href="${po.po_file}" target="_blank">${getFileName(po.po_file)}</a>` 
+                            : 'No file uploaded'}
+                    </td>
+                </tr>
+            `;
+            poTableBody.append(row);
+        });
+    } else {
+        poTableBody.append(`<tr><td ></td><td >No purchase orders found.</td><td ></td><td ></td><td ></td></tr>`);
+    }
+
+    // ✅ Re-initialize DataTable AFTER updating rows
+    poTable.DataTable({
+        pageLength: 5,
+        lengthChange: false,
+        searching: true,
+        ordering: true
+    });
+
+    // ✅ Show the container
+    poTableContainer.show();
+    hideLoader();
+},
+   error: function (xhr) {
+        console.error(xhr.responseText);
+        alert('Failed to load procurement data.');
+        hideLoader();
+    }
+});
+
+});
+
+
+
+        // Bind form submission event to the form with ID 'project-form'
+    $('#project-form').on('submit', function (event) {
+        event.preventDefault(); // Stop default form submission
+
+        // Clear any previous errors
+        $('#project_id').removeClass('is-invalid');
+        $('#name').removeClass('is-invalid');
+        $('#file_upload').removeClass('is-invalid');
+
+        // Get form values
+        let project_id = $('#project_id').val().trim();
+        let name = $('#name').val().trim();
+        let basic_value = $('#basic_value').val().trim();
+        let gst =$("#gst").val().trim();
+        let file = $('#file_upload')[0].files[0];
+        let procurement_id = $('#procurement_id').val();
+
+        let isValid = true;
+        let errorMessages = [];
+
+        // === Basic validation ===
+        if (!project_id) {
+            $('#project_id').addClass('is-invalid');
+            errorMessages.push('PO ID is required.');
+            isValid = false;
+            hideLoader();
+        }
+
+        if (!name) {
+            $('#name').addClass('is-invalid');
+            errorMessages.push('PO Total Amount is required.');
+            isValid = false;
+            hideLoader();
+        }
+
+        if (!file) {
+            $('#file_upload').addClass('is-invalid');
+            errorMessages.push('Please upload a file.');
+            isValid = false;
+            hideLoader();
+        }
+
+        if (!isValid) {
+            alert(errorMessages.join('\n')); // Basic alert for errors
+            return;
+            hideLoader();
+        }
+        showLoader();
+
+        // Prepare FormData
+        let formData = new FormData();
+        formData.append('project_id', project_id);
+        formData.append('name', name);
+        formData.append('basic_value', basic_value);
+        formData.append('gst', gst);
+        formData.append('file_upload', file);
+        formData.append('procurement_id', procurement_id);
+        formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+        // Submit via AJAX
+       // Submit via AJAX
+        $.ajax({
+            url: '{% url "po-create" %}',  // Update this with your Django URL name
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            success: function (response) {
+    hideLoader();
+    showSuccessAlert('Form submitted successfully.');
+
+    if (response.success && response.po) {
+        // Make sure table is visible
+        $('#po-table-container').show();
+        console.log(response)
+        const po = response.po;
+        const fileLink = po.po_file
+            ? `<a href="${po.po_file}" target="_blank">${getFileName(po.po_file)}</a>`
+            : 'No file uploaded';
+
+        // Append new row
+        const newRow = `
+            <tr>
+                <td>${po.po_number}</td>
+                <td>${po.po_basic_value}</td>
+                <td>${po.po_gst_value}</td>
+                <td>${po.po_grandtotal}</td>
+                <td>${fileLink}</td>
+            </tr>
+        `;
+
+        // Append the new PO at the top
+        $('#po-table tbody').prepend(newRow);
+    }
+
+    // Reset form fields
+    $('#project-form')[0].reset();
+    $('#po_grandtotal').val(''); // clear calculated total
+},
+
+            error: function (xhr) {
+                hideLoader();
+                const response = xhr.responseJSON;
+
+                if (response && response.errors) {
+                    let messages = [];
+
+                    // Reset previous validation states
+                    $('#project_id').removeClass('is-invalid');
+                    $('#name').removeClass('is-invalid');
+                    $('#file_upload').removeClass('is-invalid');
+
+                    for (let field in response.errors) {
+                        messages.push(response.errors[field].join(', '));
+
+                        // Highlight invalid fields
+                        if (field === 'po_number') $('#project_id').addClass('is-invalid');
+                        if (field === 'po_grandtotal') $('#name').addClass('is-invalid');
+                        if (field === 'po_files') $('#file_upload').addClass('is-invalid');
+                    }
+
+                    showAlert(messages.join('\n')); // Or use a fancier alert
+                } else if (response && response.error) {
+                    showAlert('Error: ' + response.error);
+                } else {
+                    showAlert('An unknown error occurred.');
+                }
+            }
+        });
+
+
+});
+});
+</script>
+{% endblock scripts %}
