@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+
+<style>
+
+@page{
+    size:A4;
+    margin:20mm;
+}
+
+body{
+    font-family:Arial;
+    font-size:12px;
+}
+
+table{
+    border-collapse:collapse;
+    width:100%;
+}
+
+table,th,td{
+    border:1px solid black;
+}
+
+th,td{
+    padding:5px;
+    text-align:center;
+}
+
+.no-border td{
+    border:none;
+}
+
+.title{
+    text-align:center;
+    font-weight:bold;
+    font-size:16px;
+}
+
+.subtitle{
+    text-align:center;
+    font-size:13px;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="title">MESLOVA SYSTEMS PRIVATE LIMITED</div>
+<div class="subtitle">ISSUE VOUCHER FOR REVENUE ITEMS</div>
+
+<br>
+
+<table class="no-border">
+
+<tr>
+<td width="60%" style="text-align:left;">
+<strong>To :</strong> {{ voucher.to_department }}
+</td>
+
+<td width="40%" style="text-align:left;">
+<strong>IV No :</strong> {{ voucher.issue_voucher_number }}
+</td>
+</tr>
+
+<tr>
+<td style="text-align:left;">
+<strong>Stores / IMM Department</strong>
+</td>
+
+<td style="text-align:left;">
+<strong>IV Date :</strong> {{ voucher.gm_date }}
+</td>
+</tr>
+
+</table>
+
+<br>
+
+<table class="no-border">
+
+<tr>
+<td style="text-align:left;border-bottom:1px dotted black;">
+Kindly issue following material for {{ voucher.description }}
+</td>
+</tr>
+
+</table>
+
+<br>
+
+<table>
+
+<thead>
+
+<tr>
+<th>Sl no</th>
+<th>Description</th>
+<th>Part No</th>
+<th>Unit</th>
+<th>Qty required</th>
+<th>Qty authorised</th>
+<th>Qty Issued</th>
+<th>Qty Balance</th>
+<th>Remarks</th>
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for item in items %}
+
+<tr>
+<td>{{ forloop.counter }}</td>
+<td>{{ item.product.name }}</td>
+<td>{{ item.product.code }}</td>
+<td>{{ item.uom }}</td>
+<td>{{ item.project_component.component_qty }}</td>
+<td>{{ item.quantity|floatformat:0 }}</td>
+<td>{{ item.quantity|floatformat:0 }}</td>
+
+ <td>
+    {% if project_component.type == 'BOM' %}
+    {{ item.project_component.balance_bom_qty }}
+    
+    {%else%}
+    {{ item.project_component.balance_qty }}
+    {%endif%}
+</td> 
+<td width="50">{{ item.remarks|default:"" }}</td>
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+<br><br><br>
+
+<table class="no-border">
+
+<tr>
+
+<td style="text-align:center;">
+_____________________<br>
+Indentor
+</td>
+
+<td style="text-align:center;">
+_____________________<br>
+Store Keeper
+</td>
+
+<td style="text-align:center;">
+_____________________<br>
+Accounts
+</td>
+
+<td style="text-align:center;">
+_____________________<br>
+Received by
+</td>
+
+<td style="text-align:center;">
+_____________________<br>
+Authorised by<br>
+Head IMM
+</td>
+
+</tr>
+
+</table>
+
+</body>
+</html>
+{% block pagecss %}
+<style>
+  @page {
+      size: A4;
+      margin: 20mm;
+
+      background-image: url("{{ watermark_path }}");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 60%;
+  }
+
+  body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+  }
+
+  table {
+      border-collapse: collapse;
+      width: 100%;
+  }
+
+  table, th, td {
+      border: 1px solid black;
+      padding: 4px;
+      text-align: center;
+  }
+</style>
+
+{% endblock %}

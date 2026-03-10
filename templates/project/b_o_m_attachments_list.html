@@ -2,20 +2,22 @@
 
 {% block content %}
 <div class="row mb-2 mt-0">
-  <div class="col-6 col-md-6"></div>
-  <div class="col-6 col-md-6">
-    <div class="button-group" style="float:right;">
-      <a href="{% url 'bom-attachment-create' object.pk %}" class="btn btn-sm app-btn-primary">
-        <i class="fa fa-plus"></i> Add {{ model_name }}
-      </a>
+    {% if not form_status %}
+    <div class="col-12 text-end">
+        <div class="button-group">
+            <a href="{% url 'bom-attachment-create' object.pk %}" class="btn btn-sm app-btn-primary">
+                <i class="fa fa-plus"></i> Add {{ model_name }}
+            </a>
+        </div>
     </div>
-  </div>
+    {% endif %}
 </div>
 
+
 <div class="col-12 col-md-12">
-  <div class="app-card app-card-settings shadow-md">
+  <div class="app-card app-card-settings shadow-md p-4">
     {% include 'project/bom_menu.html' %}
-    <div class="app-card-body p-1">
+    <div class="app-card-body ps-2">
       {% if not form_status %}
       <!-- Table -->
       <div class="table-responsive">
@@ -69,7 +71,21 @@
                   <td>{{ attachment.file_size|default:"-" }}</td>
 
                   <!-- Status Column -->
-                  <td class="cell {{ attachment.status_name }}">{{ attachment.status_name }}</td>
+                  <!-- <td class="cell {{ attachment.status_name }}">{{ attachment.status_name }}</td> -->
+
+                  <td class="cell {{ eachRow.status_name|lower }}">
+                      <span class="badge 
+                          {% if attachment.status == 1 %}
+                              bg-success
+                          {% elif attachment.status == 0 %}
+                              bg-warning
+                          {% else %}
+                              bg-danger
+                          {% endif %}
+                      ">
+                          {{ attachment.status_name }}
+                      </span>
+                  </td>
 
                   <!-- Updated At Column -->
                   <td>{{ attachment.last_modified_at }}</td>
@@ -99,7 +115,7 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="9" class="text-center">No attachments found</td>
+                <td colspan="9"><h6 class="text-center">No attachments Found</h6></td>
               </tr>
             {% endif %}
           </tbody>

@@ -2,8 +2,8 @@
 
 {% block content %}
 <div class="col-12 col-md-12">
-  <div class="app-card app-card-settings shadow-md">
-    <div class="app-card-body p-4">
+  <div class="app-card app-card-settings shadow-md p-4">
+    <div class="app-card-body ps-2">
 
       {% include 'core/search_form.html' with add_url='bom-header-create' model_name='BOM Header' %}
 
@@ -88,7 +88,20 @@
                     </span>
                 </td>
                 <td>{{ eachRow.project.project.name }}({{ eachRow.project.project.project_id }})</td>
-                <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td>
+                <!-- <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td> -->
+                <td class="cell {{ eachRow.status_name|lower }}">
+                    <span class="badge 
+                        {% if eachRow.status == 1 %}
+                            bg-success
+                        {% elif eachRow.status == 0 %}
+                            bg-warning
+                        {% else %}
+                            bg-danger
+                        {% endif %}
+                    ">
+                        {{ eachRow.status_name }}
+                    </span>
+                </td>
                 <td>{{ eachRow.last_modified_at }}</td>
                 <td>{{ eachRow.last_modified_user }}</td>
                 <td class="cell">
@@ -101,7 +114,7 @@
               </tr>
               {% endfor %}
             {% else %}
-              <tr><td colspan="5" class="text-center">No records found</td></tr>
+              <tr><td colspan="5"><h6 class="text-center">No Records Found</h6></td></tr>
             {% endif %}
           </tbody>
         </table>

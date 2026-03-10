@@ -72,21 +72,21 @@
   </style>
 </head>
 <body>
-  <div class="header">Inspection Cum Receipt Document (IRV)</div>
+  <div class="header">INSPECTION CUM RECEIPT DOCUMENT (IRV)</div>
 
   <table>
     <tr>
       <td><b>Supplier:</b> {{ po_obj.vendor.code }} ({{ po_obj.vendor.company_name1 }})</td>
-      <td><b>Indentor:</b> {{ indentor }}</td>
-      <td><b>Document No:</b> {{ document_no }}</td>
-      <td><b>Date:</b> {{ document_date }}</td>
+      <td><b>Indentor:</b> {{ po_obj.name }}</td>
+      <td><b>Document No:</b> {{ prv_number }}</td>
+      <td><b>Date:</b> {{ po_obj.updated_at|date:"d M Y" }}</td>
     </tr>
   </table>
 
   <table class="inspection-table" style="width: 100%;">
     <thead>
       <tr>
-        <th style="width: 20%;">Document Number</th>
+        <th style="width: 20%;">Document</th>
         <th style="width: 20%;">Purchase Order/Ref</th>
         <th style="width: 20%;">Invoice/DC</th>
         <th style="width: 20%;">RR/LR/DD/Hand</th>
@@ -95,11 +95,17 @@
     </thead>
     <tbody>
       <tr >
-        <td style="width: 20%;">{{ document_number }}</td>
+        <td style="width: 20%;"><b>Number</b></td>
         <td style="width: 20%;">{{ po_obj.code }}</td>
         <td style="width: 20%;">{{ invoice_dc }}</td>
         <td style="width: 20%;">{{ rr_lr_dd_hand }}</td>
-        <td style="width: 20%;">{{ gr }}</td>
+        <td style="width: 20%;">
+          {% for item in history_items %}
+              {% if forloop.first %}
+                  {{ item.gm_header.code }}
+              {% endif %}
+          {% endfor %}
+      </td>
       </tr>
       <tr>
         <td style="width: 20%;"><b>Date</b></td>
@@ -116,27 +122,26 @@
   <table>
     <thead>
       <tr>
-        <th style="width: 12.5%;">Sl No</th>
-        <th style="width: 12.5%;">Material Code</th>
-        <th style="width: 12.5%;">Description</th>
-        <th style="width: 12.5%;">Part no as per PO</th>
-        <th style="width: 12.5%;">Unit</th>
-        <th style="width: 12.5%;">Ordered Qty</th>
-        <th style="width: 12.5%;">Challan Qty</th>
-        <th style="width: 12.5%;">Received Qty</th>
+        <th style="width: 14.28%;">Sl No</th>
+        <th style="width: 14.28%;">Material Code</th>
+        <th style="width: 14.28%;">Description</th>
+        <th style="width: 14.28%;">Part no as per PO</th>
+        <th style="width: 14.28%;">Unit</th>
+        <th style="width: 14.28%;">Ordered Qty</th>
+        <th style="width: 14.28%;">Received Qty</th>
       </tr>
     </thead>
     <tbody>
-      {% for item in po_obj.getItems %}
+      {% for item in history_items %}
       <tr>
-        <td style="width: 12.5%;">{{ forloop.counter }}</td>        
-        <td style="width: 12.5%;">{{ item.item.code }}</td>
-        <td style="width: 12.5%;">{{ item.item.name}}</td>
-        <td style="width: 12.5%;">{{ item.item.uom }}</td>
-        <td style="width: 12.5%;">{{item.uom}}</td>
-        <td style="width: 12.5%;" class="yet_to_be_received">{{ item.quantity|add:"0" }}</td>
-        <td style="width: 12.5%;">{{ item.already_received_qt }}</td>
-        <td style="width: 12.5%;">{{ item.rejected_qty }}</td>
+        <td style="width: 14.28%;">{{ forloop.counter }}</td>        
+        <td style="width: 14.28%;">{{ item.product.item.code }}</td>
+        <td style="width: 14.28%;">{{ item.product.item.name}}</td>
+        <td style="width: 14.28%;">{{ item.product.item.uom }}</td>
+        <td style="width: 14.28%;">{{item.product.uom}}</td>
+        <td style="width: 14.28%;" class="yet_to_be_received">{{ item.product.quantity|add:"0" }}</td>
+         <td style="width: 14.28%;">{{ item.po_good_qty|add:item.po_rejected_qty|floatformat:0 }}</td>
+         
         
       </tr>
       {% endfor %}
@@ -159,17 +164,20 @@
     </tr>
   </thead>
   <tbody>
-    {% for item in po_obj.getItems %}
+    {% for item in history_items %}
     <tr>
       <td style="width: 10%;">{{ forloop.counter }}</td>
-      <td style="width: 25%;">{{ item.item }}</td>
-      <td style="width: 8%;">{{ item.uom }}</td>
+      <td style="width: 25%;">{{ item.product.item.code }}</td>
+      <td style="width: 8%;">{{ item.product.uom }}</td>
     
       
-        <td style="width: 12.5%;">{{item.already_received_qty}} </td>
-        <td style="width: 12.5%;">{{ item.good_qty }}</td>
-        <td style="width: 12.5%;">{{ item.rejected_qty }}</td>
-        <td style="width: 12.5%;"></td>
+        <td style="width: 12.5%;">
+        {{ item.po_good_qty|add:item.po_rejected_qty|floatformat:0 }}
+        </td>
+        <td style="width: 12.5%;">{{ item.po_good_qty }}</td>
+        <td style="width: 12.5%;">{{ item.po_rejected_qty }}</td>
+        <td style="width: 12.5%;">{{ item.rejection_code_name_display}}</td>
+
         <td style="width: 12.5%;"></td>
     </tr>
     {% endfor %}
@@ -191,3 +199,34 @@
   <p>Distribution of copies: Accounts / IMM / Indentor / Stores In-charge</p>
 </body>
 </html>
+
+{% block pagecss %}
+<style>
+  @page {
+      size: A4;
+      margin: 20mm;
+
+      background-image: url("{{ watermark_path }}");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: 60%;
+  }
+
+  body {
+      font-family: Arial, sans-serif;
+      font-size: 12px;
+  }
+
+  table {
+      border-collapse: collapse;
+      width: 100%;
+  }
+
+  table, th, td {
+      border: 1px solid black;
+      padding: 4px;
+      text-align: center;
+  }
+</style>
+
+{% endblock %}

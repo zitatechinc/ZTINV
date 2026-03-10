@@ -1,0 +1,116 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+{% load custom_filters %}
+
+<div class="col-12 col-md-12">
+  <div class="app-card app-card-settings shadow-md">
+    <div class="app-card-body p-4">
+      
+      {% include 'core/search_form.html' with add_url='user-create' model_name=model_name %}
+      
+      <div class="table-responsive">
+        <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
+
+          <thead>
+            <tr>
+              <th>Photo</th>
+              <th>First Name</th>
+              <th>Last Name</th>
+              <th>Role</th>
+              <th>Email</th>
+              <th>Mobile Number</th>
+              <th>Last Login</th>
+              <th>Status</th>
+              <th>Role Permissions</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {% if page_obj.object_list %}
+              {% for eachRow in page_obj.object_list %}
+                <tr>
+                  <!-- Photo -->
+                  <td class="cell">
+                    <img class="img-thumbnail"
+                         width="30"
+                         src="/media/{{ eachRow.photo }}"
+                         alt="No Image"
+                         onerror="this.onerror=null;this.src='/static/default/img/no-image.png';this.width=30;">
+                  </td>
+
+                  <!-- Names -->
+                  <td class="cell">
+                    <a href="{% url 'user-view' eachRow.pk %}">{{ eachRow.first_name }}</a>
+                  </td>
+                  <td class="cell">{{ eachRow.last_name|default_if_none:""|default:"" }}</td>
+
+                  <!-- Role/Groups -->
+                  <td class="cell">
+                    {% for group in eachRow.groups.all %}
+                        {% if group.name == "Administrator" %}
+                            <span class="badge bg-danger">{{ group.name }}</span>
+                        {% elif group.name == "Staff" %}
+                            <span class="badge bg-primary">{{ group.name }}</span>
+                        {% elif group.name == "Guest" %}
+                            <span class="badge bg-secondary">{{ group.name }}</span>
+                        {% else %}
+                            <span class="badge bg-info">{{ group.name }}</span>
+                        {% endif %}
+                    {% endfor %}
+                  </td>
+
+                  <!-- Contact Info -->
+                  <td class="cell">{{ eachRow.email|lower }}</td>
+                  <td class="cell">{{ eachRow.mobile_number }}</td>
+                  <td class="cell">{{ eachRow.last_login|date:"d M Y, H:i" }}</td>
+
+                  <!-- Status -->
+                  <td class="cell">
+                      <span class="badge {% if eachRow.is_active %}bg-success{% else %}bg-warning{% endif %}">
+                          {% if eachRow.is_active %}Active{% else %}Draft{% endif %}
+                      </span>
+                  </td>
+
+                  <!-- Role Permissions -->
+                  <!-- Role Permissions -->
+                  <td class="cell">
+                      {% if eachRow.is_superuser %}
+                          <span class="badge bg-danger">All Permissions</span>
+                      {% else %}
+                          {% for perm in eachRow.get_all_permissions|sort_list %}
+                              <span class="badge bg-info">{{ perm|cut:"auth." }}</span>
+                          {% empty %}
+                              <span class="text-muted">No Permissions</span>
+                          {% endfor %}
+                      {% endif %}
+                  </td>
+
+                  <!-- Action -->
+                  <td class="cell">
+                    <a href="{% url 'user-view' eachRow.pk %}">
+                      <span class="badge app-btn-primary"><i class="fa fa-eye"></i> View</span>
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            {% else %}
+              <tr>
+                <td colspan="10" class="text-center">
+                  <h6>No Records found</h6>
+                </td>
+              </tr>
+            {% endif %}
+          </tbody>
+
+        </table>
+      </div>
+
+      {% include 'core/pagination.html' %}
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block pagejs %}{% endblock %}

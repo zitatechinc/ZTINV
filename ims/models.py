@@ -213,10 +213,16 @@ class Quantity(models.Model):
     def __str__(self):
         return f"{self.quantity}"
     
+# class Units(models.Model):
+#     unit=models.CharField(max_length=255,blank=True, null=True)# Unit of measurement (e.g., "kg", "pcs", "liters")
+#     def __str__(self):
+#         return f"{self.unit}"
+
 class Units(models.Model):
-    unit=models.CharField(max_length=255,blank=True, null=True)# Unit of measurement (e.g., "kg", "pcs", "liters")
+    unit = models.CharField(max_length=255, unique=True)
+
     def __str__(self):
-        return f"{self.unit}"
+        return self.unit
 
  
 class Particular(models.Model):

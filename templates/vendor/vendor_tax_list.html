@@ -2,7 +2,9 @@
 {% load humanize %}
 {% load static %}
 {% block content %}
+
 <div class="row mb-2 mt-2">
+    {% if not form_status %}
     <div class="col-12 col-md-12 text-end">
         <div class="button-group">
             <a href="{% url 'vendor-tax-create' vendor_obj.pk %}" class="btn btn-sm app-btn-primary">
@@ -10,17 +12,19 @@
             </a>
         </div>
     </div>
+    {% endif %}
 </div>
 
+
 <div class="col-12 col-md-12">
-    <div class="app-card app-card-settings shadow-md">
+    <div class="app-card app-card-settings shadow-md p-4">
 
         {% include 'vendor/vendor_menu.html' %}
 
-        <div class="app-card-body p-4">
+        <div class="app-card-body ps-2">
 
             {% if not form_status %}
-            <div class="row">
+            <div class="row mt-2">
                 <div class="col-md-12">
                     <h6>Tax Details</h6>
                 </div>
@@ -57,9 +61,22 @@
                                 <td class="cell"><span class="truncate">{% if eachRow.country %}{{ eachRow.country.name }}{% endif %}</span></td>
                                 <td class="cell"><span class="truncate">{{ eachRow.category }}</span></td>
                                 <td class="cell"><span class="truncate">{{ eachRow.other_tax_details }}</span></td>
-                                <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td>
+                                <!-- <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td> -->
+                                <td class="cell {{ eachRow.status_name|lower }}">
+                                        <span class="badge 
+                                            {% if eachRow.status == 1 %}
+                                                bg-success
+                                            {% elif eachRow.status == 0 %}
+                                                bg-warning
+                                            {% else %}
+                                                bg-danger
+                                            {% endif %}
+                                        ">
+                                            {{ eachRow.status_name }}
+                                        </span>
+                                    </td>
                                 <td class="cell">{{ eachRow.last_modified_at }}</td>
-                                <td class="cell"><span class="truncate">{{ eachRow.updated_user.username }}</span></td>
+                                <td class="cell"><span class="truncate">{{ eachRow.last_modified_user }}</span></td>
                                 <td class="cell">
                                     <!-- View button as icon -->
                                     <a href="{% url 'vendor-tax-view' vendor_obj.pk eachRow.pk %}">
@@ -70,8 +87,8 @@
                             {% endfor %}
                         {% else %}
                         <tr>
-                            <td colspan="9" class="text-center">
-                                <h6>No Records found</h6>
+                            <td colspan="11" class="text-center">
+                                <h6>No Records Found</h6>
                             </td>
                         </tr>
                         {% endif %}

@@ -23,16 +23,17 @@
                     <h3>Category Information</h3><br>
                     <!-- Category Fields -->
                     <div class="col-md-4">
-                        <strong>Name:</strong> {{ object.name }}
+                        <strong>Name :</strong> {{ object.name }}
                     </div>
                     <div class="col-md-4">
-                        <strong>Parent:</strong> {% if object.parent %}{{ object.parent.name }}{% else %}N/A{% endif %}
+                        <strong>Code :</strong> {{ object.code }}
                     </div>
                     <div class="col-md-4">
-                        <strong>Code:</strong> {{ object.code }}
+                        <strong>Parent :</strong> {% if object.parent %}{{ object.parent.name }}{% else %}None{% endif %}
                     </div>
+
                     <div class="col-md-4">
-                        <strong>Status:</strong>
+                        <strong>Status :</strong>
                         <span class="badge 
                             {% if object.status == 1 %}
                                 bg-success
@@ -45,6 +46,13 @@
                             {{ object.status_name }}
                         </span>
                     </div>
+                    <div class="col-md-4">
+                        <strong>Description :</strong> {{ object.description }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Search Keywords :</strong> {{ object.search_keywords }}
+                    </div>
+                    
                 </div>
 
                 <!-- Include Audit Log Information inside the same app-card -->

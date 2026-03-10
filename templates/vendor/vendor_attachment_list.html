@@ -3,6 +3,7 @@
 {% block content %}
 
 <div class="row mb-2 mt-2">
+    {% if not form_status %}
     <div class="col-12 col-md-12 text-end">
         <div class="button-group">
             <a href="{% url 'vendor-attachment-create' vendor_obj.pk %}" class="btn btn-sm app-btn-primary">
@@ -10,15 +11,19 @@
             </a>
         </div>
     </div>
+    
+    {% endif %}
+    
 </div>
 
+
 <div class="col-12 col-md-12">
-    <div class="app-card app-card-settings shadow-md">
+    <div class="app-card app-card-settings shadow-md p-4">
         {% include 'vendor/vendor_menu.html' %}
-        <div class="app-card-body p-4">
+        <div class="app-card-body ps-2">
 
             {% if not form_status %}
-            <div class="row mb-2">
+            <div class="row mt-2">
                 <div class="col-md-12">
                     <h6>Attachment Details</h6>
                 </div>
@@ -49,7 +54,7 @@
                             <td class="cell">{{ eachRow.notes }}</td>
                             <td class="cell">{{ eachRow.vendor.company_name1 }}</td>
                             <td class="cell">{{ eachRow.last_modified_at }}</td>
-                            <td class="cell">{{ eachRow.updated_user.username }}</td>
+                            <td class="cell">{{ eachRow.last_modified_user }}</td>
                             <td class="cell">
                                 <!-- View button as icon -->
                                 <a href="{% url 'vendor-attachment-view' vendor_obj.pk eachRow.pk %}">
@@ -60,8 +65,8 @@
                         {% endfor %}
                         {% else %}
                         <tr>
-                            <td colspan="9" class="text-center">
-                                <h6>No Records found</h6>
+                            <td colspan="7" class="text-center">
+                                <h6>No Records Found</h6>
                             </td>
                         </tr>
                         {% endif %}

@@ -850,8 +850,44 @@ class ProcurementView(LoginRequiredMixin, View):
     def dispatch(self, *args, **kwargs):
         return super().dispatch(*args, **kwargs)
     
+    # def get(self, request):    
+    #     # Get the currently logged-in user
+    #     user = request.user
+
+    #     if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+    #         vendor_ids = request.GET.getlist('vendors[]')
+    #         vendor_ids = [int(v) for v in vendor_ids if v.isdigit()]
+
+    #         if vendor_ids:
+    #             # Filter products that are linked to selected vendors
+    #             qs = ProductVendor.objects.filter(vendor_id__in=vendor_ids,status=1) # Active only
+    #             total = qs.count()
+    #             print("Total Productvendor mapped vendors ::",total)
+    #             products = [
+    #                 {
+    #                     "id": p.product.id,
+    #                     "vendor": p.vendor_id,
+    #                     "name": p.product.name,
+    #                     "code": p.product.code,
+    #                 }
+    #                 for p in qs
+    #             ]
+    #         else:
+    #             # No vendor selected -> return all products
+    #             products = [
+    #                 {
+    #                     "id": p.id,
+    #                     "vendor": None,
+    #                     "name": p.name,
+    #                     "code": p.code,
+    #                 }
+    #                 #for p in Product.objects.all()
+    #                 for p in Product.objects.filter(status=1) # display only Active products 
+    #             ]
+
+    #         return JsonResponse({'products': products})
+
     def get(self, request):    
-        # Get the currently logged-in user
         user = request.user
 
         if request.headers.get('x-requested-with') == 'XMLHttpRequest':
@@ -859,29 +895,34 @@ class ProcurementView(LoginRequiredMixin, View):
             vendor_ids = [int(v) for v in vendor_ids if v.isdigit()]
 
             if vendor_ids:
-                # Filter products that are linked to selected vendors
-                qs = ProductVendor.objects.filter(vendor_id__in=vendor_ids)
+                # Filter products linked to selected vendors
+                qs = ProductVendor.objects.filter(vendor_id__in=vendor_ids, status=1)
+
+                total = qs.count()
+                print("Total Productvendor mapped vendors ::", total)
+
                 products = [
                     {
                         "id": p.product.id,
                         "vendor": p.vendor_id,
                         "name": p.product.name,
                         "code": p.product.code,
+                        "procurement_type" : p.product.procurementtype.Procurement_name if p.product.procurementtype else '',
+                        "procurement_code" : p.product.procurementtype.Procurement_code if p.product.procurementtype else '' ,
+                        "specification": p.product.specification,
+                        "source_of_make": p.product.source_of_make,
+                        "unit_of_measure": p.product.unit_of_measure.unit,
+                        "unit_of_measure_id": p.product.unit_of_measure.pk,
+
+                        "model_number": p.product.model_number,
                     }
                     for p in qs
                 ]
-            else:
-                # No vendor selected -> return all products
-                products = [
-                    {
-                        "id": p.id,
-                        "vendor": None,
-                        "name": p.name,
-                        "code": p.code,
-                    }
-                    for p in Product.objects.all()
-                ]
 
+            else:
+                # If no vendor selected return all active products                
+                products= Product.objects.filter(status=1)
+                
             return JsonResponse({'products': products})
 
         # Get the UserReg instance for the user
@@ -925,12 +966,14 @@ class ProcurementView(LoginRequiredMixin, View):
             name = 'Guest'  
             department = 'N/A'  
             mydep = 'N/A'
-        # #pdb.set_trace
+
         # Get all vendors for source of supply dropdown
-        vendor = Vendor.objects.all().values('company_name1','code','id')
+        #vendor = Vendor.objects.all().values('company_name1','code','id')
+        vendor = Vendor.objects.filter(status=1).order_by('company_name1') # Active vendors
         # products =ProductVendor.objects.all().values('product','vendor','product__unit_of_measure','product__short_description','product__long_description','product__mpin','product__upc','product__isbn','product__ean','product__notes','product__serialnumber_status','product__prefix','product__category__description','product__product_type__description','product__product_group__description','product__brand__description','product__manufacturer__description','product__name','product__code')
-        products=Product.objects.all().values('name','code','id')
-        print(products,'product')
+        #products=Product.objects.all().values('name','code','id') 
+        products=Product.objects.filter(status=1)
+
         # selected_vendors = request.GET.getlist('source_of_supplies')  # List of selected vendor IDs
     
         # # Filter products based on the selected vendors
@@ -939,24 +982,10 @@ class ProcurementView(LoginRequiredMixin, View):
         # else:
         #     filtered_products = ProductVendor.objects.all()
 
-        
-        # print(product,'product')
-        #print(vendor)
-
         # Get all office branch locations
         # location = OfficeBranch.objects.all().values()
-        #print(location)
-        # drop down
-
-        # location = SubLocation.objects.annotate(
-        #     location_label=Concat(F('name'), Value('-'), F('code'))
-        # ).filter(
-        #     code__isnull=False,
-        #     name__isnull=False,
-        #     status=1  # Only active locations
-        # ).values('id', 'location_label')
-
-
+      
+        # dropdown sublocations
         location = SubLocation.objects.annotate(
             location_label=Concat(F('name'),Value(' ('),F('code'), Value(')') )
         ).filter(
@@ -999,19 +1028,15 @@ class ProcurementView(LoginRequiredMixin, View):
 
         # Get all procurement types and convert to list of dictionaries
         procurement_types = pd.DataFrame(ProcurementType.objects.all().values()).to_dict('records')
-        # ##pdb
         pr_choices = Procurement.pr_choices
         category_choices = Procurement.category_choices
 
         # Get all options for source of make (import/indigenous)
         import_indigenous_types = SourceOfMake.objects.all()
-
         # Get all tender types
         tender_types = TenderType.objects.all()
-
         # Get all finalized procurements
         procurement = Procurement.objects.filter(is_draft=False)
-
         # Get all budget allocations
         budgets = BudgetAllocation.objects.all()
         # Get all departments
@@ -1020,6 +1045,7 @@ class ProcurementView(LoginRequiredMixin, View):
         user_role = request.session.get("user_role")  
         user_dept = request.user.userreg.user_dept 
         # user_dept=request.session.get("user_dept")
+
         if "Indentor" in user_role and "IMM" in user_role and "Recommending Authority" in user_role:
 
             users = UserReg.objects.filter(
@@ -1028,6 +1054,7 @@ class ProcurementView(LoginRequiredMixin, View):
                 user_dept=user_dept,
                
             ).values("emp_id", "user__first_name", "user__last_name", "role__role")
+
         elif "Indentor" in user_role and "Accounts" in user_role and "Recommending Authority" in user_role:
 
             users = UserReg.objects.filter(
@@ -1094,12 +1121,13 @@ class ProcurementView(LoginRequiredMixin, View):
 
         # Get all units of measurement
         units = Units.objects.values('id', 'unit')
+        
 
         procurements = BudgetAllocation.objects.all().values()
         # Get all delivery options
         delivery = Delivery.objects.all()
 
-        # Prepare context to be passed to template
+        # Prepare context to be passed to template dropdown
         context = {
             'show_image': False,
             'procurements': procurements,
@@ -3017,11 +3045,13 @@ def get_dpo_data(procurement):
             # 'gst_number': vendor.gst_number,
             'address': vendor.building_name,
             # 'tin_number': vendor.tin_number,
-            'state': vendor.state.name,
+            'country': vendor.country.name if vendor.country else '',
+            'state': vendor.state.name if vendor.state else '',
+            'sublocation' : vendor.sublocation.name if vendor.sublocation else '',
             # 'city': vendor.city,
             'pincode': vendor.zipcode,
             'company_name': vendor.company_name1,
-            # 'country': vendor.country,
+            
         }] if vendor else []
 
         particular_data_dpo = []
@@ -3128,7 +3158,7 @@ def get_dpo_data(procurement):
 #             'gst_number': vendor.gst_number,
 #             'address': vendor.address,
 #             'tin_number': vendor.tin_number,
-#             'state': vendor.state.name,
+#             'state': vendor.state.name if vendor.state else '',
 #             'city': vendor.city,
 #             'pincode': vendor.pincode,
 #             'company_name': vendor.company_name,
@@ -3254,11 +3284,12 @@ def get_all_pos_with_latest_dpo(procurement):
                         # 'gst_number': vendor.gst_number,
                         'address': vendor.building_name,
                         # 'tin_number': vendor.tin_number,
-                        'state': vendor.state.name,
+                        'country': vendor.country.name if vendor.country else '',
+                        'state': vendor.state.name if vendor.state else '',
+                        'sublocation' : vendor.sublocation.name if vendor.sublocation else '', 
                         # 'city': vendor.city,
                         'pincode': vendor.zipcode,
                         'company_name': vendor.company_name1,
-                        # 'country': vendor.country,
                     }]
 
                 # Particulars from DPO
@@ -3950,7 +3981,7 @@ class RAProcurementView(LoginRequiredMixin, View):
                 #         'gst_number': vendor.gst_number,
                 #         'address': vendor.address,
                 #         'tin_number': vendor.tin_number,
-                #         'state': vendor.state.name,
+                #         'state': vendor.state.name if vendor.state else '',
                 #         'city': vendor.city,
                 #         'pincode': vendor.pincode,
                 #         'company_name': vendor.company_name,
@@ -4514,11 +4545,14 @@ class VendorCreateView(LoginRequiredMixin, View):
             vendor.gst_number = request.POST.get('gst_number', None)
             vendor.address = request.POST.get('address', None)
             vendor.tin_number = request.POST.get('tin_number', None)
+            # vendor.country = request.POST.get('country', None)
+            # vendor.state = request.POST.get('state', None)
+            # vendor.city = request.POST.get('city', None)
+            vendor.country.name = request.POST.get('country', None)
             vendor.state.name = request.POST.get('state', None)
-            vendor.city = request.POST.get('city', None)
+            vendor.sublocation.name = request.POST.get('sublocation', None)
             vendor.pincode = request.POST.get('pincode', None)
             vendor.company_name = request.POST.get('company_name', None)
-            vendor.country = request.POST.get('country', None)
 
             vendor.save()
 
@@ -4533,11 +4567,13 @@ class VendorCreateView(LoginRequiredMixin, View):
                     'gst_number': vendor.gst_number,
                     'address': vendor.address,
                     'tin_number': vendor.tin_number,
-                    'state': vendor.state.name,
-                    'city': vendor.city,
+                    'country': vendor.country.name if vendor.country else '',
+                    'state': vendor.state.name if vendor.state else '',
+                    'sublocation' : vendor.sublocation.name if vendor.sublocation else '',
+                    # 'city': vendor.city,
                     'pincode': vendor.pincode,
                     'company_name': vendor.company_name,
-                    'country': vendor.country
+                    
                 }
             })
 
@@ -4602,11 +4638,13 @@ class VendorCreateView(LoginRequiredMixin, View):
                     'gst_number': vendor.gst_number,
                     'address': vendor.address,
                     'tin_number': vendor.tin_number,
-                    'state': vendor.state.name,
-                    'city': vendor.city,
+                    'country' : vendor.country.name if vendor.country else '',
+                    'state': vendor.state.name if vendor.state else '',
+                    'sublocation' : vendor.sublocation.name if vendor.sublocation else '',
+                    # 'country': vendor.country,
+                    # 'city': vendor.city, 
                     'pincode': vendor.pincode,
-                    'company_name': vendor.company_name,
-                    'country': vendor.country
+                    'company_name': vendor.company_name
                 }
             })
 
@@ -5517,7 +5555,7 @@ class ProcurementIMMView(LoginRequiredMixin,View):
             #         'gst_number': vendor.gst_number,
             #         'address': vendor.address,
             #         'tin_number': vendor.tin_number,
-            #         'state': vendor.state.name,
+            #         'state': vendor.state.name if vendor.state else '',
             #         'city': vendor.city,
             #         'pincode': vendor.pincode,
             #         'company_name': vendor.company_name,
@@ -19759,11 +19797,13 @@ class Dpo(LoginRequiredMixin,View):
                 # 'gst_number': vendor.gst_number,
                 'address': vendor.building_name,
                 # 'tin_number': vendor.tin_number,
-                'state': vendor.state.name,
+                'country': vendor.country.name if vendor.country else '',
+                'state': vendor.state.name if vendor.state else '',
+                'sublocation' : vendor.sublocation.name if vendor.sublocation else '',
                 # 'city': vendor.city,
                 'pincode': vendor.zipcode,
-                'company_name': vendor.company_name1,
-                # 'country': vendor.country,
+                'company_name': vendor.company_name1
+                
             }] if vendor else []
 
             particular_data = []
@@ -20347,7 +20387,7 @@ class PO(LoginRequiredMixin,View):
             reverse=True
         )
 
-
+        print("final proooooooooo",final_procurements)
         # ✅ Step 7: Render final result
         return render(request, "ims/PO.html", {
             "procurements": final_procurements,
@@ -20429,11 +20469,13 @@ class PO(LoginRequiredMixin,View):
                     # 'gst_number': vendor.gst_number,
                     'address': vendor.building_name,
                     # 'tin_number': vendor.tin_number,
-                    'state': vendor.state.name,
+                    'country': vendor.country.name if vendor.country else '',
+                    'state': vendor.state.name if vendor.state else '',
+                    'sublocation' : vendor.sublocation.name if vendor.sublocation else '',
                     # 'city': vendor.city,
                     'pincode': vendor.zipcode,
-                    'company_name': vendor.company_name1,
-                    # 'country': vendor.country,
+                    'company_name': vendor.company_name1
+                    
                 }] if vendor else []
                
                
@@ -26522,7 +26564,7 @@ def close_session_view(request):
 #                                     'gst_number': vendor.gst_number,
 #                                     'address': vendor.address,
 #                                     'tin_number': vendor.tin_number,
-#                                     'state': vendor.state.name,
+#                                     'state': vendor.state.name if vendor.state else '',
 #                                     'city': vendor.city,
 #                                     'pincode': vendor.pincode,
 #                                     'company_name': vendor.company_name,
@@ -27678,11 +27720,13 @@ class DpoApprovalAccounts(LoginRequiredMixin,View):
                 # 'gst_number': vendor.gst_number,
                 'address': vendor.building_name,
                 # 'tin_number': vendor.tin_number,
-                'state': vendor.state.name,
+                'country': vendor.country.name if vendor.country else '',
+                'state': vendor.state.name if vendor.state else '',
+                'sublocation' : vendor.sublocation.name if vendor.sublocation else '',
                 # 'city': vendor.city,
                 'pincode': vendor.zipcode,
-                'company_name': vendor.company_name1,
-                # 'country': vendor.country,
+                'company_name': vendor.company_name1
+                
             }] if vendor else []
 
             particular_data = []
@@ -28706,11 +28750,13 @@ class DpoApprovalAA(LoginRequiredMixin,View):
                 # 'gst_number': vendor.gst_number,
                 'address': vendor.building_name,
                 # 'tin_number': vendor.tin_number,
-                'state': vendor.state.name,
+                'country': vendor.country.name if vendor.country else '',
+                'state': vendor.state.name if vendor.state else '',
+                'sublocation' : vendor.sublocation.name if vendor.sublocation else '',
                 # 'city': vendor.city,
                 'pincode': vendor.zipcode,
                 'company_name': vendor.company_name1,
-                # 'country': vendor.country,
+                
             }] if vendor else []
 
             particular_data = []
@@ -29077,6 +29123,7 @@ from django.utils import timezone
 from inventory.models import PurchaseOrderStatus, PurchaseOrderHeader, PurchaseOrderItem
 from location.models import SubLocation
 from django.db import transaction
+from ims.models import Units
 
 def insert_po_headers_and_items():
         logger.info("Starting PO header and item insertion process")
@@ -29093,7 +29140,7 @@ def insert_po_headers_and_items():
         query = """
         SELECT
             po.po_number,
-            strftime('%Y-%m-%d %H:%M:%S', po.date_created),
+            TO_CHAR(po.date_created AT TIME ZONE 'Asia/Kolkata', 'YYYY-MM-DD HH24:MI:SS') AS formatted_date_created,
             dpo.sources_id,
             dpo_particular.quantity_dpo,
             dpo_particular.unit_price_dpo,
@@ -29113,7 +29160,7 @@ def insert_po_headers_and_items():
         JOIN ims_particular AS p ON qp.csparticular_id = p.id
         JOIN ims_units AS unit ON p.unitname_id = unit.id
         JOIN catalog_product AS cp ON p.product_id = cp.id
-        WHERE pa.done_sign = 1
+        WHERE pa.done_sign = TRUE
         ORDER BY po.po_number;
         """
 
@@ -29127,10 +29174,14 @@ def insert_po_headers_and_items():
         # ------------------------------------------------------------------
         line_number_cache = {}
 
+        # UPDATED: Units cache to avoid repeated DB queries
+        units_cache = {u.unit.lower(): u for u in Units.objects.all()}
+
         # ------------------------------------------------------------------
         # GET STATUS
         # ------------------------------------------------------------------
         pos = PurchaseOrderStatus.objects.get(name='OPEN')
+        
 
         try:
             for row in rows:
@@ -29142,7 +29193,7 @@ def insert_po_headers_and_items():
                 total_price = row[5]
                 sublocation_name = row[6]
                 description = row[7]
-                uom = row[8]
+                uom_name = row[8]
                 product_id = row[9]
 
                 logger.debug("Processing PO: %s", po_number)
@@ -29205,13 +29256,27 @@ def insert_po_headers_and_items():
                 # -----------------------------
                 item_code = f"{po_number}-{line_number}"
 
+                # --------------------------------------------------
+                # UPDATED: Convert string UOM → Units instance
+                # --------------------------------------------------
+                uom_key = (uom_name or "").lower()
+
+                uom_obj = units_cache.get(uom_key)
+
+                if not uom_obj:
+
+                    uom_obj = Units.objects.create(unit=uom_key)
+
+                    units_cache[uom_key] = uom_obj
+
                 item_defaults = {
                     "line_number": line_number,
                     "quantity": quantity,
                     "created_at": created_at,
                     "updated_at": created_at,
                     "description": description,
-                    "uom": uom,
+                    # "uom": uom,
+                    "uom": uom_obj,   # UPDATED
                     "unit_price": unit_price,
                     "total_price": total_price,
                     "item_status": "OPEN",
@@ -29510,9 +29575,10 @@ class POApprovalView(LoginRequiredMixin,View):
                         'email': getattr(vendor, 'email_1', '') or '',
                         'phone_number': getattr(vendor, 'phone_number_1', '') or '',
                         # 'gst_number': getattr(vendor, 'gst_number', '') or '',
-                        'address': getattr(vendor, 'building_name', '') or '',
+                        'address': getattr(vendor,'building_name', '') or '',
                         # 'tin_number': getattr(vendor, 'tin_number', '') or '',
-                        'state': vendor.state.name,
+                        'state': vendor.state.name if vendor.state else '',
+                        'sublocation' : vendor.sublocation.name if vendor.sublocation else '',
                         # 'city': getattr(vendor, 'city', '') or '',
                         'pincode': getattr(vendor, 'zipcode', '') or '',
                         'company_name': getattr(vendor, 'company_name1', '') or '',

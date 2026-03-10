@@ -4,9 +4,7 @@ from itertools import chain
 import re
 from utils.current_user import get_current_user
 from django.core.exceptions import ValidationError
-
-
-
+from django.utils import timezone
 
 STATUS_CHOICES = (
     (1, 'Active'),
@@ -69,74 +67,85 @@ GM_CATEGORY_CHOICES = (
     )
 
 UOM_CHOICES = [
-    # Basic / Each
-    ('EA', 'Each'),
-    ('PC', 'Piece'),
-    ('SET', 'Set'),
-    ('DOZ', 'Dozen'),
-    ('PK', 'Pack'),
-    ('BOX', 'Box'),
-    ('ROL', 'Roll'),
-    ('BAG', 'Bag'),
-    ('PAIR', 'Pair'),
-
-    # Weight
-    ('MG', 'Milligram'),
-    ('G', 'Gram'),
-    ('KG', 'Kilogram'),
-    ('MT', 'Metric Ton'),
-    ('LB', 'Pound'),
-    ('OZ', 'Ounce'),
-
-    # Length
-    ('MM', 'Millimeter'),
-    ('CM', 'Centimeter'),
-    ('M', 'Meter'),
-    ('KM', 'Kilometer'),
-    ('IN', 'Inch'),
-    ('FT', 'Foot'),
-    ('YD', 'Yard'),
-    ('MI', 'Mile'),
-
-    # Volume
-    ('ML', 'Milliliter'),
-    ('L', 'Liter'),
-    ('M3', 'Cubic Meter'),
-    ('GAL', 'Gallon'),
-    ('QT', 'Quart'),
-    ('PT', 'Pint'),
-    ('CUP', 'Cup'),
-
-    # Area
-    ('MM2', 'Square Millimeter'),
-    ('CM2', 'Square Centimeter'),
-    ('M2', 'Square Meter'),
-    ('KM2', 'Square Kilometer'),
-    ('FT2', 'Square Foot'),
-    ('YD2', 'Square Yard'),
-    ('ACRE', 'Acre'),
-    ('HA', 'Hectare'),
-
-    # Time
-    ('SEC', 'Second'),
-    ('MIN', 'Minute'),
-    ('HR', 'Hour'),
-    ('DAY', 'Day'),
-    ('WK', 'Week'),
-    ('MON', 'Month'),
-    ('YR', 'Year'),
-
-    # Packaging
-    ('CS', 'Case'),
-    ('CTN', 'Carton'),
-    ('PAL', 'Pallet'),
-    ('DRM', 'Drum'),
-    ('TNK', 'Tank'),
-    ('BND', 'Bundle'),
-    ('CAN', 'Can'),
-    ('BOT', 'Bottle'),
-    ('JAR', 'Jar'),
+    ("pcs", "Pieces"),
+    ("KG", "Kilogram"),
+    ("LTR", "Liter"),
+    ("EA","Each"),
+    ("DZ","Dozen"),
+    ("BOX","Box"),
+    ("SET","Set"),
+    ('Nos', 'Nos')
 ]
+
+# UOM_CHOICES = [
+#     # Basic / Each
+#     ('EA', 'Each'),
+#     ('PC', 'Piece'),
+#     ('SET', 'Set'),
+#     ('DOZ', 'Dozen'),
+#     ('PK', 'Pack'),
+#     ('BOX', 'Box'),
+#     ('ROL', 'Roll'),
+#     ('BAG', 'Bag'),
+#     ('PAIR', 'Pair'),
+
+#     # Weight
+#     ('MG', 'Milligram'),
+#     ('G', 'Gram'),
+#     ('KG', 'Kilogram'),
+#     ('MT', 'Metric Ton'),
+#     ('LB', 'Pound'),
+#     ('OZ', 'Ounce'),
+
+#     # Length
+#     ('MM', 'Millimeter'),
+#     ('CM', 'Centimeter'),
+#     ('M', 'Meter'),
+#     ('KM', 'Kilometer'),
+#     ('IN', 'Inch'),
+#     ('FT', 'Foot'),
+#     ('YD', 'Yard'),
+#     ('MI', 'Mile'),
+
+#     # Volume
+#     ('ML', 'Milliliter'),
+#     ('L', 'Liter'),
+#     ('M3', 'Cubic Meter'),
+#     ('GAL', 'Gallon'),
+#     ('QT', 'Quart'),
+#     ('PT', 'Pint'),
+#     ('CUP', 'Cup'),
+
+#     # Area
+#     ('MM2', 'Square Millimeter'),
+#     ('CM2', 'Square Centimeter'),
+#     ('M2', 'Square Meter'),
+#     ('KM2', 'Square Kilometer'),
+#     ('FT2', 'Square Foot'),
+#     ('YD2', 'Square Yard'),
+#     ('ACRE', 'Acre'),
+#     ('HA', 'Hectare'),
+
+#     # Time
+#     ('SEC', 'Second'),
+#     ('MIN', 'Minute'),
+#     ('HR', 'Hour'),
+#     ('DAY', 'Day'),
+#     ('WK', 'Week'),
+#     ('MON', 'Month'),
+#     ('YR', 'Year'),
+
+#     # Packaging
+#     ('CS', 'Case'),
+#     ('CTN', 'Carton'),
+#     ('PAL', 'Pallet'),
+#     ('DRM', 'Drum'),
+#     ('TNK', 'Tank'),
+#     ('BND', 'Bundle'),
+#     ('CAN', 'Can'),
+#     ('BOT', 'Bottle'),
+#     ('JAR', 'Jar'),
+# ]
 
 
 ITEM_STATUS_CHOICES = [
@@ -155,26 +164,99 @@ ITEM_STATUS_CHOICES = [
 
 FONT_SIZE_CHOICES = [(str(i), str(i)) for i in range(7, 20)]
 
+class NormalizeCodeMixin(models.Model):
+    """
+    Mixin to normalize `code` to uppercase and ensure
+    case-insensitive uniqueness for `name` and `code`.
+    """
+    class Meta:
+        abstract = True
+
+    def clean(self):
+        super().clean()
+
+        # Check name case-insensitive uniqueness
+        if hasattr(self, 'name') and self.name:
+            qs = self.__class__.objects.filter(name__iexact=self.name.strip())
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError({'name': f"{self.__class__.__name__} with this Name already exists."})
+
+        # Check code case-insensitive uniqueness
+        if hasattr(self, 'code') and self.code:
+            qs = self.__class__.objects.filter(code__iexact=self.code.strip())
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError({'code': "Code already exists."})
+
+    def save(self, *args, **kwargs):
+        # Normalize code to uppercase if it exists
+        if hasattr(self, 'code') and self.code:
+            self.code = self.code.upper().strip()
+        super().save(*args, **kwargs)
+
+# class TimeStampBaseModel(models.Model):
+#     created_at = models.DateTimeField(auto_now_add=True)
+#     updated_at = models.DateTimeField(auto_now=True)
+
+#     # @property
+#     # def last_modified_at(self):
+#     #     return self.updated_at.strftime("%b,%d, %Y %H:%M") or self.created_at.strftime("%b,%d, %Y %H:%M")
+    
+#     @property
+#     def last_modified_at(self):
+#         dt = self.updated_at if self.updated_at else self.created_at
+#         return dt.strftime("%d %b %Y, %H:%M") if dt else ""
+
+#     # @property
+#     # def created_date(self):
+#     #     return self.created_at.strftime("%b,%d, %Y %H:%M")
+
+#     @property
+#     def created_date(self):
+#         return self.created_at.strftime("%d %b %Y, %H:%M")
+
+#     # @property
+#     # def updated_date(self):
+#     #     return self.updated_at.strftime("%b,%d, %Y %H:%M")
+
+#     @property
+#     def updated_date(self):
+#         return self.updated_at.strftime("%d %b %Y, %H:%M")
+    
+#     class Meta:
+#         abstract = True
+
 class TimeStampBaseModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
     @property
     def last_modified_at(self):
-        return self.updated_at.strftime("%b,%d, %Y %H:%M") or self.created_at.strftime("%b,%d, %Y %H:%M")
+        dt = self.updated_at or self.created_at
+        if not dt:
+            return ""
+        local_dt = timezone.localtime(dt)
+        return local_dt.strftime("%d %b %Y, %H:%M")
 
     @property
     def created_date(self):
-        return self.created_at.strftime("%b,%d, %Y %H:%M")
+        if not self.created_at:
+            return ""
+        local_dt = timezone.localtime(self.created_at)
+        return local_dt.strftime("%d %b %Y, %H:%M")
 
     @property
     def updated_date(self):
-        return self.updated_at.strftime("%b,%d, %Y %H:%M")
-    
-    
+        if not self.updated_at:
+            return ""
+        local_dt = timezone.localtime(self.updated_at)
+        return local_dt.strftime("%d %b %Y, %H:%M")
+
     class Meta:
         abstract = True
-
 
 class UserLogBaseModel(models.Model):
 
@@ -187,7 +269,6 @@ class UserLogBaseModel(models.Model):
         on_delete=models.SET_NULL, related_name="%(class)s_updated_by"
     )
 
-
     class Meta:
         abstract = True
 
@@ -197,8 +278,14 @@ class UserLogBaseModel(models.Model):
         if not user:
             return ""
         return f"{user.first_name} {user.last_name or ''}".strip()
-
-
+    
+    @property
+    def record_created_user(self):
+        user = self.created_user
+        if not user:
+            return ""
+        
+        return f"{user.first_name} {user.last_name or ''}".strip()
 
     def save(self, *args, **kwargs):
         user = get_current_user()
@@ -208,8 +295,7 @@ class UserLogBaseModel(models.Model):
             self.updated_user = user
         super().save(*args, **kwargs)
    
-
-class CatalogBaseModel(models.Model):
+class CatalogBaseModel(NormalizeCodeMixin,models.Model):
     name = models.CharField(
         max_length=60,
         verbose_name="Name",
@@ -231,7 +317,6 @@ class CatalogBaseModel(models.Model):
     )
     slug = models.SlugField(max_length=255, blank=True)
    
-
     @property
     def status_name(self):
         return dict(STATUS_CHOICES).get(self.status)
@@ -279,8 +364,7 @@ class CatalogBaseModel(models.Model):
     class Meta:
         abstract = True
 
-
-class LocationBaseModel(TimeStampBaseModel):
+class LocationBaseModel(NormalizeCodeMixin,TimeStampBaseModel):
     name = models.CharField(
         max_length=50,
         unique=True,
@@ -324,7 +408,6 @@ class LocationBaseModel(TimeStampBaseModel):
 
     class Meta:
         abstract = True
-
 
 class VendorBaseModel(models.Model):
     status = models.IntegerField(default=0, verbose_name="Status", null=True, choices=STATUS_CHOICES)
@@ -407,7 +490,7 @@ class ScraperBaseModel(models.Model):
     class Meta:
         abstract = True
 
-class AttributeBaseModel(models.Model):
+class AttributeBaseModel(NormalizeCodeMixin,models.Model):
     name = models.CharField(
         max_length=60,
         help_text="Display name"
@@ -432,7 +515,6 @@ class AttributeBaseModel(models.Model):
         verbose_name="Description"
 
     )
-   
 
     @property
     def status_name(self):
@@ -480,7 +562,6 @@ class AttributeBaseModel(models.Model):
 
     class Meta:
         abstract = True
-
 
 class InventoryBaseModel(models.Model):
     status = models.IntegerField(default=0, verbose_name="Record Status", null=True, choices=STATUS_CHOICES)
@@ -530,7 +611,6 @@ class InventoryBaseModel(models.Model):
 
     class Meta:
         abstract = True
-
 
 class PurchaseOrderBaseModel(models.Model):
     status = models.IntegerField(default=0, verbose_name="Record Status", null=True, choices=STATUS_CHOICES)
@@ -585,11 +665,9 @@ class PurchaseOrderBaseModel(models.Model):
     class Meta:
         abstract = True
 
-
 class CustomerBaseModel(models.Model):
     status = models.IntegerField(default=0, verbose_name="Status", null=True, choices=STATUS_CHOICES)
 
-    
     @property
     def status_name(self):
         return dict(STATUS_CHOICES).get(self.status)
@@ -608,3 +686,4 @@ class CustomerBaseModel(models.Model):
 
     class Meta:
         abstract = True
+

@@ -55,19 +55,43 @@ INSTALLED_APPS = [
     'project'
 ]
 
+# MIDDLEWARE = [
+#     'whitenoise.middleware.WhiteNoiseMiddleware', 
+#     'django.middleware.security.SecurityMiddleware',
+#     'django.contrib.sessions.middleware.SessionMiddleware',
+#     'django.middleware.common.CommonMiddleware',
+#     'django.middleware.csrf.CsrfViewMiddleware',
+#     'django.contrib.auth.middleware.AuthenticationMiddleware',
+#     'django.contrib.messages.middleware.MessageMiddleware',
+#     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+#     'core.middleware.current_user.CurrentUserMiddleware',
+#     'ZTInventoryApp.middleware.SessionRedirectMiddleware',
+#     'auditlog.middleware.AuditlogMiddleware',
+#      'accounts.middleware.UserTimezoneMiddleware',
+    
+# ]
+
 MIDDLEWARE = [
-    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware',
+
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
+
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+
+    # ✅ Activate user timezone immediately after authentication
+    'accounts.middleware.UserTimezoneMiddleware',
+
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+
     'core.middleware.current_user.CurrentUserMiddleware',
     'ZTInventoryApp.middleware.SessionRedirectMiddleware',
-    'auditlog.middleware.AuditlogMiddleware'
-    
+
+    # ✅ Auditlog should come AFTER timezone activation
+    'auditlog.middleware.AuditlogMiddleware',
 ]
 
 ROOT_URLCONF = 'ZTInventoryApp.urls'

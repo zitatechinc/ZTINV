@@ -1,6 +1,7 @@
 from django.urls import path
 
 from . import views
+from catalog.views import GenericFKCreateView
 
 urlpatterns = [
     path('category/list', views.CategoryCRUDView.as_view(), name='category-list'),
@@ -63,4 +64,8 @@ urlpatterns = [
     path('product_group/<int:pk>/delete', views.ProductGroupCRUDView.as_view(), name='product-group-delete'),
 
     path("product-search/", views.ProductSearchView.as_view(), name="product_search"),
+
+    path("ajax/create-fk/", GenericFKCreateView.as_view(), name="ajax_create_fk"),
+
+    path("uom_list", views.uom_list, name="uom_list"),
 ]

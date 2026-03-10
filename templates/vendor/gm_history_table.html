@@ -38,7 +38,7 @@
                         {% if g.quantity > 0 %}
                             <tr>
                             <td style="padding:6px 8px; white-space: left:">{{ g.document_number.code }}</td>
-                            <td style="padding:6px 8px; white-space: normal;">{{ g.document_number.gm_date }}</td>
+                            <td style="padding:6px 8px; white-space: normal;">{{ g.document_number.gm_date|date:"d M Y" }}</td>
                             <td style="padding:6px 8px; white-space: normal;">{{ g.uom }}</td>
                             <td style="padding:6px 8px; white-space: normal;">{{ g.gm_type }}</td>
                             <td style="padding:6px 8px; white-space: normal;">{{ g.quantity|floatformat:0 }}</td>

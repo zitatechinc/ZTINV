@@ -49,6 +49,63 @@
                                             <th class="td-2">{{project.project.project_id}}</th>
                                             <th class="td-1">Project Name</th>
                                             <th class="td-2">{{project.project.name}}</th>
+                                            <th>IssuVouchers</th>
+                                            <th>
+
+                                               {% if project.issue_voucher_numbers %}
+                                  <a href="#" data-bs-toggle="modal" data-bs-target="#exampleModal1_{{ po_obj.pk }}">
+                                    <span class="badge app-btn-primary"><i class="fa fa-eye"></i></span>
+                                  </a>
+                                  <!-- PO History Modal -->
+                                  <div class="modal fade" id="exampleModal1_{{ po_obj.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel1_{{ po_obj.pk }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-xl">
+                                      <div class="modal-content">
+                                        <div class="modal-header">
+                                          <h5 class="modal-title" id="exampleModalLabel1_{{ po_obj.pk }}">IRV History</h5>
+                                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                          <table class="table table-bordered text-center">
+                                            <thead>
+                                              <tr>
+                                                <th>SNo</th>                                              
+                                                <!-- <th>Gm Number</th> -->
+                                                <th>IRV Number</th>
+                                                <th>Created Date</th>
+                                                <th>Download</th>                                               
+                                              </tr>
+                                            </thead>
+                                            <tbody>                                                
+                                              {% for eachHisItem in project.issue_voucher_numbers %}                                               
+                                                  <tr>
+                                                    <td>{{ forloop.counter }}</td>
+
+                                                    <!-- <td>{{eachHisItem}}</td> -->
+                                                    <td>{{eachHisItem}}</td>
+                                                    <td>{{eachHisItem.created_at}}</td>
+                                                    
+                                                    <td>                                             
+                                                        <a href="{% url 'issue-voucher-pdf' project.pk eachHisItem 'IV' %}"
+                                                          target="_blank"
+                                                          class="btn btn-sm btn-danger">
+                                                          <i class="fa fa-file-pdf"></i>
+                                                        
+                                                    </td>
+                                                  </tr>                                                
+                                              {% endfor %}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                        <div class="modal-footer">
+                                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                {% else %}
+                                  <span class="badge app-btn-primary"><i class="fa fa-eye"></i></span>
+                                {% endif %}
+                                            </th>
                                         </tr>
                                       
                                         <!-- <tr>
@@ -112,6 +169,7 @@
             </tr>
         </thead>
         <tbody>
+         
            {% for row in component_rows %}
 <tr class="{% if row.has_stock %}stock-ok{% else %}no-stock{% endif %}">
     
@@ -596,7 +654,7 @@ document.getElementById("cancel-btn").addEventListener("click", function (event)
         // if (form) {
         //     form.submit();
         // }
-      window.location.href = "{% url 'voucher-search-create' %}";
+      window.location.href = "{% url 'project-header-list' %}";
     } 
     // else {
     //     // Otherwise, go to home page

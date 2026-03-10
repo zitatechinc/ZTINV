@@ -1,7 +1,6 @@
 
-
-
 {% block content %}
+{% load static %}
 
 <form method="post" action="{{ form_action_url }}" novalidate>
     {% csrf_token %}
@@ -107,7 +106,6 @@
 
                     <!-- Component Quantity -->
                         
-
                     </div>
 
                     <!-- Row 3: Component Cost & Status -->
@@ -193,6 +191,79 @@
 
 
 {% endblock content %}
+
+
+{% block pagejs %}
+
+<script src="{% static 'default/js/select2.min.js' %}"></script>
+
+<script>
+
+function initializeCreatableSelect2(selector, appLabel, modelName, ajaxUrl, placeholderText) {
+
+    if (!$(selector).length) return;
+
+    $(selector).select2({
+        width: '100%',
+        placeholder: placeholderText,
+        allowClear: true,
+        tags: true,
+        dropdownParent: $(selector).parent(),   // 🔥 Fix for hidden fields
+
+        createTag: function(params) {
+            if ($.trim(params.term) === '') return null;
+            return {
+                id: params.term,
+                text: params.term,
+                newTag: true
+            };
+        },
+
+        ajax: {
+            url: ajaxUrl,
+            dataType: 'json',
+            delay: 250,
+            cache: false,
+            data: function(params) {
+                return {
+                    app_label: appLabel,
+                    model: modelName,
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                return { results: data.results };
+            }
+        }
+    });
+}
+
+$(document).ready(function () {
+
+    // 🔥 Initialize ForeignKey Fields
+    initializeCreatableSelect2('#id_bom','project','BOMHeader','/catalog/ajax/create-fk/',"Select or add BOM" );
+
+    initializeCreatableSelect2(
+        '#id_product',
+        'catalog',
+        'Product',
+        '/catalog/ajax/create-fk/',
+        "Select or add Product"
+    );
+
+    initializeCreatableSelect2(
+        '#id_service',
+        'catalog',
+        'Product',
+        '/catalog/ajax/create-fk/',
+        "Select or add Service"
+    );
+
+});
+
+</script>
+
+{% endblock pagejs %}
 
 
 

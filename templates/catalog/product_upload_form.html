@@ -1,41 +1,177 @@
 {% extends 'core/base.html' %}
+
 {% block content %}
-<form method="post" action = "{{form_action_url}}" enctype="multipart/form-data" novalidate>
+
+<form id="uploadForm" method="post" action="{{ form_action_url }}" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
-    <div class="row mb-2 mt-2">
-        <div class="col-12 text-end">
-            <div class="button-group">
-                <a href="/media/product_sample_file.xlsx" class="btn btn-sm app-btn-primary">
-                    <i class="fa fa-download fa-lg"></i> Sample file
-                </a>
-                <button type="submit" class="btn btn-sm app-btn-primary">
-                    <i class="fa fa-save fa-lg"></i> Save
-                </button>
-            </div>
+
+    <!-- Header Actions -->
+    <div class="d-flex justify-content-between align-items-center mb-4 mt-2">
+        <h4 class="mb-0 fw-semibold">Product Bulk Upload</h4>
+
+        <div>
+            <a href="/media/product_sample_file.xlsx" class="btn btn-sm btn-outline-primary me-2">
+                <i class="fa fa-download me-1"></i> Sample File
+            </a>
+            <button type="submit" class="btn btn-sm btn-primary">
+                <i class="fa fa-upload me-1"></i> Upload
+            </button>
         </div>
     </div>
 
-    <div class="row">
-        <div class="col-12 col-md-12">
-            <div class="app-card app-card-settings shadow-md" >
-                <div class="app-card-body p-4">
-                    <div class="row">
-                        <div class="col-md-12 mb-2">
-                            <h6>Product Uploads</h6>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="mb-3">
-                          <label for="formFile" class="form-label">Upload File</label>
-                           {{ form.file }}
-                        </div>
+    <!-- Flash Messages -->
+    {% if messages %}
+        <div class="mb-3">
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show shadow-sm" role="alert">
+                    {{ message|safe }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <!-- Upload Card -->
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+
+            <p class="text-muted mb-4">
+                Upload an <strong>Excel (.xlsx)</strong> file OR a <strong>ZIP file (Excel + Images + Specs)</strong>.
+                Images and specification files are optional if uploading Excel separately.
+            </p>
+
+            <!-- Excel / ZIP Upload -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Upload Excel or ZIP</label>
+
+                <div class="border rounded p-3 bg-light text-center">
+
+                    <input 
+                        type="file"
+                        name="file"
+                        accept=".xlsx,.zip"
+                        class="form-control form-control-sm custom-file"
+                        required
+                    />
+
+                    <small class="text-muted">
+                        Drag & drop or choose file (.xlsx / .zip)
+                    </small>
+
+                </div>
+            </div>
+
+            <!-- Optional Images & Spec Files -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Upload Images / Specification Files (Optional)</label>
+
+                <input 
+                    type="file" 
+                    name="images" 
+                    multiple 
+                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+                    class="form-control form-control-sm w-auto custom-file"
+                    style="max-width: 320px;"
+                />
+
+                <small class="text-muted d-block mt-1">
+                    Required only if Excel contains 
+                    <code>image_file_name</code> or 
+                    <code>specification_file_name</code>.
+                    Skip this if uploading ZIP file.
+                </small>
+            </div>
+
+            <!-- Processing UI -->
+            <div id="processingSection" class="mt-4" style="display:none;">
+
+                <div class="progress" style="height:22px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                         role="progressbar"
+                         style="width:100%">
+                        Processing Upload...
                     </div>
                 </div>
-                
+
+                <div class="text-center mt-3">
+                    <div class="spinner-border text-primary spinner-border-sm" role="status"></div>
+                    <span class="ms-2 text-muted">Please wait while we process your file</span>
+                </div>
+
             </div>
+
         </div>
     </div>
+
 </form>
+
 {% endblock %}
+
 {% block pagecss %}
-{% endblock %}
+<style>
+
+.card {
+    border-radius:10px;
+}
+
+.progress-bar {
+    font-weight:500;
+    font-size:13px;
+}
+
+/* Custom File Button */
+
+.custom-file::file-selector-button {
+    background-color:#198754;
+    color:white;
+    border:none;
+    padding:5px 14px;
+    margin-right:10px;
+    border-radius:5px;
+    cursor:pointer;
+    transition:0.3s ease;
+}
+
+.custom-file::file-selector-button:hover {
+    background-color:#157347;
+}
+
+</style>
+{% endblock pagecss %}
+
+
+{% block pagejs %}
+<script>
+
+document.getElementById("uploadForm").addEventListener("submit", function() {
+
+    const submitBtn = document.querySelector("button[type='submit']");
+    submitBtn.disabled = true;
+    submitBtn.innerHTML = '<i class="fa fa-spinner fa-spin me-1"></i> Processing';
+
+    document.getElementById("processingSection").style.display = "block";
+
+});
+
+
+/* Validate Excel / ZIP */
+
+const fileInput = document.querySelector("input[name='file']");
+
+fileInput.addEventListener("change", function(){
+
+    const file = this.files[0];
+    if(!file) return;
+
+    const allowed = [".xlsx",".zip"];
+    const ext = file.name.substring(file.name.lastIndexOf(".")).toLowerCase();
+
+    if(!allowed.includes(ext)){
+        alert("Only Excel (.xlsx) or ZIP (.zip) files are allowed.");
+        this.value="";
+    }
+
+});
+
+</script>
+{% endblock pagejs %}

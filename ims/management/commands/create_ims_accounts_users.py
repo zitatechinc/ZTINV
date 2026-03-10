@@ -9,7 +9,7 @@ from ims.models import UserReg, Roles, Designation, Department
 class Command(BaseCommand):
     help = "Create Users + Conditional UserReg + Role Images + Profile + Sign"
 
-    PASSWORD = "rm#123"
+    PASSWORD = "meslova#123"
 
     USERS = [
         # -------- ONLY accounts.User --------
@@ -35,10 +35,10 @@ class Command(BaseCommand):
         },
         {
             "username": "guest_user",
-            "email": "alison@mesolva.com",
+            "email": "guest@mesolva.com",
             "group": "Guest",
-            "first_name": "Guest_name1",
-            "last_name": "Guest_name2",
+            "first_name": "Guest_name",
+            "last_name": "Guest_name1",
             "mobile": "9123456787",
             "tz": "Asia/Kolkata",
             "roles": ["Guest"]

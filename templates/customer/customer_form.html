@@ -465,137 +465,87 @@
 
 {% endblock pagecss %}
 
-
 {% block pagejs %}
 
 <script src="{% static 'default/js/select2.min.js' %}"></script>
-<script>
-	$(document).ready(function () {
-		$('#id_customer_type').select2({
-			placeholder: "Select a customer type",
-			allowClear: false,
-			width: '100%'
-		});
-	});
-</script>
 
 <script>
-	$(document).ready(function () {
-		$('#id_payment_terms').select2({
-			placeholder: "Select a payment terms",
-			allowClear: false ,// Optional: enables a clear button
-			width: '100%'
-		});
-	});
-</script>
+function initializeCreatableSelect2(selector, appLabel, modelName, ajaxUrl, placeholderText) {
 
-<script>
-	$(document).ready(function () {
-		$('#id_language').select2({
-			placeholder: "Select a language",
-			allowClear: false,
-			width: '100%'
-		});
-	});
-</script>
-
-<script>
-	$(document).ready(function () {
-		$('#id_country').select2({
-			placeholder: "Select a country",
-			allowClear: false,
-			width: '100%'
-		});
-	});
-</script>
-
-<!-- ✅ NEW: State Select2 -->
-<script>
-	$(document).ready(function () {
-		$('#id_state').select2({
-			placeholder: "Select a state",
-			allowClear: false,
-			width: '100%'
-		});
-	});
-</script>
-
-<!-- ✅ NEW: SubLocation Select2 -->
-<script>
-	$(document).ready(function () {
-		$('#id_sublocation').select2({
-			placeholder: "Select a city",
-			allowClear: false,
-			width: '100%'
-		});
-	});
-</script>
-
-<script>
-$(document).ready(function() {
-    // Initialize Select2
-    $('#id_country, #id_state, #id_sublocation').select2({
+    $(selector).select2({
         width: '100%',
-        placeholder: "Select an option",
-        allowClear: true
+        placeholder: placeholderText,
+        allowClear: true,
+        tags: true,
+        ajax: {
+            url: ajaxUrl,
+            dataType: 'json',
+            delay: 250,
+            cache: false,
+            data: function(params) {
+                return {
+                    app_label: appLabel,
+                    model: modelName,
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                return { results: data.results };
+            }
+        }
     });
+}
 
+$(document).ready(function () {
+
+    // Standard Select2 fields
+    $('#id_customer_type').select2({ placeholder: "Select a customer type", width: '100%' });
+    $('#id_payment_terms').select2({ placeholder: "Select payment terms", width: '100%' });
+
+    // 🔥 Creatable ForeignKeys with **custom placeholders**
+    initializeCreatableSelect2('#id_language','catalog','Languages','/catalog/ajax/create-fk/',"Select or add a language");
+    initializeCreatableSelect2('#id_country','location','Country','/catalog/ajax/create-fk/',"Select or add a country");
+    initializeCreatableSelect2('#id_state','location','Location','/catalog/ajax/create-fk/',"Select or add a state");
+
+    // City = NORMAL select2 (NO AJAX)
+    $('#id_sublocation').select2({ placeholder:"Select or add a city", width:'100%' });
+
+    // =====================
     // Country → State
-    $('#id_country').on('change', function() {
-        var countryId = $(this).val();
-        if (countryId) {
-            $.ajax({
-                url: "/location/ajax/get-states/",  // Full URL path for states
-                data: {
-                    'country_id': countryId
-                },
-                success: function(data) {
-                    var stateSelect = $('#id_state');
-                    stateSelect.empty(); // Clear old options
-                    stateSelect.append('<option value="">Select a state</option>'); // Default option
-                    $.each(data.states, function(key, value) {
-                        stateSelect.append('<option value="' + value.id + '">' + value.name + '</option>');
-                    });
-                    stateSelect.trigger('change'); // Reinitialize select2
-                },
-                error: function(xhr, status, error) {
-                    alert("Failed to load states: " + error);
-                }
+    // =====================
+    $('#id_country').on('change', function(){
+
+        $('#id_state').empty().trigger('change');
+        $('#id_sublocation').empty().trigger('change');
+
+        $.get("/location/ajax/get-states/", {country_id:this.value}, function(data){
+
+            $.each(data.states, function(i,v){
+                $('#id_state').append(new Option(v.name,v.id,false,false));
             });
-        } else {
-            $('#id_state').empty().append('<option value="">Select a state</option>').trigger('change'); // Reset state dropdown
-            $('#id_sublocation').empty().append('<option value="">Select a city</option>').trigger('change'); // Reset sublocation dropdown
-        }
+
+            $('#id_state').trigger('change.select2');
+        });
     });
 
-    // State → SubLocation (City)
-    $('#id_state').on('change', function() {
-        var stateId = $(this).val();
-        if (stateId) {
-            $.ajax({
-                url: "/location/ajax/get-sublocations/",  // Full URL path for sublocations
-                data: {
-                    'state_id': stateId
-                },
-                success: function(data) {
-                    var sublocationSelect = $('#id_sublocation');
-                    sublocationSelect.empty(); // Clear old options
-                    sublocationSelect.append('<option value="">Select a city</option>'); // Default option
-                    $.each(data.sublocations, function(key, value) {
-                        sublocationSelect.append('<option value="' + value.id + '">' + value.name + '</option>');
-                    });
-                    sublocationSelect.trigger('change'); // Reinitialize select2
-                },
-                error: function(xhr, status, error) {
-                    alert("Failed to load sublocations: " + error);
-                }
+    // =====================
+    // State → City
+    // =====================
+    $('#id_state').on('change', function(){
+
+        $('#id_sublocation').empty().trigger('change');
+
+        $.get("/location/ajax/get-sublocations/", {state_id:this.value}, function(data){
+
+            $.each(data.sublocations, function(i,v){
+                $('#id_sublocation').append(new Option(v.name,v.id,false,false));
             });
-        } else {
-            $('#id_sublocation').empty().append('<option value="">Select a city</option>').trigger('change'); // Reset sublocation dropdown
-        }
+
+            $('#id_sublocation').trigger('change');
+        });
     });
+
 });
 </script>
-
 
 {% endblock pagejs %}

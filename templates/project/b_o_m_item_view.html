@@ -18,25 +18,20 @@
 
     <div class="row">
         <div class="col-12 col-md-12">
-            <div class="app-card app-card-settings shadow-md">
-
+            <div class="app-card app-card-settings shadow-md p-4">
                 {% include 'project/bom_menu.html' %}
-
-                <div class="app-card-body p-4">
+                <div class="app-card-body ps-2">
                     <!-- BOM Item Information -->
                     <div class="row mb-4">
                         <h6 class="mb-3">BOM Item Information</h6>
-
-                        <div class="col-md-4"><strong>BOM:</strong> {{ bi_obj.bom }}</div>
-                        <div class="col-md-4"><strong>Code:</strong> {{ bi_obj.code }}</div>
-                        <div class="col-md-4"><strong>Product:</strong> {{ bi_obj.product }}</div>
-
-                        <div class="col-md-4"><strong>Quantity:</strong> {{ bi_obj.bom_quantity }}</div>
-                        <div class="col-md-4"><strong>UOM:</strong> {{ bi_obj.bom_uom }}</div>
-                        <div class="col-md-4"><strong>Scrap %:</strong> {{ bi_obj.scrap_percentage }}</div>
-
+                        <div class="col-md-4"><strong>BOM :</strong> {{ bi_obj.bom }}</div>
+                        <div class="col-md-4"><strong>Code :</strong> {{ bi_obj.code }}</div>
+                        <div class="col-md-4"><strong>Product :</strong> {{ bi_obj.product }}</div>
+                        <div class="col-md-4"><strong>Quantity :</strong> {{ bi_obj.bom_quantity }}</div>
+                        <div class="col-md-4"><strong>UOM :</strong> {{ bi_obj.bom_uom }}</div>
+                        <div class="col-md-4"><strong>Scrap % :</strong> {{ bi_obj.scrap_percentage }}</div>
                         <div class="col-md-4">
-                            <strong>Status:</strong>
+                            <strong>Status :</strong>
                             <span class="badge 
                                 {% if bi_obj.status == 1 %}
                                     bg-success
@@ -50,7 +45,6 @@
                             </span>
                         </div>
                     </div>
-
                     <!-- Download Button for BOM Item -->
                     {% if bi_obj.file_name %}
                     <div class="row mb-4">
@@ -61,10 +55,10 @@
                         </div>
                     </div>
                     {% endif %}
-
                     <!-- Audit Log Information -->
-                   {% include 'core/auditlog.html' with object=bi_obj %}
+                    {% include 'core/auditlog1.html' with object=bi_obj %}
                 </div>
+                
             </div>
         </div>
     </div>

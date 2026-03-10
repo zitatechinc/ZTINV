@@ -129,7 +129,7 @@ class ProductModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
 
     class Meta:
         model = Product
-        exclude=('created_user', 'updated_user')
+        exclude=('created_user', 'updated_user','upc','isbn','ean','mpin','material_code')
        
 class ProductLinksModelForm(CatalogBaseModelForm):
     required_css_class = 'required'
@@ -160,7 +160,7 @@ class ProductAttributeModelForm(CatalogBaseModelForm):
         self.product_id = product_id
         
         product_obj = Product.objects.get(pk=self.product_id)
-        attributes = Attribute.objects.filter(status=True).order_by('name')
+        attributes = Attribute.objects.filter(status=True,category=product_obj.category,product_type=product_obj.product_type,product_group=product_obj.product_group).order_by('name')
 
         for attr in attributes:
             existing_value = ProductAttribute.objects.filter(attribute=attr,product=product_obj).first()

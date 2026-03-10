@@ -1,79 +1,94 @@
-<div class="row mt-1">
-  <div class="col-md-6">
-    <span>Total Records: <strong>{{ RecordsTotal }}</strong></span>
-  </div>
-  <div class="col-md-6">
-    <div class="row">
-      <div class="col-md-12">
-        <nav class="app-pagination" style="float: right;">
-          <ul class="pagination justify-content-center">
 
-            <!-- First Button -->
-            {% if page_obj.number == 1 %}
-              <li class="page-item disabled">
-                <span class="page-link">First</span>
-              </li>
-            {% else %}
-              <li class="page-item">
-                <a href="?page=1{% for key, values in request.GET.lists %}{% if key != 'page' %}{% for v in values %}&{{ key }}={{ v }}{% endfor %}{% endif %}{% endfor %}" class="page-link">First</a>
-              </li>
+
+
+
+ {% if is_paginated %}
+            <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap">
+
+                <!-- Showing Info -->
+                <div>
+                    <small>
+                        Showing 
+                        {{ page_obj.start_index }}–
+                        {{ page_obj.end_index }}
+                        of {{ RecordsTotal }} records
+                    </small>
+                </div>
+
+                <!-- Page Size Selector -->
+                <div>
+                    <form method="get" id="pageSizeForm" class="d-flex align-items-center">
+                        <label class="me-2">Show</label>
+                        <select name="page_size"
+                                onchange="document.getElementById('pageSizeForm').submit();"
+                                class="form-select form-select-sm w-auto">
+                            {% for size in PageSizeOptions %}
+                                <option value="{{ size }}"
+                                    {% if PageSize == size %}selected{% endif %}>
+                                    {{ size }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                        <label class="ms-2">entries</label>
+                    </form>
+                </div>
+
+                <!-- Pagination Controls -->
+                <nav class="app-pagination" style="float: right;">
+                    <ul class="pagination pagination-sm mb-0">
+
+                        <!-- First -->
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page=1&page_size={{ PageSize }}">First</a>
+                        </li>
+                        {% endif %}
+
+                        <!-- Previous -->
+                        {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ page_obj.previous_page_number }}&page_size={{ PageSize }}">
+                                &laquo;
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- Page Numbers -->
+                        {% for num in paginator.page_range %}
+                            {% if num >= page_obj.number|add:-2 and num <= page_obj.number|add:2 %}
+                                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                                    <a class="page-link"
+                                       href="?page={{ num }}&page_size={{ PageSize }}">
+                                        {{ num }}
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endfor %}
+
+                        <!-- Next -->
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ page_obj.next_page_number }}&page_size={{ PageSize }}">
+                                &raquo;
+                            </a>
+                        </li>
+                        {% endif %}
+
+                        <!-- Last -->
+                        {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link"
+                               href="?page={{ paginator.num_pages }}&page_size={{ PageSize }}">
+                                Last
+                            </a>
+                        </li>
+                        {% endif %}
+
+                    </ul>
+                </nav>
+
+            </div>
             {% endif %}
-
-            <!-- Previous Button -->
-            {% if page_obj.has_previous %}
-              <li class="page-item">
-                <a href="?page={{ page_obj.previous_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page' %}{% for v in values %}&{{ key }}={{ v }}{% endfor %}{% endif %}{% endfor %}" class="page-link">Previous</a>
-              </li>
-            {% else %}
-              <li class="page-item disabled">
-                <span class="page-link">Previous</span>
-              </li>
-            {% endif %}
-
-            <!-- Page Numbers -->
-            {% for i in page_obj.paginator.page_range %}
-              {% if page_obj.number == i %}
-                <li class="page-item active">
-                  <span class="page-link">{{ i }} <span class="sr-only">(current)</span></span>
-                </li>
-              {% elif i >= object.MinPrevPage and i <= object.MaxNextPage %}
-                <li class="page-item">
-                  <a href="?page={{ i }}{% for key, values in request.GET.lists %}{% if key != 'page' %}{% for v in values %}&{{ key }}={{ v }}{% endfor %}{% endif %}{% endfor %}" class="page-link">{{ i }}</a>
-                </li>
-              {% endif %}
-            {% endfor %}
-
-            <!-- Next Button -->
-            {% if page_obj.has_next %}
-              <li class="page-item">
-                <a href="?page={{ page_obj.next_page_number }}{% for key, values in request.GET.lists %}{% if key != 'page' %}{% for v in values %}&{{ key }}={{ v }}{% endfor %}{% endif %}{% endfor %}" class="page-link">Next</a>
-              </li>
-            {% else %}
-              <li class="page-item disabled">
-                <span class="page-link">Next</span>
-              </li>
-            {% endif %}
-
-            <!-- Last Button -->
-            {% if page_obj.number == page_obj.paginator.num_pages %}
-              <li class="page-item disabled">
-                <span class="page-link">Last</span>
-              </li>
-            {% else %}
-              <li class="page-item">
-                <a href="?page={{ page_obj.paginator.num_pages }}{% for key, values in request.GET.lists %}{% if key != 'page' %}{% for v in values %}&{{ key }}={{ v }}{% endfor %}{% endif %}{% endfor %}" class="page-link">Last</a>
-              </li>
-            {% endif %}
-
-          </ul>
-        </nav>
-      </div>
-
-      {% if RecordsTotal > 0 %}
-        <div class="col-md-12" style="float: right; text-align: right;">
-          (Page <strong>{{ page_obj.number }}</strong> of <strong>{{ page_obj.paginator.num_pages }}</strong>)
-        </div>
-      {% endif %}
-    </div>
-  </div>
-</div>

@@ -17,6 +17,7 @@
                             {{ form.PurchaseOrderHeader }}
                             {{ form.code }}
                         </div>
+
                     </div>
         </form>
 
@@ -47,15 +48,15 @@
                       <tbody>
                         <tr>
                           <th class="td-1">Created On</th>
-                          <td class="td-2">{{ po_obj.created_at|date:"M.d,Y H:i" }}</td>
+                          <td class="td-2">{{ po_obj.created_at|date:"d M Y H:i" }}</td>
                           <th class="td-1">Created by</th>
-                          <td class="td-2">{{ po_obj.created_user.first_name }}</td>
+                          <td class="td-2">{{ po_obj.record_created_user }}</td>
                           <th class="td-1">Last Modified on</th>
-                          <td class="td-2">{{ po_obj.updated_at|date:"M.d,Y H:i" }}</td>
+                          <td class="td-2">{{ po_obj.updated_at|date:"d M Y H:i" }}</td>
                         </tr>
                         <tr>
                           <th class="td-1">Last Modified by</th>
-                          <td class="td-2">{{ po_obj.updated_user.first_name }}</td>
+                          <td class="td-2">{{ po_obj.last_modified_user }}</td>
                           <th class="td-1">Vendor Code and Name</th>
                           <td class="td-2">
                             <a href="{% url 'vendor-view' po_obj.vendor.pk %}" style="color:#116a8d !important;">
@@ -63,43 +64,112 @@
                             </a>
                           </td>
                           <th class="td-1">PO Date</th>
-                          <td class="td-2">{{ po_obj.po_date }}</td>
+                          <td class="td-2">{{ po_obj.po_date |date:"d M Y"}}</td>
                         </tr>
                         <tr>
                           <th class="td-1">PO Requested</th>
-                          <td class="td-2">{{ po_obj.po_requested_by.first_name }} {{ po_obj.po_requested_by.last_name }}</td>
-                          <th class="td-1">QM Header Status</th>
+                          <td class="td-2">{{ po_obj.po_requested_by.first_name|default_if_none:""|default:"" }} {{ po_obj.po_requested_by.last_name|default_if_none:""|default:"" }}</td>
+                          <!-- <th class="td-1">QM Header Status</th>
                           <td class="td-2">
                             <span class="badge {{ po_obj.qm_header_status.name|upper }}">{{ po_obj.qm_header_status.name }}</span>
-                          </td>
+                          </td> -->
+                          <th class="td-1">QM Header Status</th>
+                            <td class="td-2">
+                              <span class="badge
+                                {% if po_obj.qm_header_status.name == 'OPEN' %}
+                                  bg-success
+                                {% elif po_obj.qm_header_status.name == 'CLOSED' %}
+                                  bg-danger
+                                {% elif po_obj.qm_header_status.name == 'PARTIAL' %}
+                                  bg-warning
+                                {% else %}
+                                  bg-secondary
+                                {% endif %}
+                              ">
+                                {{ po_obj.qm_header_status.name }}
+                              </span>
+                            </td>
                           <th class="td-1">PO Type</th>
                           <td class="td-2">{{ po_obj.po_type.name }}</td>
                         </tr>
                         <tr>
                           <th class="td-1">Requested Delivery Date</th>
-                          <td class="td-2">{{ po_obj.requested_delivery_date }}</td>
+                          <td class="td-2">{{ po_obj.requested_delivery_date |date:"d M Y "}}</td>
+
+                          <th class="td-1">IRV List</th>
+                          
+                          <td>                              
+
+                            {% if po_obj.getReferenceQMNUmbers %}
+                                  <a href="#" data-bs-toggle="modal" data-bs-target="#exampleModal1_{{ po_obj.pk }}">
+                                    <span class="badge app-btn-primary"><i class="fa fa-eye"></i></span>
+                                  </a>
+                                  <!-- PO History Modal -->
+                                  <div class="modal fade" id="exampleModal1_{{ po_obj.pk }}" tabindex="-1" aria-labelledby="exampleModalLabel1_{{ po_obj.pk }}" aria-hidden="true">
+                                    <div class="modal-dialog modal-xl">
+                                      <div class="modal-content">
+                                        <div class="modal-header">
+                                          <h5 class="modal-title" id="exampleModalLabel1_{{ po_obj.pk }}">IRV History</h5>
+                                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                          <table class="table table-bordered text-center">
+                                            <thead>
+                                              <tr>
+                                                <th>SNo</th>                                              
+                                                <!-- <th>Gm Number</th> -->
+                                                <th>IRV Number</th>
+                                                <th>Created Date</th>
+                                                <th>Download</th>                                               
+                                              </tr>
+                                            </thead>
+                                            <tbody>                                                
+                                              {% for eachHisItem in po_obj.getReferenceQMNUmbers %}                                               
+                                                  <tr>
+                                                    <td>{{ forloop.counter }}</td>
+
+                                                    <!-- <td>{{eachHisItem}}</td> -->
+                                                    <td>{{eachHisItem.reference_number}}</td>
+                                                    <td>{{eachHisItem.created_at}}</td>
+                                                    
+                                                    <td>                                             
+                                                        <a href="{% url 'quality-management-pdf' po_obj.pk eachHisItem.reference_number 'IRV' %}"
+                                                          target="_blank"
+                                                          class="btn btn-sm btn-danger">
+                                                          <i class="fa fa-file-pdf"></i>
+                                                        
+                                                    </td>
+                                                  </tr>                                                
+                                              {% endfor %}
+                                            </tbody>
+                                          </table>
+                                        </div>
+                                        <div class="modal-footer">
+                                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                {% else %}
+                                  <span class="badge app-btn-primary"><i class="fa fa-eye"></i></span>
+                                {% endif %}
+                          </td>
                         </tr>
                       </tbody>
                     </table>
                   </div>
                 </div>
-
               </div>
             </div>
 
             <!-- Quality Management Form -->
-            <form method="post" action="{% url 'quality_management_receipt' po_obj.pk %}" novalidate>
+            <form method="post" action="{% url 'quality_management_receipt' po_obj.pk %}" enctype="multipart/form-data" novalidate>
               <div class="row mt-1">
                 <div class="col-md-6"></div>
                 <div class="col-md-6">
                   <div class="mb-2 button-group" style="float:right;">
-                    <a
-                      href="{% url 'quality-management-pdf' po_obj.pk %}"
-                      target="_blank"
-                      class="btn btn-sm btn-danger"
-                    >
-                      <i class="fa fa-file-pdf"></i> Export PDF
-                    </a>
+                    
+                    
                     <button type="submit" id="saveChangesBtn" onclick="return confirmSave()" class="btn btn-success" {% if po_obj.qm_header_status.name == 'CLOSED' %}disabled{% endif %}>
                       <i class="fa fa-save"></i> Save Changes
                     </button>
@@ -171,6 +241,9 @@
                                                 <th>CreatedBy</th>
                                                 <th>Passed Inspection<br><small>(Qty)</small></th>
                                                 <th>Rejected Inspection<br><small>(Qty)</small></th>
+                                                <th>Rejected codes</th>
+                                                <th>Rejected Attachment</th>
+                                                <th>Notes</th>
                                               </tr>
                                             </thead>
                                             <tbody>
@@ -182,12 +255,21 @@
                                                     <td>{{ eachHisItem.po_history_number }}</td>
                                                     <td>{{ eachHisItem.po_history_type }}</td>
                                                     <td>{{ eachHisItem.gm_header.code }}</td>
-                                                    <td>{{ eachHisItem.po_history_date }}</td>
+                                                    <td>{{ eachHisItem.po_history_date|date:"d M Y" }}</td>
                                                     <td>{{ eachHisItem.uom }}</td>
-                                                    <td>{{ eachHisItem.created_at }}</td>
-                                                    <td>{{ eachHisItem.created_user.first_name }}</td>
+                                                    <td>{{ eachHisItem.created_at|date:"d M Y, H:i"}}</td>
+                                                    <td>{{ eachHisItem.record_created_user }}</td>
                                                     <td>{{ eachHisItem.po_good_qty }}</td>
                                                     <td>{{ eachHisItem.po_rejected_qty }}</td>
+                                                    <td>{{ eachHisItem.rejection_code_name_display }}</td>
+                                                    <td>{% for doc in eachHisItem.documents_list %}
+                                                          <a href="{{ doc.document.url }}" target="_blank">
+                                                              View Document
+                                                          </a>
+                                                          {%endfor%}
+                                                        
+                                                        </td>
+                                                    <td>{{eachHisItem.description}}</td>
                                                   </tr>
                                                 {% endif %}
                                               {% endfor %}
@@ -207,8 +289,13 @@
                               </td>
 
                               <!-- Remaining Table Columns -->
-                              <td>{{ eachItem.code }}</td>
-                              <td><a href="{% url 'product-view' eachItem.item.pk %}">{{ eachItem.item }}</a></td>
+                              <td>{{ eachItem.code }} {{eachItem.qm_document}}</td>
+                              <!-- <td><a href="{% url 'product-view' eachItem.item.pk %}">{{ eachItem.item }}</a></td> -->
+                              <td>
+                                <a href="{% url 'product-view' eachItem.item.pk %}" target="_blank">
+                                  {{ eachItem.item }}
+                                </a>
+                              </td>
                               <td>{{ eachItem.po_location.name }}</td>
                               <td>{{ eachItem.sub_location.name}}</td>
                               <td>{{ eachItem.quantity|add:"0" }}</td>
@@ -218,100 +305,101 @@
                               <td>{{ eachItem.rejected_qty }}</td>
                               <td class="tot_ins_qty">{{ eachItem.total_qty_inspected }}</td>
 
-                              <!-- Updated Current Inspection / Rejection -->
-                              <!-- <td class="text-end inspected_qty">
-                                <input type="number" style="width: 60px;"
-                                       name="quality_already_inspected_{{ eachItem.id }}"
-                                       value="{{ eachItem.quality_already_inspected|default:0 }}"
-                                       min="0"
-                                       max="{{ eachItem.total_qty_inspected}}"
-                                       class="form-control">
-                              </td> -->
-
+                              <!-- Current Inspection -->
                               <td class="text-end inspected_qty">
-                                      <input type="number" style="width: 60px;"
-                                             name="quality_already_inspected_{{ eachItem.id }}" 
-                                             value="{{ eachItem.quality_already_inspected|default:0 }}" 
-                                             min="0" 
-                                             max="{{ eachItem.total_qty_inspected }}"
-                                             class="form-control" {% if eachItem.qty_inspection_status == 'CLOSED'%}disabled readonly{% endif %}>
-                                              {% if item_errors and eachItem.id|stringformat:"s" in item_errors %}
-                                              
-                                                {% for item_id, messages in item_errors.items %}
-                                                    <div>
-                                                      
-                                                        <ul>
-                                                            {% for msg in messages %}
-                                                                <li style="color:red">{{ msg }}</li>
-                                                            {% endfor %}
-                                                        </ul>
-                                                    </div>
-                                                {% endfor %}
-                                            {% endif %}
-                                    </td>
+                                <input type="number" style="width: 60px;"
+                                       name="quality_already_inspected_{{ eachItem.id }}" 
+                                       value="{{ eachItem.quality_already_inspected|default:0 }}" 
+                                       min="0" 
+                                       max="{{ eachItem.total_qty_inspected }}"
+                                       class="form-control" {% if eachItem.qty_inspection_status == 'CLOSED'%}disabled readonly{% endif %}>
+                                {% if item_errors and eachItem.id|stringformat:"s" in item_errors %}
+                                  {% for item_id, messages in item_errors.items %}
+                                    <div>
+                                      <ul>
+                                        {% for msg in messages %}
+                                          <li style="color:red">{{ msg }}</li>
+                                        {% endfor %}
+                                      </ul>
+                                    </div>
+                                  {% endfor %}
+                                {% endif %}
+                              </td>
                               
-                                    <td class="text-end rejected_qty">
-                                      <input type="number" style="width: 60px;"
-                                             name="quality_already_rejected_{{ eachItem.id }}"
-                                             value="{{ eachItem.quality_already_rejected|default:0 }}" 
-                                             min="0" 
-                                             max="{{ eachItem.total_qty_inspected }}" 
-                                             class="form-control" {% if eachItem.qty_inspection_status == 'CLOSED'%}disabled readonly{% endif %}>
-                                              {% if item_errors and eachItem.id|stringformat:"s" in item_errors %}
-                                              
-                                                {% for item_id, messages in item_errors.items %}
-                                                    <div>
-                                                      
-                                                        <ul>
-                                                            {% for msg in messages %}
-                                                                <li style="color:red">{{ msg }}</li>
-                                                            {% endfor %}
-                                                        </ul>
-                                                    </div>
-                                                {% endfor %}
-                                            {% endif %}
-                                    </td>
-
-                              <!-- <td>
+                              <!-- Current Rejection -->
+                              <td class="text-end rejected_qty">
                                 <input type="number" style="width: 60px;"
                                        name="quality_already_rejected_{{ eachItem.id }}"
-                                       value="{{ eachItem.quality_already_rejected|default:0 }}"
-                                       min="0"
-                                       max="{{ eachItem.total_qty_inspected|default:0 }}"
-                                       class="form-control">
-                              </td> -->
+                                       value="{{ eachItem.quality_already_rejected|default:0 }}" 
+                                       min="0" 
+                                       max="{{ eachItem.total_qty_inspected }}" 
+                                       class="form-control" {% if eachItem.qty_inspection_status == 'CLOSED'%}disabled readonly{% endif %}>
+                                {% if item_errors and eachItem.id|stringformat:"s" in item_errors %}
+                                  {% for item_id, messages in item_errors.items %}
+                                    <div>
+                                      <ul>
+                                        {% for msg in messages %}
+                                          <li style="color:red">{{ msg }}</li>
+                                        {% endfor %}
+                                      </ul>
+                                    </div>
+                                  {% endfor %}
+                                {% endif %}
+                              </td>
+                              <td class="cell">
+                                <span class="badge
+                                  {% if eachItem.qty_inspection_status == 'PARTIAL' %}
+                                    bg-warning
+                                  {% elif eachItem.qty_inspection_status == 'CLOSED' %}
+                                    bg-danger
+                                  {% elif eachItem.qty_inspection_status == 'OPEN' %}
+                                    bg-success
+                                  {% else %}
+                                    bg-secondary
+                                  {% endif %}
+                                ">
+                                  {{ eachItem.qty_inspection_status|capfirst }}
+                                </span>
+                              </td>
+                              <!-- <td><span class="badge {{ eachItem.qty_inspection_status|upper }}">{{ eachItem.qty_inspection_status }}</span></td> -->
+                             <td>
+                                <button
+                                  type="button"
+                                  class="btn btn-sm btn-outline-primary qm-notes-btn px-1 py-0"
+                                  data-item-id="{{ eachItem.id }}"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#qmNotesModal"
+                                >
+                                  <i class="fa fa-sticky-note"></i> Notes
+                                </button>
+                                <!-- <a
+                                  href="javascript:void(0);"
+                                  class="btn btn-sm btn-outline-primary qm-notes-btn"
+                                  data-item-id="{{ eachItem.id }}"
+                                  data-bs-toggle="modal"
+                                  data-bs-target="#qmNotesModal"
+                                  role="button"
+                                >
+                                  <i class="fa fa-sticky-note"></i> Notes
+                                </a> -->
 
-                              <td><span class="badge {{ eachItem.qty_inspection_status|upper }}">{{ eachItem.qty_inspection_status }}</span></td>
-                              <td>
-                                  <button
-                                    type="button"
-                                    class="btn btn-sm btn-outline-primary qm-notes-btn"
-                                    data-item-id="{{ eachItem.id }}"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#qmNotesModal"
-                                  >
-                                    <i class="fa fa-sticky-note"></i> Notes
-                                  </button>
+                                <!-- Hidden fields bound per row -->
+                                <input type="hidden" name="qm_notes_{{ eachItem.id }}" id="qm_notes_{{ eachItem.id }}">
+                                <input type="hidden" name="rejection_code_{{ eachItem.id }}" id="rejection_code_{{ eachItem.id }}">
 
-                                  <!-- Hidden fields bound per row -->
-                                  <input type="hidden" name="qm_notes_{{ eachItem.id }}" id="qm_notes_{{ eachItem.id }}">
-                                  <input type="hidden" name="rejection_code_{{ eachItem.id }}" id="rejection_code_{{ eachItem.id }}">
+                                <!-- File input (hidden but submitted with form) -->
+                                <input
+                                  type="file"
+                                  name="qm_document_{{ eachItem.id }}"
+                                  id="qm_document_{{ eachItem.id }}"
+                                  style="display:none;"
+                                >
+                              </td>
 
-                                  <!-- File input (hidden but submitted with form) -->
-                                  <input
-                                    type="file"
-                                    name="qm_document_{{ eachItem.id }}"
-                                    id="qm_document_{{ eachItem.id }}"
-                                    style="display:none;"
-                                  >
-                                </td>
-
-
-
-                              <td style="white-space: nowrap;">{{ eachItem.created_at|date:"M.d,Y H:i" }}</td>
-                              <td>{{ eachItem.created_user }}</td>
-                              <td style="white-space: nowrap;">{{ eachItem.updated_at|date:"M.d,Y H:i" }}</td>
-                              <td>{{ eachItem.updated_user }}</td>
+                              <td style="white-space: nowrap;">{{ eachItem.created_at|date:"d M Y, H:i" }}</td>
+                              <td>{{ eachItem.record_created_user }}</td>
+                              <td style="white-space: nowrap;">{{ eachItem.updated_at|date:"d M Y, H:i" }}</td>
+                              <td>{{ eachItem.last_modified_user }}</td>
 
                             </tr>
                           {% endfor %}
@@ -348,7 +436,6 @@
   </div>
 </div>
 
-<!-- ================= QM NOTES MODAL ================= -->
 <div class="modal fade" id="qmNotesModal" tabindex="-1">
   <div class="modal-dialog modal-lg modal-dialog-centered">
     <div class="modal-content">
@@ -374,16 +461,27 @@
           ></textarea>
         </div>
 
-        <!-- Rejection Code -->
+        <!-- Rejection Code with Multi-Select Checkboxes -->
         <div class="mb-3">
           <label class="form-label fw-semibold">Rejection Code</label>
-          <select id="modal_rejection_code" class="form-select">
-            <option value="">Select code</option>
-            <option value="RC01">RC01 – Damage</option>
-            <option value="RC02">RC02 – Quality Mismatch</option>
-            <option value="RC03">RC03 – Expired</option>
-            <option value="RC04">RC04 – Packaging Issue</option>
-          </select>
+          
+          <!-- Display selected codes as badges -->
+          <div id="selected_rejection_codes" class="mb-2" style="min-height: 40px; padding: 8px; border: 1px solid #dee2e6; border-radius: 4px; background-color: #f8f9fa;">
+            <span class="text-muted" id="no_selection_text">No codes selected</span>
+          </div>
+          
+          <!-- Checkbox list -->
+          <div class="rejection-code-checkboxes" style="border: 1px solid #dee2e6; border-radius: 4px; padding: 10px 15px; max-height: 200px; overflow-y: auto; background-color: #fff;">
+            {% for item in rejection_codes %}
+            <div class="form-check">
+              <input class="form-check-input rejection-checkbox" type="checkbox" value="{{item.code}}" id="{{item.code}}">
+              <label class="form-check-label" for="{{item.code}}">
+                {{item.code}}-{{item.name}}
+              </label>
+            </div>
+            {%endfor%}
+            
+          </div>
         </div>
 
         <!-- Document Upload -->
@@ -433,18 +531,6 @@
     height: 36px !important;
   }
 </style>
-
-<!-- <style type="text/css">
-.sticky-col { position: sticky; left: 0; z-index: 2; background: #fff; }
-.sticky-col + .sticky-col { left: 6px; }
-.table tbody tr.highlight-row { background-color: #fff3cd !important; }
-.border-highlight-row { border: 2px solid #e0e0e0 !important; }
-.border-highlight-row:hover { box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15); }
-.input-error { border: 2px solid red !important; border-radius: 4px; background-color: #ffecec; }
-.table td { text-align: center; vertical-align: middle; white-space: nowrap; }
-.qm-table td { text-align: left !important; vertical-align: middle; white-space: nowrap; }
-.table td input { height: 32px; padding: 4px 8px; text-align: center; }
-</style> -->
 
 <style type="text/css">
   .sticky-col {
@@ -500,6 +586,36 @@
     padding: 4px 8px;
     text-align: left;
   }
+
+  /* Rejection Code Checkbox Styles */
+  .rejection-code-checkboxes .form-check {
+    padding: 8px 5px;
+    margin-bottom: 5px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .rejection-code-checkboxes .form-check:last-child {
+    border-bottom: none;
+  }
+
+  .rejection-code-checkboxes .form-check:hover {
+    background-color: #f8f9fa;
+  }
+
+  .rejection-code-checkboxes .form-check-input {
+    cursor: pointer;
+  }
+
+  .rejection-code-checkboxes .form-check-label {
+    cursor: pointer;
+    margin-left: 5px;
+  }
+
+  #selected_rejection_codes .badge {
+    font-size: 0.85rem;
+    padding: 6px 10px;
+    font-weight: 500;
+  }
 </style>
 
 {% endblock %}
@@ -524,8 +640,72 @@
   function confirmSave() { return confirm("Are you sure you want to save these changes?"); }
   function confirmReset() { return confirm("Are you sure you want to reset the form? All entered data will be lost."); }
 </script>
+
 <script>
+
+  $(document).ready(function () {
+
+  function validateModalInputs() {
+
+    const notesVal = $('#modal_qm_notes').val().trim();
+
+    const selectedCodes = $('.rejection-checkbox:checked').length;
+
+    const fileSelected = $('#modal_qm_document')[0].files.length > 0;
+
+    if (notesVal !== '' || selectedCodes > 0 || fileSelected) {
+      $('#saveQmNotesBtn').prop('disabled', false);
+    } else {
+      $('#saveQmNotesBtn').prop('disabled', true);
+    }
+  }
+
+  // Disable initially
+  $('#saveQmNotesBtn').prop('disabled', true);
+
+  // Trigger validation on change
+  $('#modal_qm_notes').on('input', validateModalInputs);
+  $('.rejection-checkbox').on('change', validateModalInputs);
+  $('#modal_qm_document').on('change', validateModalInputs);
+
+  // When modal opens → reset & disable
+  $('.qm-notes-btn').on('click', function () {
+    setTimeout(function () {
+      validateModalInputs();
+    }, 100);
+  });
+
+});
+
 $(document).ready(function () {
+
+  // Function to update rejection code display
+  function updateRejectionCodeDisplay() {
+    const selectedCodes = [];
+    const selectedLabels = [];
+    
+    $('.rejection-checkbox:checked').each(function() {
+      selectedCodes.push($(this).val());
+      selectedLabels.push($(this).next('label').text().trim());
+    });
+    
+    const $displayArea = $('#selected_rejection_codes');
+    
+    if (selectedCodes.length === 0) {
+      $displayArea.html('<span class="text-muted" id="no_selection_text">No codes selected</span>');
+    } else {
+      let badgesHtml = '';
+      selectedLabels.forEach((label, index) => {
+        badgesHtml += `<span class="badge bg-primary me-1 mb-1">${label}</span>`;
+      });
+      $displayArea.html(badgesHtml);
+    }
+  }
+
+  // Handle checkbox change
+  $(document).on('change', '.rejection-checkbox', function() {
+    updateRejectionCodeDisplay();
+  });
 
   // Open modal & load existing values
   $('.qm-notes-btn').on('click', function () {
@@ -533,8 +713,25 @@ $(document).ready(function () {
 
     $('#qm_item_id').val(itemId);
 
+    // Load notes
     $('#modal_qm_notes').val($(`#qm_notes_${itemId}`).val());
-    $('#modal_rejection_code').val($(`#rejection_code_${itemId}`).val());
+    
+    // Load rejection codes (multi-select)
+    const savedCodes = $(`#rejection_code_${itemId}`).val();
+    
+    // Uncheck all first
+    $('.rejection-checkbox').prop('checked', false);
+    
+    // Check saved codes
+    if (savedCodes) {
+      const codesArray = savedCodes.split(',');
+      codesArray.forEach(code => {
+        $(`.rejection-checkbox[value="${code.trim()}"]`).prop('checked', true);
+      });
+    }
+    
+    // Update display
+    updateRejectionCodeDisplay();
 
     // Reset modal file input
     $('#modal_qm_document').val('');
@@ -543,29 +740,79 @@ $(document).ready(function () {
   // Save notes → bind to hidden inputs
   $('#saveQmNotesBtn').on('click', function () {
 
-    const itemId = $('#qm_item_id').val();
+  // 🔔 Confirmation
+  if (!confirm("Are you sure you want to save QM Notes and Rejection details?")) {
+    return; // Stop if user clicks Cancel
+  }
 
-    // Bind text values
-    $(`#qm_notes_${itemId}`).val($('#modal_qm_notes').val());
-    $(`#rejection_code_${itemId}`).val($('#modal_rejection_code').val());
+  const itemId = $('#qm_item_id').val();
 
-    // Bind file (move file input)
-    const modalFile = $('#modal_qm_document')[0].files[0];
-    if (modalFile) {
-      const rowFileInput = $(`#qm_document_${itemId}`)[0];
-      rowFileInput.files = $('#modal_qm_document')[0].files;
+  // Bind text values
+  $(`#qm_notes_${itemId}`).val($('#modal_qm_notes').val());
+  
+  // Collect selected rejection codes
+  const selectedCodes = [];
+  $('.rejection-checkbox:checked').each(function() {
+    selectedCodes.push($(this).val());
+  });
+
+  $(`#rejection_code_${itemId}`).val(selectedCodes.join(','));
+
+  // Bind file (move file input)
+  const modalFile = $('#modal_qm_document')[0].files[0];
+  if (modalFile) {
+    const rowFileInput = $(`#qm_document_${itemId}`)[0];
+    rowFileInput.files = $('#modal_qm_document')[0].files;
+  }
+
+  // Visual indicator
+  $(`.qm-notes-btn[data-item-id="${itemId}"]`)
+    .removeClass('btn-outline-primary')
+    .addClass('btn-success');
+
+  $('#qmNotesModal').modal('hide');
+});
+  
+});
+
+</script>
+<script>
+$(document).ready(function () {
+
+  function toggleNotesButton($row) {
+
+    // Get Current Inspection value
+    const inspectedVal = parseFloat(
+      $row.find('input[name^="quality_already_rejected"]').val()
+    ) || 0;
+
+    const notesBtn = $row.find('.qm-notes-btn');
+
+    if (inspectedVal > 0) {
+      notesBtn.prop('disabled', false);
+      notesBtn.removeClass('btn-secondary')
+              .addClass('btn-outline-primary');
+    } else {
+      notesBtn.prop('disabled', true);
+      notesBtn.removeClass('btn-outline-primary btn-success')
+              .addClass('btn-secondary');
     }
+  }
 
-    // Visual indicator
-    $(`.qm-notes-btn[data-item-id="${itemId}"]`)
-      .removeClass('btn-outline-primary')
-      .addClass('btn-success');
+  // Run on page load for ALL rows
+  $('table tbody tr').each(function () {
+    toggleNotesButton($(this));
+  });
 
-    $('#qmNotesModal').modal('hide');
+  // Run when Current Inspection changes (delegated for multiple rows)
+  $(document).on('input', 'input[name^="quality_already_rejected"]', function () {
+    const $row = $(this).closest('tr');
+    toggleNotesButton($row);
   });
 
 });
 </script>
+
 
 <script>
 $(document).ready(function() {
@@ -581,6 +828,7 @@ $(document).ready(function() {
       $('#poSearchForm').submit();
     }
   });
+
   const $saveBtn = $('#saveChangesBtn');
   $saveBtn.prop('disabled', true);
 
@@ -633,43 +881,10 @@ $(document).ready(function() {
     });
 
     $saveBtn.prop('disabled', !(enable && valid));
-});
-
+  });
 
 });
 </script>
-
-<!-- <script>
-fetch("/inventory/po_list")
-  .then(response => response.json())
-  .then(result => {
-    const select = document.getElementById("id_project");
-
-    select.innerHTML = '<option value="">Select PO Number</option>';
-
-    result.data.forEach(item => {
-      const option = document.createElement("option");
-      option.value = item.code;   // IMPORTANT: set project CODE
-      option.textContent = `${item.code}`;
-      select.appendChild(option);
-    });
-  })
-  .catch(error => console.error(error));
-
-// 🔹 Auto-fill code field and submit form
-document.addEventListener("DOMContentLoaded", function () {
-  const poSelect = document.getElementById("id_PurchaseOrderHeader");
-  const codeInput = document.getElementById("id_code");
-  const form = document.getElementById("poSearchForm");
-
-  poSelect.addEventListener("change", function () {
-    if (this.value) {
-      codeInput.value = this.value; // set project code
-      codeInput.form.submit();      // submit the same form
-    }
-  });
-});
-</script> -->
 
 <script>
 fetch("/inventory/po_list")
@@ -705,7 +920,6 @@ document.addEventListener("DOMContentLoaded", function () {
   });
 });
 </script>
-
 
 <script src="{% static 'default/js/select2.min.js' %}"></script>
 {% endblock %}

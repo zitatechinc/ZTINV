@@ -1,24 +1,27 @@
 {% extends 'core/base.html' %}
 {% load static %}
 {% load humanize %}
-
 {% block content %}
+
 <div class="row mb-2 mt-2">
+    {% if not form_status %}
     <div class="col-12 text-end">
         <a href="{% url 'vendor-product-create' vendor_obj.pk %}" class="btn btn-sm app-btn-primary">
             <i class="fa fa-plus"></i> Add Vendor Product
         </a>
     </div>
+    {% endif %}
 </div>
 
+
 <div class="col-12 col-md-12">
-    <div class="app-card app-card-settings shadow-md">
+    <div class="app-card app-card-settings shadow-md p-4">
         {% include 'vendor/vendor_menu.html' %}
 
-        <div class="app-card-body p-4">
+        <div class="app-card-body ps-2">
 
             {% if not form_status %}
-            <div class="row mb-2">
+            <div class="row mt-2">
                 <div class="col-md-12">
                     <h6>Vendor Product Details</h6>
                 </div>
@@ -77,14 +80,27 @@
                                     <td class="cell">
                                         {{ eachRow.vendor.company_name1 }}
                                     </td>
-                                    <td class="cell {{ eachRow.status_name }}">
+                                    <!-- <td class="cell {{ eachRow.status_name }}">
                                         {{ eachRow.status_name }}
+                                    </td> -->
+                                    <td class="cell {{ eachRow.status_name|lower }}">
+                                        <span class="badge 
+                                            {% if eachRow.status == 1 %}
+                                                bg-success
+                                            {% elif eachRow.status == 0 %}
+                                                bg-warning
+                                            {% else %}
+                                                bg-danger
+                                            {% endif %}
+                                        ">
+                                            {{ eachRow.status_name }}
+                                        </span>
                                     </td>
                                     <td class="cell">
                                         {{ eachRow.last_modified_at }}
                                     </td>
                                     <td class="cell">
-                                        {{ eachRow.updated_user.username }}
+                                        {{ eachRow.last_modified_user }}
                                     </td>
                                     <td class="cell">
                                         <button type="button"
@@ -99,7 +115,7 @@
                         {% else %}
                             <tr>
                                 <td colspan="6">
-                                    <h6 class="text-center">No Records found</h6>
+                                    <h6 class="text-center">No Records Found</h6>
                                 </td>
                             </tr>
                         {% endif %}
@@ -124,39 +140,34 @@
 {% block pagecss %}
 <link href="{% static 'default/css/select2.min.css' %}" rel="stylesheet" />
 <style>
-.select2-container { width: 100% !important; }
-.select2-selection {
-    min-height: 45px !important;
-    border-radius: 8px !important;
-    border: 1px solid #ced4da !important;
-    padding: 6px 12px !important;
-    font-size: 15px !important;
-    display: flex !important;
-    align-items: center !important;
-}
-.select2-selection__placeholder {
-    color: #6c757d !important;
-    font-style: italic;
-}
-.select2-results__option {
-    padding: 10px !important;
-    font-size: 15px !important;
-}
-.select2-results__option--highlighted {
-    background-color: #0d6efd !important;
-    color: white !important;
-}
+   .select2-container .select2-selection--single {
+    height: 58px;
+    /* padding: 5px 10px; */
+    padding-top: 1.625rem;
+    padding-bottom: .625rem;
+    border: 1px solid #dee2e6
+  }
+  .select2-selection__rendered {
+    line-height: 26px !important;
+  }
+  .select2-container .select2-selection--single .select2-selection__rendered {
+    padding-left: 12px !important;
+  }
+  .select2-selection__arrow {
+    height: 36px !important;
+  }
 </style>
 {% endblock %}
 
 {% block pagejs %}
 <script src="{% static 'default/js/select2.min.js' %}"></script>
-
 <script>
+
 $(document).ready(function() {
-    $('.select2-vendor').select2({
+    $('#id_product').select2({
         placeholder: "Search Product...",
         allowClear: true,
+        width:'100%',
         ajax: {
             url: "/catalog/product-search/",
             dataType: 'json',
@@ -173,6 +184,8 @@ $(document).ready(function() {
     });
 });
 </script>
+
+
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {

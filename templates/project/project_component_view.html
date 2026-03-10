@@ -1,7 +1,7 @@
 {% extends 'core/base.html' %}
 {% load humanize %}
-
 {% block content %}
+
 <form method="post" novalidate>
     {% csrf_token %}
 
@@ -18,34 +18,31 @@
 
     <div class="row">
         <div class="col-12 col-md-12">
-            <div class="app-card app-card-settings shadow-md">
-
+            <div class="app-card app-card-settings shadow-md p-4">
                 {% include 'project/project_menu.html' %}
-
-                <div class="app-card-body p-4">
+                <div class="app-card-body ps-2">
                     <!-- Project Component Information -->
                     <div class="row mb-4">
                         <h6 class="mb-3">Project Component Information</h6>
-
-                        <div class="col-md-4"><strong>Project:</strong> {{ object.project.name }}</div>
-                        <div class="col-md-4"><strong>Code:</strong> {{ project_component_obj.code}} </div>
-                        <div class="col-md-4"><strong>Component Type:</strong> {{ project_component_obj.component_type }}</div>
+                        <div class="col-md-4"><strong>Project :</strong> {{ object.project.name }}</div>
+                        <div class="col-md-4"><strong>Code :</strong> {{ project_component_obj.code}} </div>
+                        <div class="col-md-4"><strong>Component Type :</strong> {{ project_component_obj.component_type }}</div>
                         
                         {% if project_component_obj.component_type == 'BOM' %}
-                        <div class="col-md-4"><strong>BOM:</strong> {{ project_component_obj.bom }}</div>
+                        <div class="col-md-4"><strong>BOM :</strong> {{ project_component_obj.bom }}</div>
                         {% elif project_component_obj.component_type == 'SERVICE' %}
-                        <div class="col-md-4"><strong>Service:</strong> {{ project_component_obj.service }}</div>
+                        <div class="col-md-4"><strong>Service :</strong> {{ project_component_obj.service }}</div>
                         {% elif project_component_obj.component_type == 'MISCELLANEOUS' %}
-                        <div class="col-md-4"><strong>Miscellaneous:</strong> {{ project_component_obj.miscellaneous_component }}</div>
+                        <div class="col-md-4"><strong>Miscellaneous :</strong> {{ project_component_obj.miscellaneous_component }}</div>
                         {% else %}
-                        <div class="col-md-4"><strong>Product:</strong> {{ project_component_obj.product}}</div>
+                        <div class="col-md-4"><strong>Product :</strong> {{ project_component_obj.product}}</div>
                         {% endif %}
                         
-                        <div class="col-md-4"><strong>Quantity:</strong> {{ project_component_obj.component_qty }}</div>
-                        <div class="col-md-4"><strong>Cost:</strong> {{ project_component_obj.component_cost|floatformat:2 }}</div>
+                        <div class="col-md-4"><strong>Quantity :</strong> {{ project_component_obj.component_qty }}</div>
+                        <div class="col-md-4"><strong>Cost :</strong> {{ project_component_obj.component_cost|floatformat:2 }}</div>
 
                         <div class="col-md-4">
-                            <strong>Status:</strong>
+                            <strong>Status :</strong>
                             <span class="badge 
                                 {% if object.status == 1 %} bg-success
                                 {% elif object.status == 0 %} bg-warning
@@ -54,10 +51,16 @@
                                 {{ project_component_obj.status_name }}
                             </span>
                         </div>
+                        <div class="col-md-4">
+                        <strong>Search Keywords :</strong> {{ project_component_obj.search_keywords }}
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Description :</strong> {{ project_component_obj.description }}
+                        </div>
                     </div>
 
                     <!-- Audit Log Information -->
-                    {% include 'core/auditlog.html' with object=project_component_obj %}
+                    {% include 'core/project_audit_log.html' with object=project_component_obj %}
                 </div>
             </div>
         </div>

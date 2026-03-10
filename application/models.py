@@ -51,6 +51,14 @@ class Themes(UserLogBaseModel, TimeStampBaseModel):
     @property
     def get_name(self):
         return self.name
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return None
 
     @staticmethod
     def get_search_col_name():
@@ -59,7 +67,6 @@ class Themes(UserLogBaseModel, TimeStampBaseModel):
     @staticmethod
     def get_search_fields():
         return ['name']
-
 
 
 class AppSettings(UserLogBaseModel, TimeStampBaseModel):
@@ -101,6 +108,14 @@ class AppSettings(UserLogBaseModel, TimeStampBaseModel):
     @property
     def get_name(self):
         return self.name
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return None
 
     @staticmethod
     def get_search_col_name():
@@ -109,9 +124,6 @@ class AppSettings(UserLogBaseModel, TimeStampBaseModel):
     @staticmethod
     def get_search_fields():
         return ['name', "company_name"]
-
-
-
 
 auditlog.register(Themes)
 auditlog.register(AppSettings)

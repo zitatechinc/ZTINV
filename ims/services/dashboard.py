@@ -1008,20 +1008,31 @@ class DashboardDataHelper:
 def get_indentor_dashboard_data(user):
     # Get procurements assigned to this user (non-draft only)
     procurements = Procurement.objects.filter(user=user, is_draft=False)
-
+    all_project_data = None
+    projects_data = None
+    
     # Get distinct projects linked to these procurements
-    user_projects = Project.objects.filter(
-        project_id__in=procurements.values_list('project_id', flat=True)
-    ).distinct()
+    if procurements:
+        # user_projects = Project.objects.filter(
+        #     project_id__in=procurements.values_list('project_id', flat=True)
+        # ).distinct()
+        user_projects = Project.objects.filter(
+            id__in=procurements.values_list('project_id', flat=True)
+        ).distinct()
 
-    # Overall dashboard data
-    all_project_data = DashboardDataHelper(user, 'user').get_data()
 
-    # Per-project dashboard data
-    projects_data = {
-        project.project_id: DashboardDataHelper(user, 'user', project.project_id).get_data()
-        for project in user_projects
-    }
+        # Overall dashboard data
+        all_project_data = DashboardDataHelper(user, 'user').get_data()
+
+        # Per-project dashboard data
+        # projects_data = {
+        #     project.project_id: DashboardDataHelper(user, 'user', project.project_id).get_data()
+        #     for project in user_projects
+        # }
+        projects_data = {
+            project.project_id: DashboardDataHelper(user, 'user', project.id).get_data()
+            for project in user_projects
+        }
 
     return {
         "all_projects": all_project_data,
@@ -1031,20 +1042,23 @@ def get_indentor_dashboard_data(user):
 def get_RA_dashboard_data(ra_user):
     # Get procurements assigned to this user (non-draft only)
     procurements = Procurement.objects.filter(ra_user=ra_user, is_draft=False)
+    all_project_data = None
+    projects_data = None    
+    #import pdb; pdb.set_trace();
+    if procurements:
+        # Get distinct projects linked to these procurements
+        user_projects = Project.objects.filter(
+            id__in=procurements.values_list('project_id', flat=True)
+        ).distinct()
 
-    # Get distinct projects linked to these procurements
-    user_projects = Project.objects.filter(
-        project_id__in=procurements.values_list('project_id', flat=True)
-    ).distinct()
+        # Overall dashboard data
+        all_project_data = DashboardDataHelper(ra_user, 'ra_user').get_data()
 
-    # Overall dashboard data
-    all_project_data = DashboardDataHelper(ra_user, 'ra_user').get_data()
-
-    # Per-project dashboard data
-    projects_data = {
-        project.project_id: DashboardDataHelper(ra_user, 'ra_user',project.project_id).get_data()
-        for project in user_projects
-    }
+        # Per-project dashboard data
+        projects_data = {
+            project.project_id: DashboardDataHelper(ra_user, 'ra_user',project.id).get_data()
+            for project in user_projects
+        }
 
     return {
         "all_projects": all_project_data,
@@ -1118,139 +1132,146 @@ def get_AA_dashboard_data(aa_user):
         aa_user=aa_user,
         is_draft=False
     ).select_related("project")
-
-    user_projects = Project.objects.filter(
-        project_id__in=valid_procurements.values_list("project_id", flat=True)
-    ).distinct()
-
-    total_projects = user_projects.count()
-
-    #print(f"\n🔎 DEBUG AA Dashboard for {aa_user}:")
-    #print(f"➡️ Total Projects for this AA: {total_projects}")
-    #print(f"➡️ Total Procurements for this AA: {valid_procurements.count()}")
-
-    # Allocated budget across all projects
-    total_allocated_budget = (
-        BudgetAllocation.objects.filter(project__in=user_projects)
-        .aggregate(total=Sum("allocated_budget"))["total"] or 0
-    )
-
-    # Spent budget = sum of all DPO grand_totals
-    # total_spent_budget = (
-    #     Purchase_Order.objects.filter(
-    #         procurement__project__in=user_projects
-    #     ).aggregate(total=Sum("po_grandtotal"))["total"] or 0
-    # )
     
+    projects_data= None;
+    total_projects = None;
+    total_spent_budget = 0;
+    total_allocated_budget = 0;
+    total_remaining_budget = 0;
 
-    # Only include fully signed POs in spent budget
-    # approved_po_ids = (
-    #     Purchase_Order.objects
-    #     .annotate(
-    #         total_approvers=Count('poapproval'),
-    #         signed_approvers=Count('poapproval', filter=Q(poapproval__done_sign=True))
-    #     )
-    #     .filter(total_approvers=F('signed_approvers'))  # ✅ All approvals signed
-    #     .values_list('id', flat=True)
-    # )
+    if valid_procurements:
+        user_projects = Project.objects.filter(
+            id__in=valid_procurements.values_list("project_id", flat=True)
+        ).distinct()
 
-    # total_spent_budget = (
-    #     Purchase_Order.objects
-    #     .filter(
-    #         procurement__project__in=user_projects,
-    #         id__in=approved_po_ids  # ✅ Include only fully signed POs
-    #     )
-    #     .aggregate(total=Sum('po_grandtotal'))['total'] or 0
-    # )
+        total_projects = user_projects.count()
 
-    total_spent_budget = (
-        Purchase_Order.objects
-        .annotate(
-            total_approvers=Count('poapproval'),
-            signed_approvers=Count('poapproval', filter=Q(poapproval__done_sign=True))
-        )
-        .filter(
-            procurement__project__in=user_projects
-        )
-        .filter(
-            Q(po_sign=True) | Q(total_approvers=F('signed_approvers'))
-        )
-        .aggregate(total=Sum('po_grandtotal'))['total'] or 0
-    )
+        #print(f"\n🔎 DEBUG AA Dashboard for {aa_user}:")
+        #print(f"➡️ Total Projects for this AA: {total_projects}")
+        #print(f"➡️ Total Procurements for this AA: {valid_procurements.count()}")
 
-    total_remaining_budget = total_allocated_budget - total_spent_budget
-
-    #print(f"➡️ TOTAL Allocated Budget: {total_allocated_budget}")
-    #print(f"➡️ TOTAL Spent Budget (all POs): {total_spent_budget}")
-    #print(f"➡️ TOTAL Remaining Budget: {total_remaining_budget}\n")
-
-    # Per project details
-    projects_data = {}
-    for project in user_projects:
-        allocated = (
-            BudgetAllocation.objects.filter(project=project)
+        # Allocated budget across all projects
+        total_allocated_budget = (
+            BudgetAllocation.objects.filter(project__in=user_projects)
             .aggregate(total=Sum("allocated_budget"))["total"] or 0
         )
-        # spent = (
+
+        # Spent budget = sum of all DPO grand_totals
+        # total_spent_budget = (
         #     Purchase_Order.objects.filter(
-        #         procurement__project=project
+        #         procurement__project__in=user_projects
         #     ).aggregate(total=Sum("po_grandtotal"))["total"] or 0
         # )
+        
 
-        # --- Only include fully signed POs for "spent" ---
-        approved_pos = (
-            Purchase_Order.objects.filter(procurement__project=project)
+        # Only include fully signed POs in spent budget
+        # approved_po_ids = (
+        #     Purchase_Order.objects
+        #     .annotate(
+        #         total_approvers=Count('poapproval'),
+        #         signed_approvers=Count('poapproval', filter=Q(poapproval__done_sign=True))
+        #     )
+        #     .filter(total_approvers=F('signed_approvers'))  # ✅ All approvals signed
+        #     .values_list('id', flat=True)
+        # )
+
+        # total_spent_budget = (
+        #     Purchase_Order.objects
+        #     .filter(
+        #         procurement__project__in=user_projects,
+        #         id__in=approved_po_ids  # ✅ Include only fully signed POs
+        #     )
+        #     .aggregate(total=Sum('po_grandtotal'))['total'] or 0
+        # )
+
+        total_spent_budget = (
+            Purchase_Order.objects
             .annotate(
-                total_approvers=Count("poapproval"),
-                signed_approvers=Count("poapproval", filter=Q(poapproval__done_sign=True))
+                total_approvers=Count('poapproval'),
+                signed_approvers=Count('poapproval', filter=Q(poapproval__done_sign=True))
             )
             .filter(
-                Q(po_sign=True) |  # ✅ include directly signed POs
-                Q(total_approvers__gt=0, total_approvers=F("signed_approvers"))  # ✅ fully signed via approvals
+                procurement__project__in=user_projects
             )
+            .filter(
+                Q(po_sign=True) | Q(total_approvers=F('signed_approvers'))
+            )
+            .aggregate(total=Sum('po_grandtotal'))['total'] or 0
         )
 
-        spent = approved_pos.aggregate(total=Sum("po_grandtotal"))["total"] or 0
+        total_remaining_budget = total_allocated_budget - total_spent_budget
+
+        #print(f"➡️ TOTAL Allocated Budget: {total_allocated_budget}")
+        #print(f"➡️ TOTAL Spent Budget (all POs): {total_spent_budget}")
+        #print(f"➡️ TOTAL Remaining Budget: {total_remaining_budget}\n")
+
+        # Per project details
+        projects_data = {}
+        for project in user_projects:
+            allocated = (
+                BudgetAllocation.objects.filter(project=project)
+                .aggregate(total=Sum("allocated_budget"))["total"] or 0
+            )
+            # spent = (
+            #     Purchase_Order.objects.filter(
+            #         procurement__project=project
+            #     ).aggregate(total=Sum("po_grandtotal"))["total"] or 0
+            # )
+
+            # --- Only include fully signed POs for "spent" ---
+            approved_pos = (
+                Purchase_Order.objects.filter(procurement__project=project)
+                .annotate(
+                    total_approvers=Count("poapproval"),
+                    signed_approvers=Count("poapproval", filter=Q(poapproval__done_sign=True))
+                )
+                .filter(
+                    Q(po_sign=True) |  # ✅ include directly signed POs
+                    Q(total_approvers__gt=0, total_approvers=F("signed_approvers"))  # ✅ fully signed via approvals
+                )
+            )
+
+            spent = approved_pos.aggregate(total=Sum("po_grandtotal"))["total"] or 0
 
 
-        remaining = allocated - spent
+            remaining = allocated - spent
 
-        project_procurements = valid_procurements.filter(project=project).count()
-        project_dpos = DPO.objects.filter(procurement__project=project).count()
+            project_procurements = valid_procurements.filter(project=project).count()
+            project_dpos = DPO.objects.filter(procurement__project=project).count()
 
-        #print(f"📌 Project {project.project_id} - {project.name}")
-        #print(f"   • Allocated Budget: {allocated}")
-        #print(f"   • Procurements: {project_procurements}")
-        #print(f"   • DraftPOs: {project_dpos}")
-        #print(f"   • Spent (Sum of DPOs): {spent}")
-        #print(f"   • Remaining: {remaining}")
+            #print(f"📌 Project {project.project_id} - {project.name}")
+            #print(f"   • Allocated Budget: {allocated}")
+            #print(f"   • Procurements: {project_procurements}")
+            #print(f"   • DraftPOs: {project_dpos}")
+            #print(f"   • Spent (Sum of DPOs): {spent}")
+            #print(f"   • Remaining: {remaining}")
 
-        # Show individual BudgetAllocation rows
-        # allocations = BudgetAllocation.objects.filter(project=project)
-        # if allocations.exists():
-        #     #print("   • Budget Allocations:")
-        #     for alloc in allocations:
-        #         print(f"      - Allocation {alloc.id}: {alloc.allocated_budget}")
-        # else:
-        #     print("   • Budget Allocations: None")
+            # Show individual BudgetAllocation rows
+            # allocations = BudgetAllocation.objects.filter(project=project)
+            # if allocations.exists():
+            #     #print("   • Budget Allocations:")
+            #     for alloc in allocations:
+            #         print(f"      - Allocation {alloc.id}: {alloc.allocated_budget}")
+            # else:
+            #     print("   • Budget Allocations: None")
 
-        # # Show individual DPO rows
-        # pos = Purchase_Order.objects.filter(procurement__project=project)
-        # if pos.exists():
-        #     print("   • DraftPOs:")
-        #     for po in pos:
-        #         print(f"      - PO {po.po_number or po.id}: Grand Total {po.po_grandtotal}")
-        # else:
-        #     print("   • DraftPOs: None")
+            # # Show individual DPO rows
+            # pos = Purchase_Order.objects.filter(procurement__project=project)
+            # if pos.exists():
+            #     print("   • DraftPOs:")
+            #     for po in pos:
+            #         print(f"      - PO {po.po_number or po.id}: Grand Total {po.po_grandtotal}")
+            # else:
+            #     print("   • DraftPOs: None")
 
-        # print("\n")
+            # print("\n")
 
-        projects_data[project.project_id] = {
-            "dashboard_data": DashboardDataHelper(aa_user, "aa_user", project.project_id).get_data(),
-            "allocated_budget": float(allocated),
-            "spent_budget": float(spent),
-            "remaining_budget": float(remaining),
-        }
+            projects_data[project.project_id] = {
+                "dashboard_data": DashboardDataHelper(aa_user, "aa_user", project.id).get_data(),
+                "allocated_budget": float(allocated),
+                "spent_budget": float(spent),
+                "remaining_budget": float(remaining),
+            }
 
     return {
         "all_projects": DashboardDataHelper(aa_user, "aa_user").get_data(),

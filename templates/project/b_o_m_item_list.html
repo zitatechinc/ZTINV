@@ -3,102 +3,117 @@
 {% block content %}
 
 <div class="row mb-2 mt-0">
-    <div class="col-6 col-md-6">
-       <!-- Add other content here if needed -->
-    </div>
-    <div class="col-6 col-md-6">
-       <div class="button-group" style="float:right;">
+    {% if not form_status %}
+    <div class="col-12 text-end">
+       <div class="button-group">
             <!-- Add BOM Item button -->
             <a href="{% url 'bom-item-create' object.pk %}" class="btn btn-sm app-btn-primary">
                 <i class="fa fa-plus"></i> Add {{ model_name }}
             </a>
        </div>
     </div>
+    {% endif %}
 </div>
 
 <div class="col-12 col-md-12">
-    <div class="app-card app-card-settings shadow-md">
-        {% include 'project/bom_menu.html' %}
+   <div class="app-card app-card-settings shadow-md p-4">
+    {% include 'project/bom_menu.html' %}
+    <div class="app-card-body ps-2">
+        {% if not form_status %}
+            <!-- Table -->
+            <div class="table-responsive">
+                <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
+                    <thead>
+                        <tr>
+                            <!-- Column headers with sorting links -->
+                            <!-- <th>
+                                {% if SortByColumn == 'ASC' and OrderByColumn == 'bom' %}
+                                    <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=bom&SortByColumn=DESC">
+                                        <i class="fa fa-sort-down"></i>&nbsp;BOM
+                                    </a>
+                                {% elif SortByColumn == 'DESC' and OrderByColumn == 'bom' %}
+                                    <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=bom&SortByColumn=ASC">
+                                        <i class="fa fa-sort-up"></i>&nbsp;BOM
+                                    </a>
+                                {% else %}
+                                    <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=bom&SortByColumn=ASC">
+                                        <i class="fa fa-sort"></i>&nbsp;BOM
+                                    </a>
+                                {% endif %}
+                            </th> -->
+                            <th>Code</th>
+                            <th>Product</th>
+                            <th>Quantity</th>
+                            <th>UOM</th>
+                            <th>Scrap %</th>
+                            <th>Status</th>
+                            <th>Last Modified</th>
+                            <th>Modified User</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if object_list %}
+                            {% for eachRow in object_list %}
+                                <tr>
+                                    <!-- <td class="cell">
+                                        <span class="truncate">
+                                            <a href="{% url 'bom-item-view' eachRow.bom.pk eachRow.pk %}">{{ eachRow.bom }}</a>
+                                        </span>
+                                    </td> -->
+                                    <td class="cell">
+                                        <span class="truncate">
+                                            <a href="{% url 'bom-item-view' eachRow.bom.pk eachRow.pk %}">{{ eachRow.code }}</a>
+                                        </span>
+                                    </td>
+                                    <td>{{ eachRow.product }}</td>
+                                    <td>{{ eachRow.bom_quantity }}</td>
+                                    <td>{{ eachRow.bom_uom }}</td>
+                                    <td>{{ eachRow.scrap_percentage }}</td>
+                                    <!-- <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td> -->
+                                    <td class="cell {{ eachRow.status_name|lower }}">
+                                        <span class="badge 
+                                            {% if eachRow.status == 1 %}
+                                                bg-success
+                                            {% elif eachRow.status == 0 %}
+                                                bg-warning
+                                            {% else %}
+                                                bg-danger
+                                            {% endif %}
+                                        ">
+                                            {{ eachRow.status_name }}
+                                        </span>
+                                    </td>
+                                    <td>{{ eachRow.last_modified_at }}</td>
+                                    <td>{{ eachRow.last_modified_user }}</td>
+                                    <td class="cell">
+                                        <!-- View button as icon -->
+                                        <a href="{% url 'bom-item-view' eachRow.bom.pk eachRow.pk %}">
+                                            <span class="badge app-btn-primary"><i class="fa fa-eye"></i> View</span>
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="10"><h6 class="text-center">No Records Found</h6></td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
 
-        <div class="app-card-body p-1">
-            {% if not form_status %}
-                <!-- Table -->
-                <div class="table-responsive">
-                    <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
-                        <thead>
-                            <tr>
-                                <!-- Column headers with sorting links -->
-                                <th>
-                                    {% if SortByColumn == 'ASC' and OrderByColumn == 'bom' %}
-                                        <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=bom&SortByColumn=DESC">
-                                            <i class="fa fa-sort-down"></i>&nbsp;BOM
-                                        </a>
-                                    {% elif SortByColumn == 'DESC' and OrderByColumn == 'bom' %}
-                                        <a href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=bom&SortByColumn=ASC">
-                                            <i class="fa fa-sort-up"></i>&nbsp;BOM
-                                        </a>
-                                    {% else %}
-                                        <a class="text-bcolor" href="?FieldName={{FieldName}}&Keyword={{Keyword}}&QuerySearch={{QuerySearch}}&page={{page}}&OrderByColumn=bom&SortByColumn=ASC">
-                                            <i class="fa fa-sort"></i>&nbsp;BOM
-                                        </a>
-                                    {% endif %}
-                                </th>
-                                <th>Code</th>
-                                <th>Product</th>
-                                <th>Quantity</th>
-                                <th>UOM</th>
-                                <th>Scrap %</th>
-                                <th>Status</th>
-                                <th>Last Modified</th>
-                                <th>Modified User</th>
-                                <th>Action</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% if object_list %}
-                                {% for eachRow in object_list %}
-                                    <tr>
-                                        <td class="cell">
-                                            <span class="truncate">
-                                                <a href="{% url 'bom-item-view' eachRow.bom.pk eachRow.pk %}">{{ eachRow.bom }}</a>
-                                            </span>
-                                        </td>
-                                        <td>{{ eachRow.code }}</td>
-                                        <td>{{ eachRow.product }}</td>
-                                        <td>{{ eachRow.bom_quantity }}</td>
-                                        <td>{{ eachRow.bom_uom }}</td>
-                                        <td>{{ eachRow.scrap_percentage }}</td>
-                                        <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td>
-                                        <td>{{ eachRow.last_modified_at }}</td>
-                                        <td>{{ eachRow.last_modified_user }}</td>
-                                        <td class="cell">
-                                            <!-- View button as icon -->
-                                            <a href="{% url 'bom-item-view' eachRow.bom.pk eachRow.pk %}">
-                                                <span class="badge app-btn-primary"><i class="fa fa-eye"></i> View</span>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            {% else %}
-                                <tr><td colspan="10" class="text-center">No records found</td></tr>
-                            {% endif %}
-                        </tbody>
-                    </table>
+            <!-- Pagination -->
+            {% include 'core/pagination.html' %}
+        {% endif %}
+
+        {% if form_status %}
+            <div class="row">
+                <div class="col-md-12">
+                    {% include 'project/b_o_m_item_form.html' %}
                 </div>
-
-                <!-- Pagination -->
-                {% include 'core/pagination.html' %}
-            {% endif %}
-
-            {% if form_status %}
-                <div class="row">
-                    <div class="col-md-12">
-                        {% include 'project/b_o_m_item_form.html' %}
-                    </div>
-                </div>
-            {% endif %}
-        </div>
+            </div>
+        {% endif %}
     </div>
+   </div>
 </div>
 
 {% endblock content %}

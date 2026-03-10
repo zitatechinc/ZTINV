@@ -9,13 +9,11 @@ from django.utils.text import slugify
 
 from auditlog.registry import auditlog
 
-from core.models import TimeStampBaseModel, UserLogBaseModel, PurchaseOrderBaseModel
+from core.models import TimeStampBaseModel, UserLogBaseModel, PurchaseOrderBaseModel,NormalizeCodeMixin
 from location.models import Country, Location, SubLocation
 from customer.models import Customer
 from catalog.models import Product
 from inventory.models import PurchaseOrderStatus, UOM_CHOICES, Inventory
-
-
 
 
 COMPONENT_TYPES = [
@@ -47,18 +45,17 @@ ATTACHMENT_TYPES = [
 # ----------------------------
 # ProjectHeader
 # ----------------------------
-class ProjectHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class ProjectHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel): 
     project = models.ForeignKey(
         "ims.Project",
         on_delete=models.PROTECT,
-        verbose_name="project ID",
-        related_name="project_ID"
+        related_name="headers"
     )
     customer = models.ForeignKey(
         Customer,
         on_delete=models.PROTECT,
         verbose_name="customer Name",
-        related_name="customer_name"
+        related_name="customer_name",blank=True,null=True,
     )
     location = models.ForeignKey(
         Location, on_delete=models.PROTECT, blank=True, null=True,
@@ -70,6 +67,8 @@ class ProjectHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel
     )
     item_status = models.CharField(
         max_length=20, choices=ITEM_STATUS_CHOICES,
+         blank=True,      
+         null=True,
         verbose_name="Item Status"
     )
     slug = models.SlugField(max_length=255, unique=True, blank=True)
@@ -91,34 +90,69 @@ class ProjectHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel
     @property
     def get_name(self):
         return self.project.name
+    
+    @property
+    def audit_name(self):
+        return self.project.name
+
+    @property
+    def audit_code(self):
+        return self.project.project_id
 
     @property
     def total_component_cost(self):
         """Returns total cost of all project components"""
         return (
-            self.project_ID
+            self.components
             .aggregate(
                 total=Coalesce(Sum("component_cost"), Value(0))
             )["total"]
         )
-
+    @property
+    def issue_voucher_numbers(self):
+        return (
+            self.goods_movements
+            .exclude(issue_voucher_number__isnull=True)
+            .exclude(issue_voucher_number='')
+            .values_list('issue_voucher_number', flat=True)
+            .order_by('-created_at')
+            .distinct()
+        )
 
     def save(self, *args, **kwargs):
         if self.project:
             self.project = self.project
+        # if not self.slug:
+        #     self.slug = slugify(self.project)
         if not self.slug:
-            self.slug = slugify(self.project)
+            self.slug = slugify(self.project.project_id)
         self.full_clean()
         super().save(*args, **kwargs)
+
+    # def save(self, *args, **kwargs):
+
+    #     # Auto-generate UNIQUE slug
+    #     if not self.slug and self.project:
+    #         base_slug = slugify(self.project.project_id)
+    #         slug = base_slug
+    #         counter = 1
+
+    #         while ProjectHeader.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+    #             slug = f"{base_slug}-{counter}"
+    #             counter += 1
+
+    #         self.slug = slug
+
+    #     super().save(*args, **kwargs)
     
     def getItems(self):
-        return ProjectComponent.objects.filter(project_id=self.pk)
+        return ProjectComponent.objects.filter(project=self)
 
 
 # ----------------------------
 # BOMHeader
 # ----------------------------
-class BOMHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class BOMHeader(NormalizeCodeMixin,PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     code = models.CharField(
         max_length=30,
         verbose_name="BOM ID",
@@ -148,8 +182,15 @@ class BOMHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
 
     def __str__(self):
         return f"{self.code}"
+    
+    @property
+    def audit_name(self):
+        return self.project.project.name
 
-
+    @property
+    def audit_code(self):
+        return self.code
+    
     def clean(self):
         # Ensure slug is unique BEFORE saving
         slug = slugify(self.code)
@@ -199,12 +240,12 @@ class BOMHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
 # ----------------------------
 # ProjectComponent
 # ----------------------------
-class ProjectComponent(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class ProjectComponent(NormalizeCodeMixin,PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     project = models.ForeignKey(
         ProjectHeader,
         on_delete=models.PROTECT,
-        verbose_name="project ID",
-        related_name="project_ID"
+        verbose_name="Project Header",
+        related_name="components"
     )
     code = models.CharField(
         max_length=100,
@@ -256,11 +297,33 @@ class ProjectComponent(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseMo
             ("can_delete_projectcomponent", "Can delete project Component"),
         ]
 
+        constraints = [
+            models.UniqueConstraint(
+                fields=["project", "product"],
+                name="unique_project_product",
+                condition=Q(product__isnull=False),
+            ),
+            models.UniqueConstraint(
+                fields=["project", "service"],
+                name="unique_project_service",
+                condition=Q(service__isnull=False),
+            ),
+        ]
+
+
     def __str__(self):
         return f"{self.code}"
 
     @property
     def get_name(self):
+        return self.component_type
+    
+    @property
+    def audit_name(self):
+        return self.project.project.name
+
+    @property
+    def audit_code(self):
         return self.code
     # @property
     # def issued_qty(self):
@@ -389,7 +452,6 @@ class ProjectComponent(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseMo
                 .get("total") or 0
             )
             issued_units = issued_item_qty//item.bom_quantity
-            print(issued_units,"hhhhhhhhhhhhhhhhh")
             
         
         return issued_units or 0
@@ -458,7 +520,8 @@ class ProjectComponent(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseMo
         is_new = self.pk is None
 
         if is_new and not self.code:
-            project_code = self.project.project.project_id  # correct field
+            # project_code = self.project.project.project_id  # correct field
+            project_code = self.project.project_id
 
             # Atomic transaction to avoid race conditions
             with transaction.atomic():
@@ -466,7 +529,8 @@ class ProjectComponent(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseMo
                 last_component = (
                     ProjectComponent.objects
                     .select_for_update()
-                    .filter(project=self.project, code__startswith=f"{project_code}-")
+                    # .filter(project=self.project, code__startswith=f"{project_code}-")
+                    .filter(project_id=self.project_id, code__startswith=f"{project_code}-")
                     .order_by("-created_at")
                     .first()
                 )
@@ -491,7 +555,7 @@ class ProjectComponent(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseMo
 # ----------------------------
 # BOM Item
 # ----------------------------
-class BOMItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class BOMItem(NormalizeCodeMixin,PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     bom = models.ForeignKey(
         BOMHeader,
         on_delete=models.PROTECT,
@@ -505,21 +569,24 @@ class BOMItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
         help_text="BOM Component ID",
         unique=True,
         db_index=True,
-        blank=True,
-        null=True
+        # blank=True,
+        # null=True
     )
     product = models.ForeignKey(
         Product,
         on_delete=models.PROTECT,
-        blank=True, null=True,
+        # blank=True, null=True,
         verbose_name="Product ID",
         related_name="Product_ID"
     )
-    bom_quantity = models.PositiveIntegerField(verbose_name="Component Quantity", default=0)
-    bom_uom = models.CharField(
-        max_length=10, choices=UOM_CHOICES,
-        verbose_name="Component UOM"
-    )
+    bom_quantity = models.PositiveIntegerField(verbose_name="Component Quantity")
+    # bom_uom = models.CharField(
+    #     max_length=10, choices=UOM_CHOICES,
+    #     verbose_name="Component UOM"
+    # )
+    bom_uom = models.ForeignKey('ims.Units', 
+            on_delete=models.PROTECT,
+            verbose_name='Component UOM')
     scrap_percentage = models.PositiveIntegerField(verbose_name="Scrap Percentage", default=0)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
 
@@ -527,6 +594,12 @@ class BOMItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
         ordering = ['-created_at']
         verbose_name = "BOM Item"
         verbose_name_plural = "BOM Item List"
+        constraints = [
+            models.UniqueConstraint(
+                fields=['bom', 'product'],
+                name='unique_product_per_bom'
+            )
+        ]
         permissions = [
             ("can_create_bomitem", "Can create BOM Item"),
             ("can_edit_bomitem", "Can edit BOM Item"),
@@ -540,6 +613,19 @@ class BOMItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     @property
     def get_name(self):
         return self.code
+    
+    # @property
+    # def audit_name(self):
+    #     return self.bom.name
+
+    @property
+    def audit_name(self):
+        return self.bom.code
+
+    @property
+    def audit_code(self):
+        return self.code
+    
     # @property
     # def issued_qty(self):
     #     pc= ProjectComponent.objects.get(bom=self.bom)
@@ -613,7 +699,6 @@ class AttachmentType(models.TextChoices):
     URL = "URL", "URL"
     FILE = "FILE", "File"
 
-
 class BOMAttachments(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     class AttachmentType(models.TextChoices):
         FILE = 'FILE', 'File'
@@ -672,6 +757,14 @@ class BOMAttachments(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseMode
     @property
     def status_name(self):
         return self.get_status_display() if self.status is not None else "-"
+    
+    @property
+    def audit_name(self):
+        return self.title
+
+    @property
+    def audit_code(self):
+        return f"{self.bom} - {self.title}"
 
     # -----------------------------
     # Model-level validation
@@ -703,11 +796,10 @@ class BOMAttachments(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseMode
         self.full_clean()  # Runs clean() before saving
         super().save(*args, **kwargs)
 
-
 # # ----------------------------
 # # VoucherHeader
 # # ----------------------------
-class VoucherHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class VoucherHeader(NormalizeCodeMixin,PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     code = models.CharField(
         max_length=100,
         verbose_name="Voucher ID",
@@ -725,6 +817,7 @@ class VoucherHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel
         max_length=20, choices=VOUCHER_ITEM_STATUS_CHOICES,
         verbose_name="Voucher Status"
     )
+    
     voucher_qty = models.PositiveIntegerField(verbose_name="Voucher Qty", default=0)
     #slug = models.SlugField(max_length=255, unique=True, blank=True)
 
@@ -739,18 +832,27 @@ class VoucherHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel
             ("can_delete_voucherheader", "Can delete voucher header"),
         ]
 
+    # def __str__(self):
+    #     return f"{self.project.project_id}"
+
     def __str__(self):
-        return f"{self.project.project_id}"
+        return f"{self.project.project.project_id}"
+    
+    # @property
+    # def audit_name(self):
+    #     return f"{self.project.project_id}"
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def getItems(self):
         return VoucherComponent.objects.filter(voucherheader_id=self.pk)
 
-
-
 # ----------------------------
 # VoucherComponent
 # ----------------------------
-class VoucherComponent(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class VoucherComponent(NormalizeCodeMixin,PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     code = models.CharField(
         max_length=100,
         verbose_name="Voucher Component ID",
@@ -793,7 +895,18 @@ class VoucherComponent(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseMo
 
     def __str__(self):
         return f"{self.code}"
+    
+    # @property
+    # def audit_name(self):
+    #     return f"{self.project.project_id}"
 
+    @property
+    def audit_name(self):
+        return f"{self.voucherheader.project.project.project_id}"
+
+    @property
+    def audit_code(self):
+        return self.code
 
 
 auditlog.register(ProjectComponent)

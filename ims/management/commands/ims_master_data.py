@@ -101,9 +101,14 @@ class Command(BaseCommand):
 
         # ================= UNITS =================
         units_list = [
-            "Nos", "Kg", "g", "mg", "Ton", "Quintal", "Ltr", "ml", "m³",
-            "Pcs", "Dozen", "Pack", "Box", "Bag", "Roll", "Bundle",
-            "Set", "Pair", "Meter", "cm", "mm", "Sqft",
+            "pcs", "kg", "g", "mg", "ton",
+            "ltr", "ml",
+            "m", "cm", "mm",
+            "sqft", "sqm",
+            "box", "pack", "bag",
+            "roll", "bundle",
+            "set", "pair",
+            "dozen"
         ]
 
         units_created = 0

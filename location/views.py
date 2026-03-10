@@ -80,6 +80,7 @@ def get_states(request):
 
 def get_sublocations(request):
     state_id = request.GET.get('state_id')
+
     if state_id:
         sublocations = SubLocation.objects.filter(location_id=state_id, status=1).values('id', 'name')
         sublocations_list = list(sublocations)

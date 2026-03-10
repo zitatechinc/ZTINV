@@ -55,9 +55,33 @@ class CodeReadonlyOnEditForm(forms.ModelForm):
         if self.instance and self.instance.pk:
             if 'code' in self.fields:
                 self.fields['code'].disabled = True
+
+class ProjectidReadonlyOnEditForm(forms.ModelForm):
+    """Reusable mixin to disable the 'project id' field when editing."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Disable 'code' field while editing existing objects
+        if self.instance and self.instance.pk:
+            if 'project' in self.fields:
+                self.fields['project'].disabled = True
+
+class ProductVendorReadonlyOnEditForm(forms.ModelForm):
+    """Disables 'product' or 'vendor' field when editing an existing object."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        # Disable 'product' or 'vendor' field if it exists and the instance is being edited
+        if self.instance and self.instance.pk:
+            if 'product' in self.fields:
+                self.fields['product'].disabled = True
+            if 'vendor' in self.fields:
+                self.fields['vendor'].disabled = True
+        
 class AppBaseModelForm(forms.ModelForm):
     required_css_class = 'required'
-
 
     # Common init to add Bootstrap classes dynamically
     def __init__(self, *args, **kwargs):

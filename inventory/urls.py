@@ -53,11 +53,15 @@ urlpatterns = [
 
     # Regular view for displaying the inspection receipt form/page
     path('inspection/receipt/', views.inspection_receipt_view, name='inspection_receipt'),
+
     # PDF generation view
-    path("quality-management/<int:pk>/pdf/", views.quality_management_pdf, name='quality-management-pdf'),
+    path("quality-management-pdf/<int:pk>/<str:prv_number>/<str:report_type>/", views.quality_management_pdf, name='quality-management-pdf'),
+
+    path("purchase-order-list/<int:pk>", views.purchase_order_list, name='purchase-order-list'),
 
     #po report
     path('po_report/create', views.POReportCrudView.as_view(),  name='po_report_create'),
+    path('voucher/pdf/', views.download_voucher_pdf, name="download_voucher_pdf")
 
 ]
 

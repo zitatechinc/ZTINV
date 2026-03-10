@@ -5,7 +5,7 @@
     <!-- Audit Information Fields -->
     <div class="col-md-4">
         <strong><label>Created User :</label></strong>
-        {{ object.created_user }}
+        {{ object.record_created_user }}
     </div>
     <div class="col-md-4">
         <strong><label>Modified User :</label></strong>  
@@ -14,7 +14,7 @@
     <div class="col-md-4"></div>
     <div class="col-md-4">
         <strong><label>Created Date :</label></strong>  
-        {{ object.created_at }}
+        {{ object.created_at |date:"d M Y, H:i" }}
     </div>
     <div class="col-md-4">
         <strong><label>Last Modified :</label></strong>  

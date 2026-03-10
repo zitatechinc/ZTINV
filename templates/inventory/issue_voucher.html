@@ -1,0 +1,224 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+<title>Issue Voucher</title>
+
+<style>
+
+body{
+font-family: Arial;
+}
+
+.container{
+width:950px;
+margin:auto;
+border:1px solid black;
+padding:20px;
+}
+
+.header{
+text-align:center;
+font-weight:bold;
+font-size:18px;
+}
+
+.subheader{
+text-align:center;
+font-weight:bold;
+margin-bottom:15px;
+}
+
+.top-section{
+display:flex;
+justify-content:space-between;
+margin-bottom:10px;
+}
+
+table{
+width:100%;
+border-collapse:collapse;
+}
+
+th,td{
+border:1px solid black;
+padding:6px;
+text-align:center;
+font-size:13px;
+}
+
+.signature{
+margin-top:40px;
+display:flex;
+justify-content:space-between;
+}
+
+.signature div{
+text-align:center;
+width:18%;
+}
+
+.buttons{
+margin:20px 0;
+text-align:right;
+}
+
+button{
+padding:6px 12px;
+margin-left:5px;
+cursor:pointer;
+}
+
+@media print {
+
+.buttons{
+display:none;
+}
+
+}
+
+</style>
+
+</head>
+<body>
+
+<div class="container">
+
+<div class="header">
+MESLOVA SYSTEMS PRIVATE LIMITED
+</div>
+
+<div class="subheader">
+ISSUE VOUCHER FOR REVENUE ITEMS
+</div>
+
+
+<div class="top-section">
+
+<div>
+To,<br>
+Stores / IMM Department
+</div>
+
+<div>
+IV No : {{ iv_no }} <br>
+IV Date : {{ iv_date }}
+</div>
+
+</div>
+
+<p>Kindly issue following material for __________________________________</p>
+
+
+<div class="buttons">
+
+<button onclick="addRow()">Add Row</button>
+<button onclick="printVoucher()">Print</button>
+<a href="{% url 'download_voucher_pdf' %}">
+<button>Download PDF</button>
+</a>
+
+</div>
+
+
+<table id="itemsTable">
+
+<thead>
+<tr>
+
+<th>Sl No</th>
+<th>Description</th>
+<th>Part No</th>
+<th>Unit</th>
+<th>Qty Required</th>
+<th>Qty Authorised</th>
+<th>Qty Issued</th>
+<th>Qty Balance</th>
+<th>Remarks</th>
+<th>Action</th>
+
+</tr>
+</thead>
+
+<tbody id="tableBody">
+
+<tr>
+
+<td>1</td>
+
+<td><input type="text"></td>
+<td><input type="text"></td>
+<td><input type="text"></td>
+<td><input type="number"></td>
+<td><input type="number"></td>
+<td><input type="number"></td>
+<td><input type="number"></td>
+<td><input type="text"></td>
+
+<td>
+<button onclick="removeRow(this)">X</button>
+</td>
+
+</tr>
+
+</tbody>
+
+</table>
+
+
+<div class="signature">
+
+<div>Indentor</div>
+<div>Store Keeper</div>
+<div>Accounts</div>
+<div>Received By</div>
+<div>Authorised By<br>Head IMM</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+function addRow(){
+
+let table = document.getElementById("tableBody");
+
+let rowCount = table.rows.length + 1;
+
+let row = table.insertRow();
+
+row.innerHTML = `
+<td>${rowCount}</td>
+<td><input type="text"></td>
+<td><input type="text"></td>
+<td><input type="text"></td>
+<td><input type="number"></td>
+<td><input type="number"></td>
+<td><input type="number"></td>
+<td><input type="number"></td>
+<td><input type="text"></td>
+<td><button onclick="removeRow(this)">X</button></td>
+`;
+
+}
+
+function removeRow(btn){
+
+let row = btn.parentNode.parentNode;
+row.remove();
+
+}
+
+function printVoucher(){
+
+window.print();
+
+}
+
+</script>
+
+
+</body>
+</html>

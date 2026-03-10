@@ -23,7 +23,11 @@
       <script src="{% static 'default/js/ploty.js' %}"></script>
 
       <!-- Block for page-specific CSS (if needed) -->
-      {% block pagecss %}{% endblock %}
+      {% block pagecss %}
+      <style>
+      
+      </style>
+      {% endblock %}
    </head>
 
 <body class="app">
@@ -35,45 +39,44 @@
       <div class="app-content pt-1 p-md-3 p-lg-4 mb-3">
          <div class="container-fluid ">
 
-         {% if messages or form.errors %}
-            <div class="app-card alert alert-dismissible shadow-sm border-left-decoration" role="alert">
-               <div class="inner">
-                  <div class="app-card-body">
-                     <div class="row gx-5 gy-3">
-                        <div class="col-12 col-lg-9">
-                           <ul class="errorlist" style="list-style: none !important;" >
-                           {% if messages %}
-                        {% for eachmsg in messages %}
-                        
-                           <li  class="text-{{eachmsg.tags}}"><i class="fa fa-info-circle"></i> {{eachmsg}}</li>
-                        
-                        {%endfor%}
+        {% if messages or form.errors %}
+<div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 1100;">
 
-                        {%endif%}
+    {% if messages %}
+        {% for eachmsg in messages %}
+        <div class="toast align-items-center text-bg-{{ eachmsg.tags|default:'primary' }} border-0 mb-2"
+             role="alert" aria-live="assertive" aria-atomic="true"
+             data-bs-delay="4000">
+            <div class="d-flex">
+                <div class="toast-body" style="color: #fff !important;font-weight: 600 !important;">
+                    <i class="fa fa-info-circle me-2"></i> {{ eachmsg }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
 
-                        {% if form.non_field_errors  %}
-                        {% for eachformmsg in form.non_field_errors %}
-                           <li class="text-danger">{{eachformmsg}}</li>
-                        
-                        {%endfor%}
-                        {%endif%}
+    {% if form.non_field_errors %}
+        {% for eachformmsg in form.non_field_errors %}
+        <div class="toast align-items-center text-bg-danger border-0 mb-2"
+             role="alert" aria-live="assertive" aria-atomic="true"
+             data-bs-delay="5000">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="fa fa-exclamation-circle me-2"></i> {{ eachformmsg }}
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto"
+                        data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
 
-                        <div class="hide" style="display: none !important;">
-                        {% if form.errors  %}
-                        {% for key, val in form.errors.items %}
-                           <li class="text-danger">{{key}} : {{val}}</li>
-                        {%endfor%}
-                        {%endif%}
-                        </div>
-                     </ul>
-                        </div><!--//col-->
-                     </div><!--//row-->
-                     <button type="button" class="btn-close mt-2" data-bs-dismiss="alert" aria-label="Close" ></button>
-                  </div><!--//app-card-body-->
-                  
-               </div><!--//inner-->
-         </div><!--//app-card-->
-         {%endif%}
+</div>
+{% endif %}
+
 
          {% include 'core/bread_crum.html' %}
             {% block content %}
@@ -130,7 +133,8 @@
    <script src="{% static 'default/theme/assets/js/app.js' %}"></script>   
    <script src="{% static 'default/js/ploty.js' %}"></script>  <!-- Plotly.js for rendering charts -->    
    <script src="{% static 'default/js/sweetalert.js' %}"></script>      <!-- Edit popup -->  
-   <script src="{% static 'default/js/select2.min.js' %}"></script>      
+   <script src="{% static 'default/js/select2.min.js' %}"></script>
+   <script src="{% static 'default/js/xlsx.full.min.js' %}"></script>      
    
    <script>
    document.addEventListener("DOMContentLoaded", function () {
@@ -159,6 +163,36 @@
       });
 
    });
+   document.addEventListener("DOMContentLoaded", function () {
+    var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+    var toastList = toastElList.map(function (toastEl) {
+        return new bootstrap.Toast(toastEl).show()
+    })
+});
+   </script>
+   
+   <!-- global search -->
+   <script>
+      $(document).ready(function () {
+
+         $("#globalSearch").on("keyup", function () {
+            const searchValue = $(this).val().toLowerCase().trim();
+
+            $("table tbody tr").each(function () {
+
+                  const rowText = $(this).text().toLowerCase();
+
+                  if (rowText.includes(searchValue)) {
+                     $(this).show();
+                  } else {
+                     $(this).hide();
+                  }
+
+            });
+
+         });
+
+      });
    </script>
 
 

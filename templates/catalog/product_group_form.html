@@ -66,6 +66,22 @@
 
                         <div class="col-md-6">
                             <div class="form-floating mb-3">
+                                {{ form.description }}
+                                <label for="floatingDescription" class="form-label">{{ form.description.label_tag }}</label>
+                                {% if form.description.errors %}
+                                    <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                                        {% for error in form.description.errors %}
+                                            <li class="text-danger">{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-floating mb-3">
                                 {{ form.search_keywords }}
                                 <label for="floatingMetaKeyword" class="form-label">{{ form.search_keywords.label_tag }}</label>
                                 {% if form.search_keywords.errors %}
@@ -78,7 +94,7 @@
                             </div>
                         </div>
                     </div>
-
+                </div>
                 </div>
             </div>
         </div>

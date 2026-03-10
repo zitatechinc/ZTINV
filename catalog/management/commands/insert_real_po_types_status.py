@@ -63,7 +63,7 @@ class Command(BaseCommand):
 
         # ------------------ Realistic PO Status ------------------
         po_status_names = [
-            "OPEN", "CLOSED", "PARTIALLY COMPLETED", "PENDING APPROVAL", "APPROVED",
+            "OPEN", "CLOSED", "PARTIAL", "PARTIALLY COMPLETED", "PENDING APPROVAL", "APPROVED",
             "REJECTED", "IN PROGRESS", "ON HOLD", "CANCELLED", "COMPLETED",
             "DRAFT", "CONFIRMED", "BACKORDERED", "SHIPPED", "DELIVERED",
             "RECEIVED", "RETURNED", "INVOICED", "PAID", "OVERDUE",

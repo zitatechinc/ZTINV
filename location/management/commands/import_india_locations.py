@@ -4,9 +4,11 @@ from django.core.management.base import BaseCommand
 from django.conf import settings
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
+import random
 
 from location.models import Country, Location, SubLocation
 
+STATUS_CHOICES = [1, -1, 0]
 
 class Command(BaseCommand):
     help = "Import India locations: State → Location, City → SubLocation (handle duplicates)"
@@ -40,6 +42,7 @@ class Command(BaseCommand):
                 defaults={
                     "name": c["name"],
                     "slug": slugify(c["name"]),
+                    "status": 1
                 },
             )
 
@@ -68,6 +71,7 @@ class Command(BaseCommand):
                     "region": s["name"],
                     "slug": self.unique_slug(Location, s["name"]),
                     "code": self.unique_code(Location, s["name"], 4),
+                    "status": random.choice(STATUS_CHOICES),
                 },
             )
 
@@ -105,6 +109,7 @@ class Command(BaseCommand):
                     location=state,
                     slug=self.unique_slug(SubLocation, final_name),
                     code=self.unique_code(SubLocation, final_name, 6),
+                    status=random.choice(STATUS_CHOICES),
                 )
                 self.stdout.write(f"Created city: {final_name}")
 

@@ -1,5 +1,5 @@
 {% block content %}
-
+{% load static %}
 <form method="post" action="{{ form_action_url }}" enctype="multipart/form-data" novalidate>
     {% csrf_token %}
 
@@ -7,7 +7,7 @@
         <div class="col-12">
 
             <!-- Header -->
-            <div class="row mb-3">
+            <div class="row mt-2">
                 <div class="col-12">
                     <h6>Vendor Product Mapping Form</h6>
                 </div>
@@ -18,7 +18,20 @@
 
                 <!-- Product -->
                 <div class="col-md-4 mb-3">
-                    <label class="form-label">
+
+                    
+                    <div class="form-floating mb-3">
+                                {{ form.product }}
+                                <label for="floatingName" class="form-label">{{ form.product.label_tag }}</label>
+                                {% if form.product.errors %}
+                                <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                                    {% for error in form.product.errors %}
+                                    <li class="text-danger">{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {%endif%}
+                            </div>
+                    <!-- <label class="form-label">
                         {{ form.product.label }}
                     </label>
                     {{ form.product }}
@@ -29,11 +42,24 @@
                                 <li>{{ error }}</li>
                             {% endfor %}
                         </ul>
-                    {% endif %}
+                    {% endif %} -->
                 </div>
 
                 <!-- Status -->
                 <div class="col-md-4 mb-3">
+
+                    <div class="form-floating mb-3">
+                                {{ form.status }}
+                                <label for="floatingName" class="form-label">{{ form.status.label_tag }}</label>
+                                {% if form.status.errors %}
+                                <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                                    {% for error in form.status.errors %}
+                                    <li class="text-danger">{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {%endif%}
+                            </div>
+                    <!-- <div class="form-floating mb-3">
                     <label class="form-label">
                         {{ form.status.label }}
                     </label>
@@ -46,8 +72,8 @@
                             {% endfor %}
                         </ul>
                     {% endif %}
+                </div> -->
                 </div>
-
             </div>
 
             <!-- Submit button -->
@@ -63,4 +89,16 @@
     </div>
 </form>
 
+{% block pagecss %}
+
+
+
+{% endblock pagecss %}
+
+{% block pagejs %}
+
+
+
+{% endblock pagejs %}
 {% endblock %}
+

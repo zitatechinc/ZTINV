@@ -12415,6 +12415,12 @@ body {
     color: #5d6778
 }
 
+.text-bg-error{
+    background-color:#dc3545 !important;
+}
+.text-bg-safe {
+    background-color:#dc3545 !important;
+}
 h1,
 .h1,
 h2,

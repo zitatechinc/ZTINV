@@ -167,3 +167,84 @@
 {% endblock content %}
 
 
+
+{% block pagecss %}
+
+<link href="{% static 'default/css/select2.min.css' %}" rel="stylesheet" />
+
+<style>
+  .select2-container .select2-selection--single {
+    height: 58px;
+    /* padding: 5px 10px; */
+    padding-top: 1.625rem;
+    padding-bottom: .625rem;
+    border-color: #e0e0e0 !important;
+  }
+  .select2-selection__rendered {
+    line-height: 26px !important;
+  }
+  .select2-selection__arrow {
+    height: 36px !important;
+  }
+</style>
+
+
+{% endblock pagecss %}
+
+{% block pagejs %}
+
+<script src="{% static 'default/js/select2.min.js' %}"></script>
+
+<script>
+
+function initializeCreatableSelect2(selector, appLabel, modelName, ajaxUrl, placeholderText) {
+
+    $(selector).select2({
+        width: '100%',
+        placeholder: placeholderText,
+        allowClear: true,
+        tags: true,
+        ajax: {
+            url: ajaxUrl,
+            dataType: 'json',
+            delay: 250,
+            cache: false,
+            data: function(params) {
+                return {
+                    app_label: appLabel,
+                    model: modelName,
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                return { results: data.results };
+            }
+        }
+    });
+}
+
+$(document).ready(function () {
+
+    // initializeCreatableSelect2(
+    //     '#id_bom',
+    //     'project',                // app where BOMHeader exists
+    //     'BOMHeader',
+    //     '/catalog/ajax/create-fk/',
+    //     "Select or add BOM"
+    // );
+
+    initializeCreatableSelect2(
+        '#id_product',
+        'catalog',
+        'Product',
+        '/catalog/ajax/create-fk/',
+        "Select or add Product"
+    );
+
+});
+
+</script>
+
+{% endblock pagejs %}
+
+

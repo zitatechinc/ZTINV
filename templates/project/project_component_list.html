@@ -1,31 +1,28 @@
 {% extends 'core/base.html' %}
 {% load static %}
 {% block content %}
+
 <div class="row mb-2 mt-0">
-<div class="col-6 col-md-6">
-   
+  {% if not form_status %}
+  <div class="col-12 text-end">
+    <div class="button-group">
+        <a href="{% if can_add_component %}{% url 'project-component-create' object.pk %}{% else %}#{% endif %}"
+          class="btn btn-sm app-btn-primary"
+          {% if not can_add_component %}onclick="showBudgetAlert(); return false;"{% endif %}>
+          <i class="fa fa-plus"></i> Add {{ model_name }}
+        </a>
+    </div>
+  </div>
+  {% endif %}
 </div>
-<div class="col-6 col-md-6">
-   <div class="button-group" style="float:right;">
 
-
-  <a href="{% if can_add_component %}{% url 'project-component-create' object.pk %}{% else %}#{% endif %}"
-   class="btn btn-sm app-btn-primary"
-   {% if not can_add_component %}onclick="showBudgetAlert(); return false;"{% endif %}>
-   <i class="fa fa-plus"></i> Add {{model_name}}
-</a>
-
-   </div>
-</div>
-</div>
 <div class="col-12 col-md-12">
-  <div class="app-card app-card-settings shadow-md">
-     {% include 'project/project_menu.html' %}
-     <div class="app-card-body p-1">
+  <div class="app-card app-card-settings shadow-md p-4">
+    {% include 'project/project_menu.html' %}
+    <div class="app-card-body ps-2">
 
        {% if not form_status %}
 
-    
       <!-- Table -->
       <div class="table-responsive">
         <table class="table app-table-hover text-left table-bordered table-hover" id="app_table_data">
@@ -251,7 +248,20 @@
                 <td>{{ eachRow.component_qty }}</td>
                 <td>{{ eachRow.component_cost }}</td>
                 <!-- <td>{{ eachRow.status_name }}</td> -->
-                <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td>
+                <!-- <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td> -->
+                <td class="cell {{ eachRow.status_name|lower }}">
+                    <span class="badge 
+                        {% if eachRow.status == 1 %}
+                            bg-success
+                        {% elif eachRow.status == 0 %}
+                            bg-warning
+                        {% else %}
+                            bg-danger
+                        {% endif %}
+                    ">
+                        {{ eachRow.status_name }}
+                    </span>
+                </td>
                 <td>{{ eachRow.last_modified_at }}</td>
                 <td>{{ eachRow.last_modified_user }}</td>
                 <td class="cell">
@@ -266,7 +276,7 @@
               </tr>
               {% endfor %}
             {% else %}
-              <tr><td colspan="11" class="text-center">No records found</td></tr>
+              <tr><td colspan="11"><h6 class="text-center">No Records Found</h6></td></tr>
             {% endif %}
           </tbody>
         </table>
@@ -274,14 +284,14 @@
 
       <!-- Pagination -->
       {% include 'core/pagination.html' %}
-       {%endif%}
-          {% if form_status %}
-              <div class="row">
-                <div class="col-md-12">
-              {% include 'project/project_component_form.html' %}
-            </div>
-            </div>
-          {%endif%}
+      {%endif%}
+        {% if form_status %}
+            <div class="row">
+              <div class="col-md-12">
+            {% include 'project/project_component_form.html' %}
+          </div>
+          </div>
+        {%endif%}
 
     </div>
   </div>

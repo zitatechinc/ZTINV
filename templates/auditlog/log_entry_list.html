@@ -30,7 +30,9 @@
                         <thead>
                             <tr>
                                 <th>Entity Name</th>
-                                <th>Row ID</th>
+                                <!-- <th>Row ID</th> -->
+                                <th>Name</th>
+                                <th>Code</th>
                                 <th>Column Name</th>
                                 <th>New Value</th>
                                 <th>Old Value</th>
@@ -43,18 +45,20 @@
                             {% for log in object_list %}
                             <tr>
                                 <td>{{ log.EntityName }}</td>
-                                <td>{{ log.RowID }}</td>
+                                <!-- <td>{{ log.RowID }}</td> -->
+                                <td>{{ log.AuditName }}</td>
+                                <td>{{ log.AuditCode }}</td>    
                                 <td>{{ log.ColumnName }}</td>
                                 <td class="bg-success text-white">{{ log.NewValue }}</td>
                                 <td class="bg-danger text-white">{{ log.OldValue }}</td>
                                 <td>{{ log.Action }}</td>
                                 <td>{{ log.User }}</td>
-                                <td>{{ log.Timestamp }}</td>
+                                <td>{{ log.Timestamp|date:"d M Y, H:i" }}</td>
                             </tr>
                             {% empty %}
                             <tr>
                                 <td colspan="8" class="text-center text-muted">
-                                    No records found
+                                    No Records Found
                                 </td>
                             </tr>
                             {% endfor %}

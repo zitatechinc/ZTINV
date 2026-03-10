@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import TimeStampBaseModel, CustomerBaseModel, UserLogBaseModel
+from core.models import TimeStampBaseModel, CustomerBaseModel, UserLogBaseModel,NormalizeCodeMixin
 from location.models import Country, Location, SubLocation
 from accounts.models import User
 from catalog.models import  Languages
@@ -8,7 +8,7 @@ from django.core.exceptions import ValidationError
 from core.models import CUSTOMER_TYPE_CHOICES, STATUS_CHOICES, PAYMENT_TERM_CHOICES
 from auditlog.registry import auditlog
         
-class Customer(CustomerBaseModel, TimeStampBaseModel, UserLogBaseModel):
+class Customer(NormalizeCodeMixin,CustomerBaseModel, TimeStampBaseModel, UserLogBaseModel):
     code = models.CharField(
         max_length=100,
         verbose_name="Code",
@@ -17,8 +17,8 @@ class Customer(CustomerBaseModel, TimeStampBaseModel, UserLogBaseModel):
     )
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     customer_type = models.CharField(max_length=60,verbose_name="Customer Type", choices=CUSTOMER_TYPE_CHOICES)
-    company_name1 = models.CharField(max_length=250, verbose_name='Company Name1', unique=True)
-    company_name2 = models.CharField(max_length=250, verbose_name='Company Name2',blank=True,null=True)
+    company_name1 = models.CharField(max_length=250, verbose_name='Company Name 1', unique=True)
+    company_name2 = models.CharField(max_length=250, verbose_name='Company Name 2',blank=True,null=True)
     dba = models.CharField(max_length=250, blank=True,verbose_name='DBA (Doing Business AS)')
     search_keywords = models.CharField(max_length=250,verbose_name='Search Keywords',blank=True,null=True)
     language = models.ForeignKey(Languages, on_delete=models.PROTECT, null=True, blank=True, verbose_name='Language')
@@ -90,6 +90,14 @@ class Customer(CustomerBaseModel, TimeStampBaseModel, UserLogBaseModel):
     @property
     def get_name(self):
         return self.company_name1
+    
+    @property
+    def audit_name(self):
+        return self.company_name1
+
+    @property
+    def audit_code(self):
+        return self.code
 
     class Meta:
         ordering = ['-updated_at']

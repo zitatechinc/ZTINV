@@ -40,14 +40,7 @@ class Command(BaseCommand):
 
             print (po_number, vendor_cls, po_date, RequestedBy, po_status, po_type, req_delivery_date, header_notes)
 
-
-           
             try:
-                
-                
-                
-
-
                 po_header_dict = {
                 "code": po_number,
                 "vendor_id":vendor_cls.pk,

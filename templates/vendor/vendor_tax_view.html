@@ -18,44 +18,43 @@
 
     <div class="row">
         <div class="col-12 col-md-12">
-            <div class="app-card app-card-settings shadow-md">
+            <div class="app-card app-card-settings shadow-md p-4">
 
                 {% include 'vendor/vendor_menu.html' %}
 
-                <div class="app-card-body p-4">
+                <div class="app-card-body ps-2">
                     <!-- Tax Information -->
-                    <div class="row mb-4">
-                        <h6 class="mb-3">Tax Information</h6> 
+                    <div class="row mt-2">
+                        <h6 class="">Tax Information</h6> 
 
                         <div class="col-md-4"><strong>Name :</strong> {{ object.name }}</div>
                         <div class="col-md-4"><strong>Tax Number :</strong> {{ object.tax_number }}</div>
                         <div class="col-md-4"><strong>Tax Rate :</strong> {{ object.tax_rate }}</div>
-
-                        <div class="col-md-4"><strong>Vendor :</strong> {{ object.vendor.company_name1 }}</div>
-                        <div class="col-md-4"><strong>Country :</strong> {% if object.country %}{{ object.country.name }}{% endif %}</div>
                         <div class="col-md-4"><strong>Category :</strong> {{ object.category }}</div>
-
-                        <div class="col-md-4">
-                        <strong>Status :</strong>
-                        <span class="badge 
-                            {% if object.status == 1 %}
-                                bg-success
-                            {% elif object.status == 0 %}
-                                bg-warning
-                            {% else %}
-                                bg-danger
-                            {% endif %}
-                        ">
-                            {{ object.status_name }}
-                        </span>
-                    </div>
+                        <div class="col-md-4"><strong>Country :</strong> {% if object.country %}{{ object.country.name }}{% endif %}</div>
                         <div class="col-md-4">
                             <strong>Other Tax Details :</strong>
                             {{ object.other_tax_details|default:"—" }}
                         </div>
+                        <div class="col-md-4">
+                            <strong>Status :</strong>
+                            <span class="badge 
+                                {% if object.status == 1 %}
+                                    bg-success
+                                {% elif object.status == 0 %}
+                                    bg-warning
+                                {% else %}
+                                    bg-danger
+                                {% endif %}
+                            ">
+                                {{ object.status_name }}
+                            </span>
+                        </div>
+                        <div class="col-md-4"><strong>Vendor :</strong> {{ object.vendor.company_name1 }}</div>
+                        
                     </div>
 
-                    {% include 'core/auditlog.html' %}
+                   {% include 'core/project_audit_log.html' %}
 
                     <!-- Audit Log Information - Now aligned properly -->
                     <!-- <div class="row mb-4">

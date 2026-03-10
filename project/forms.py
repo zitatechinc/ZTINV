@@ -1,6 +1,6 @@
 from django import forms
 from .models import ProjectHeader, BOMHeader, ProjectComponent, BOMItem, BOMAttachments
-from core.forms import PurchaseOrderBaseModelForm, CodeReadonlyOnEditForm, CatalogBaseModelForm
+from core.forms import PurchaseOrderBaseModelForm, CodeReadonlyOnEditForm, CatalogBaseModelForm,ProjectidReadonlyOnEditForm
 from ims.models import BudgetAllocation
 from django.db.models import Sum
 from location.models import Location, SubLocation
@@ -8,33 +8,55 @@ from customer.models import Customer
 from catalog.models import Product
 from ims.models import Project  # Assuming this is the correct Project model
 
-# ---------------- ProjectHeader Form ----------------
-class ProjectHeaderModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
+
+class ProjectHeaderModelForm(CatalogBaseModelForm, ProjectidReadonlyOnEditForm):
     class Meta:
         model = ProjectHeader
-        exclude = ('created_user', 'updated_user', 'created_at',  'slug')
+        exclude = ('created_user', 'updated_user', 'created_at', 'slug', 'item_status')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        # Only show active foreign key options (status=1 means active)
+        # -----------------------------------
+        # ACTIVE FILTERING
+        # -----------------------------------
         self.fields['customer'].queryset = Customer.objects.filter(status=1)
         self.fields['location'].queryset = Location.objects.filter(status=1)
         self.fields['sub_location'].queryset = SubLocation.objects.filter(status=1)
-        # self.fields['project'].queryset = Project.objects.filter(status=1)
 
-        # Include current instance's FK even if inactive
+        # -----------------------------------
+        # EXCLUDE ALREADY USED PROJECTS
+        # -----------------------------------
+        # used_projects = ProjectHeader.objects.values_list("project_id", flat=True)
+
+        # self.fields['project'].queryset = Project.objects.exclude(
+        #     id__in=used_projects
+        # )
+
+        used_projects = ProjectHeader.objects.values_list("project", flat=True)
+
+        self.fields['project'].queryset = Project.objects.exclude(
+            id__in=used_projects)
+
+        # -----------------------------------
+        # WHILE EDITING → include current project
+        # -----------------------------------
         if self.instance.pk:
             if self.instance.customer:
                 self.fields['customer'].queryset |= Customer.objects.filter(pk=self.instance.customer.pk)
+
             if self.instance.location:
                 self.fields['location'].queryset |= Location.objects.filter(pk=self.instance.location.pk)
+
             if self.instance.sub_location:
                 self.fields['sub_location'].queryset |= SubLocation.objects.filter(pk=self.instance.sub_location.pk)
-            # if self.instance.project:
-            #     self.fields['project'].queryset |= Project.objects.filter(pk=self.instance.project.pk)
 
-        # Ensure no duplicates
+            if self.instance.project:
+                self.fields['project'].queryset |= Project.objects.filter(pk=self.instance.project.pk)
+
+        # -----------------------------------
+        # REMOVE DUPLICATES
+        # -----------------------------------
         for field_name in ['customer', 'location', 'sub_location', 'project']:
             self.fields[field_name].queryset = self.fields[field_name].queryset.distinct()
 
@@ -88,11 +110,18 @@ class ProjectComponentModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
 
     def clean(self):
         cleaned_data = super().clean()
+
         project_header = self.project_id
+        component_type = cleaned_data.get("component_type")
         bom = cleaned_data.get("bom")
+        product = cleaned_data.get("product")
+        service = cleaned_data.get("service")
         component_qty = cleaned_data.get("component_qty")
         component_cost = cleaned_data.get("component_cost")
 
+        # ---------------------------------
+        # Quantity & Cost validation
+        # ---------------------------------
         if component_qty is not None and component_qty <= 0:
             self.add_error("component_qty", "Component quantity must be greater than 0.")
 
@@ -100,9 +129,41 @@ class ProjectComponentModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
             self.add_error("component_cost", "Component cost must be greater than 0.")
 
         # ---------------------------------
+        # PRODUCT uniqueness rules
+        # ---------------------------------
+        if component_type == "Product" and project_header and product:
+            exists = (
+                ProjectComponent.objects
+                .filter(project=project_header, product=product)
+                .exclude(pk=self.instance.pk)
+                .exists()
+            )
+            if exists:
+                self.add_error(
+                    "product",
+                    "This product is already added to this project."
+                )
+
+        # ---------------------------------
+        # SERVICE uniqueness rules
+        # ---------------------------------
+        if component_type == "Service" and project_header and service:
+            exists = (
+                ProjectComponent.objects
+                .filter(project=project_header, service=service)
+                .exclude(pk=self.instance.pk)
+                .exists()
+            )
+            if exists:
+                self.add_error(
+                    "service",
+                    "This service is already added to this project."
+                )
+
+        # ---------------------------------
         # BOM uniqueness rules
         # ---------------------------------
-        if project_header and bom:
+        if component_type == "BOM" and project_header and bom:
             existing = (
                 ProjectComponent.objects
                 .filter(bom=bom)
@@ -111,13 +172,11 @@ class ProjectComponentModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
             )
 
             if existing:
-                # Same BOM added again to SAME project
                 if existing.project == project_header:
                     self.add_error(
                         "bom",
                         "This BOM is already added to this project."
                     )
-                # Same BOM added to DIFFERENT project
                 else:
                     self.add_error(
                         "bom",
@@ -126,7 +185,7 @@ class ProjectComponentModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
                     )
 
         # ---------------------------------
-        # Budget validation (existing logic)
+        # Budget validation
         # ---------------------------------
         if not project_header or component_cost is None:
             return cleaned_data
@@ -160,6 +219,7 @@ class ProjectComponentModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
 
         return cleaned_data
 
+
 # ---------------- BOMHeader Form ----------------
 class BOMHeaderModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
     class Meta:
@@ -177,21 +237,55 @@ class BOMHeaderModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
 class BOMItemModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
     class Meta:
         model = BOMItem
-        exclude = ('code','slug','created_user', 'updated_user', 'created_at')
+        exclude = ('code', 'slug', 'created_user', 'updated_user', 'created_at')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+
+        # Base querysets for active objects
         self.fields['product'].queryset = Product.objects.filter(status=1)
         self.fields['bom'].queryset = BOMHeader.objects.filter(status=1)
 
+        # Include current instance even if inactive
         if self.instance.pk:
             if self.instance.product:
                 self.fields['product'].queryset |= Product.objects.filter(pk=self.instance.product.pk)
             if self.instance.bom:
                 self.fields['bom'].queryset |= BOMHeader.objects.filter(pk=self.instance.bom.pk)
 
+            # Remove duplicates
             self.fields['product'].queryset = self.fields['product'].queryset.distinct()
             self.fields['bom'].queryset = self.fields['bom'].queryset.distinct()
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        bom = cleaned_data.get("bom")
+        product = cleaned_data.get("product")
+        quantity = cleaned_data.get("bom_quantity")
+
+        # 1️⃣ Quantity validation
+        if quantity is None or quantity <= 0:
+            self.add_error(
+                "bom_quantity",
+                "Component quantity must be greater than 0."
+            )
+
+        # 2️⃣ Ensure product is unique per BOM
+        if bom and product:
+            exists = BOMItem.objects.filter(
+                bom=bom,
+                product=product
+            ).exclude(pk=self.instance.pk).exists()  # ⚡ Exclude current instance for update
+
+            if exists:
+                self.add_error(
+                    "product",
+                    "This product is already added to this BOM."
+                )
+
+        return cleaned_data
+
 
 class BOMAttachmentsModelForm(CatalogBaseModelForm, CodeReadonlyOnEditForm):
     class Meta:

@@ -16,9 +16,37 @@
             <div class="col-12 col-md-12">
                 <div class="app-card app-card-settings shadow-sm p-4 rounded-3">
                     {% include 'customer/customer_menu.html' %}
-                    {% include 'core/auditlog.html' %}
+                    
                     
                     <div class="app-card-body">
+                        
+                        <div class="row p-1">
+                            <h3>Contact Information</h3>
+                            <div class="col-md-4">
+                                <strong>{{ form.phone_number_1.label_tag }} :</strong> {{ object.phone_number_1 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.phone_number_2.label_tag }} :</strong> {{ object.phone_number_2 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.phone_number_3.label_tag }} :</strong> {{ object.phone_number_3 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.fax.label_tag }} :</strong> {{ object.fax }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.email_1.label_tag }} :</strong> {{ object.email_1 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.email_2.label_tag }} :</strong> {{ object.email_2 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.email_3.label_tag }} :</strong> {{ object.email_3 }}
+                            </div>
+                            <div class="col-md-4">
+                                <strong>{{ form.website.label_tag }} :</strong> {{ object.website }}
+                            </div>
+                        </div>
                         
                         <div class="row p-1">
                             <h3>Address Information</h3>
@@ -52,33 +80,7 @@
                             </div>
                         </div>
                         
-                        <div class="row p-1">
-                            <h3>Contact Information</h3>
-                            <div class="col-md-4">
-                                <strong>{{ form.phone_number_1.label_tag }} :</strong> {{ object.phone_number_1 }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>{{ form.phone_number_2.label_tag }} :</strong> {{ object.phone_number_2 }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>{{ form.phone_number_3.label_tag }} :</strong> {{ object.phone_number_3 }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>{{ form.fax.label_tag }} :</strong> {{ object.fax }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>{{ form.email_1.label_tag }} :</strong> {{ object.email_1 }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>{{ form.email_2.label_tag }} :</strong> {{ object.email_2 }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>{{ form.email_3.label_tag }} :</strong> {{ object.email_3 }}
-                            </div>
-                            <div class="col-md-4">
-                                <strong>{{ form.website.label_tag }} :</strong> {{ object.website }}
-                            </div>
-                        </div>
+                        {% include 'core/auditlog.html' %}
                     </div>
                 </div>
             </div>

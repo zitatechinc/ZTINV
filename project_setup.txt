@@ -7,36 +7,17 @@
 
 Note : Run below commands should be 'manage.py' existed in that path or not
    and run below sequence of commands
+
 *********************************************
-python manage.py makemigrations core
-python manage.py makemigrations accounts
-python manage.py makemigrations location
-python manage.py makemigrations catalog
-python manage.py makemigrations vendor
-python manage.py makemigrations ims
-python manage.py makemigrations customer
-python manage.py makemigrations application 
-python manage.py makemigrations inventory
-python manage.py makemigrations project
+python manage.py makemigrations core accounts location ims catalog vendor inventory customer application project
+
 *********************************************
 
-python manage.py makemigrations core accounts location catalog vendor ims customer application inventory project
- 
 3) Migrate
 ************************************
-python manage.py migrate core
-python manage.py migrate accounts
-python manage.py migrate location
-python manage.py migrate catalog
-python manage.py migrate vendor
-python manage.py migrate ims
-python manage.py migrate customer
-python manage.py migrate application
-python manage.py migrate inventory
-python manage.py migrate project
-python manage.py migrate auditlog
+python manage.py migrate 
+
 *************************************
-python manage.py migrate core accounts location catalog vendor ims customer application inventory project auditlog
 
 4) run overall project level migrations to run below commands
   ==============================================================
@@ -49,23 +30,29 @@ python manage.py migrate
 5) create Projectlevel admin credentianls
    ======================================
    *******************************************
+
    command : python manage.py createsuperuser
+
    *******************************************
    Example :
-   Username : meslova
-   Email    : meslovasys@gmail.com
+   Username : admin
+   Email    : test@gmail.com
    Password : admin@1234
 
 6) insert sample users data::
    ==========================
    *****************************************************
+
    command : python manage.py create_ims_accounts_users
+
    *****************************************************
 
 7) Run insert_permission_data.py first:
    ====================================
    *****************************************************
+
    command: python manage.py insert_permission_data
+
    *****************************************************
    insert_permission_data.py:
    -------------------------
@@ -86,7 +73,9 @@ python manage.py migrate
 8) Run insert_po_data.py second:
    ==============================
    ******************************************
+
    command: python manage.py insert_po_data
+
    ******************************************
    insert_po_data.py:
    ------------------
@@ -107,7 +96,9 @@ python manage.py migrate
 9) Country, Location, SubLocation:
    ===============================
   *****************************************************
+
   Command : python manage.py import_india_locations
+
   *****************************************************
   This script automates importing India’s hierarchical location data (country → states → cities) into your database models (Country, Location, SubLocation) 
    while handling duplicates and generating unique identifiers.
@@ -115,7 +106,9 @@ python manage.py migrate
 10) Purchase Order Types & Purchase Order Status :
     ============================================
     *****************************************************
+
     Command : python manage.py insert_real_po_types_status
+
     ******************************************************
     It is a data seeding script for purchase order management, creating ready-to-use types and statuses for your inventory or procurement system with meaningful 
      names, codes, descriptions, and search keywords.
@@ -123,7 +116,9 @@ python manage.py migrate
 12)  categories, product types, brands, languages, product groups, and manufacturers:
      ================================================================================
    ************************************************
-   Command : python manage.py insert_catalog_list_data
+
+   Command : python manage.py insert_master_list_data
+
    ************************************************
    Populates the catalog with 50 records each for categories, product types, brands, languages, product groups, and manufacturers, 
    creating a complete, realistic dataset with slugs and hierarchy.”
@@ -131,14 +126,34 @@ python manage.py migrate
 13) Themes :
     =========
    ************************************************
+
    Command : python manage.py insert_best_theme
+
    ************************************************
    “Populates the database with predefined default themes, creating or updating each theme’s colors, fonts, and styling details.”
+
+18) inset IMS required Tables(Stages,Units,Departments,Roles,Tendor Type and Procurement Type)
+    ===========================================================================================
+    Procurement Types  : 
+    Departments        : 
+    Source Types       : 
+    Tender Types       : 
+    Units              : 
+    Delivery Types     : 
+    Stages             : 
+    Roles              : 
+    Designations       : 
+
+    ***********************************************
+    Command: python manage.py ims_master_data
+    ************************************************
 
 14) Product :
     =========
     ************************************************
+
     Command : python manage.py insert_master_products_data
+
     ************************************************
     Note :
     ------
@@ -153,14 +168,6 @@ python manage.py migrate
     ensuring every   product references existing records without causing constraint violations.
 
     This command inserts 100 realistic product records into the database, filling all fields with unique values, descriptions, identifiers, and search keywords for easy retrieval.
-
-
-15)  VendorType ::
-     =============
-     ************************************************
-     Command : python manage.py insert_vendor_types
-     ************************************************
-     Inserts 100 realistic VendorType records with unique codes, random status, and descriptions, skipping duplicates, into the database.
 
 16) Vendor :
     ========
@@ -210,24 +217,20 @@ python manage.py migrate
 
      This will create 100 customers with valid foreign key references (country, state, sublocation, language), phone numbers, emails, address, and other details.
 
+18) Rejection Codes ::
+    ==================
+
+    ***********************************************
+
+    Command : python manage.py insert_rejection_codes
+
+    ************************************************
+
+
 
 ====================== ims ==================
 
-18) inset IMS required Tables(Stages,Units,Departments,Roles,Tendor Type and Procurement Type)
-    ===========================================================================================
-    Procurement Types  : 
-    Departments        : 
-    Source Types       : 
-    Tender Types       : 
-    Units              : 
-    Delivery Types     : 
-    Stages             : 
-    Roles              : 
-    Designations       : 
 
-    ***********************************************
-    Command: python manage.py inventory_master_data
-    ************************************************
 
 19) Insert both Project and Budget : 
    =================================

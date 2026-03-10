@@ -12,14 +12,14 @@
 </div>
 
 <div class="col-12 col-md-12">
-    <div class="app-card app-card-settings shadow-md">
+    <div class="app-card app-card-settings shadow-md p-4">
         <!-- Vendor Menu Inclusion -->
         {% include 'vendor/vendor_menu.html' %}
         
-        <div class="app-card-body p-4">
+        <div class="app-card-body ps-2">
             <!-- Attachment Information -->
-            <div class="row mb-4">
-                <h6 class="mb-3">Attachment Information</h6>
+            <div class="row mt-2">
+                <h6 class="">Attachment Information</h6>
                 
                 <div class="col-md-4"><strong>Attachment Type :</strong> {{ object.attachment_type }}</div>
                 <div class="col-md-4"><strong>File :</strong> 
@@ -43,7 +43,7 @@
                 </div>
             </div>
             <!-- Include Audit Log Information -->
-            {% include 'core/auditlog.html' %}
+            {% include 'core/project_audit_log.html' %}
         </div>
     </div>
 </div>

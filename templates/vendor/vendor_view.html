@@ -17,15 +17,36 @@
 
     <div class="row">
         <div class="col-12 col-md-12">
-            <div class="app-card app-card-settings shadow-md">
+            <div class="app-card app-card-settings shadow-md p-4">
                 
                 <!-- Include the vendor menu -->
-                {% include 'vendor/vendor_menu.html' %} <br>
+                {% include 'vendor/vendor_menu.html' %} 
 
-                <div class="app-card-body p-4">
+                <div class="app-card-body ps-2"><br>
+
+                    <!-- Contact Information -->
+                    <div class="row mb-2">
+                        <div class="col-md-12">
+                           <h6 >Contact Information</h6>
+                        </div>
+                        <div class="col-md-4"><strong>{{ form.phone_number_1.label_tag }} :</strong> {{ object.phone_number_1 }}</div>
+                        <div class="col-md-4"><strong>{{ form.phone_number_2.label_tag }} :</strong> {{ object.phone_number_2 }}</div>
+                        <div class="col-md-4"><strong>{{ form.phone_number_3.label_tag }} :</strong> {{ object.phone_number_3 }}</div>
+                        <div class="col-md-4"><strong>{{ form.fax.label_tag }} :</strong> {{ object.fax }}</div>
+                        <div class="col-md-4"><strong>{{ form.email_1.label_tag }} :</strong> {{ object.email_1 }}</div>
+                        <div class="col-md-4"><strong>{{ form.email_2.label_tag }} :</strong> {{ object.email_2 }}</div>
+                        <div class="col-md-4"><strong>{{ form.email_3.label_tag }} :</strong> {{ object.email_3 }}</div>
+                        <div class="col-md-4"><strong>{{ form.website.label_tag }} :</strong> {{ object.website }}</div>
+                    </div>
+
                     <!-- Address Information -->
-                    <div class="row mb-4">
-                        <h6 class="mb-3">Address Information</h6>
+                     <div class="row mt-2">
+                        <div class="col-md-12">
+                            <h6>Address Information</h6>
+                        </div>
+                     </div>
+                    <div class="row mb-2">
+                        
                         <div class="col-md-4"><strong>{{ form.house_number.label_tag }} :</strong> {{ object.house_number }}</div>
                         <div class="col-md-4"><strong>{{ form.street_name.label_tag }} :</strong> {{ object.street_name }}</div>
                         <div class="col-md-4"><strong>{{ form.building_name.label_tag }} :</strong> {{ object.building_name }}</div>
@@ -42,29 +63,7 @@
                         </div>
                     </div>
 
-                    <!-- Contact Information -->
-                    <div class="row mb-4">
-                        <h6 class="mb-3">Contact Information</h6>
-                        <div class="col-md-4"><strong>{{ form.phone_number_1.label_tag }} :</strong> {{ object.phone_number_1 }}</div>
-                        <div class="col-md-4"><strong>{{ form.phone_number_2.label_tag }} :</strong> {{ object.phone_number_2 }}</div>
-                        <div class="col-md-4"><strong>{{ form.phone_number_3.label_tag }} :</strong> {{ object.phone_number_3 }}</div>
-                        <div class="col-md-4"><strong>{{ form.fax.label_tag }} :</strong> {{ object.fax }}</div>
-                        <div class="col-md-4"><strong>{{ form.email_1.label_tag }} :</strong> {{ object.email_1 }}</div>
-                        <div class="col-md-4"><strong>{{ form.email_2.label_tag }} :</strong> {{ object.email_2 }}</div>
-                        <div class="col-md-4"><strong>{{ form.email_3.label_tag }} :</strong> {{ object.email_3 }}</div>
-                        <div class="col-md-4"><strong>{{ form.website.label_tag }} :</strong> {{ object.website }}</div>
-                    </div>
-
-                    <!-- Audit Log Information -->
-                    <!-- <div class="row mb-4">
-                        <h6 class="mb-3">Audit Information</h6>
-                        <div class="col-md-4"><strong>Created:</strong> {{ object.created_at }}</div>
-                        <div class="col-md-4"><strong>Created User:</strong> {{ object.created_user }}</div>
-                        <div class="col-md-4"><strong>Modified User:</strong> {{ object.last_modified_user }}</div>
-                        <div class="col-md-4"><strong>Last Modified:</strong> {{ object.last_modified_at }}</div>
-                    </div> -->
-                    <!-- Include Audit Log Information -->
-                    {% include 'core/auditlog.html' %}
+                    {% include 'core/project_audit_log.html' %}
 
                 </div>
             </div>

@@ -32,6 +32,7 @@
                             <th class="cell">Favicon</th>
                             <th class="cell">Company Name</th>
                             <th class="cell">Website</th>
+                            <th class="cell">Theme</th>
                             <th class="cell">Phone</th>
                             <th class="cell">Last Modified</th>
                             <th class="cell">Modified User</th>
@@ -59,6 +60,13 @@
 
                             <td class="cell">{{ eachRow.company_name }}</td>
                             <td class="cell">{{ eachRow.website }}</td>
+                            <td class="cell">
+                                {% if eachRow.theme %}
+                                    <span class="badge bg-info">{{ eachRow.theme }}</span>
+                                {% else %}
+                                    <span class="text-muted">No Theme</span>
+                                {% endif %}
+                            </td>
                             <td class="cell">{{ eachRow.phone }}</td>
                             <td class="cell">{{ eachRow.last_modified_at }}</td>
                             <td class="cell">{{ eachRow.last_modified_user }}</td>

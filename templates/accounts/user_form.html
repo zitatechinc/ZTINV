@@ -235,5 +235,29 @@ $(document).ready(function () {
         width: '100%'
     });
 });
+$(document).ready(function () {
+
+    const roleField = $('#id_groups');   // your role select field
+    const superUserField = $('#id_is_superuser');
+
+    function toggleSuperuser() {
+        const selectedRole = roleField.find("option:selected").text();
+
+        if (selectedRole === "Administrator") {
+            superUserField.prop("disabled", false);
+        } else {
+            superUserField.prop("checked", false);
+            superUserField.prop("disabled", true);
+        }
+    }
+
+    toggleSuperuser(); // run on page load
+
+    roleField.on("change", function () {
+        toggleSuperuser();
+    });
+
+});
 </script>
+
 {% endblock pagejs %}

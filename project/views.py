@@ -1,21 +1,30 @@
 from django.shortcuts import render
-from core.views import ProjectHeaderBaseCRUDView, ProjectHeaderBaseCRUDView1, VoucherHeaderBaseCRUDView, BOMHeaderBaseCRUDView, BaseCRUDView,BOMCRUDView,ProjectBaseCRUDView,ProjectIssueVoucherCRUDView
+from core.views import ProjectHeaderBaseCRUDView, VoucherHeaderBaseCRUDView, BOMHeaderBaseCRUDView, BaseCRUDView,BOMCRUDView,ProjectBaseCRUDView,ProjectIssueVoucherCRUDView
 from .models import ProjectHeader, ProjectComponent, BOMHeader, BOMItem,BOMAttachments, VoucherHeader, VoucherComponent
 from .forms import ProjectSearchModelForm, BOMSearchModelForm, BOMHeaderModelForm, ProjectHeaderModelForm, ProjectComponentModelForm, VoucherSearchModelForm, BOMItemModelForm,BOMAttachmentsModelForm
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from ims.models import Project, BudgetAllocation
-from inventory.models import Inventory
+from inventory.models import Inventory,GoodsMovementHeader
 from django.contrib import messages
 from django.shortcuts import render, get_object_or_404, redirect
 from django.urls import reverse
 from django.http import FileResponse, Http404
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
+from django.template.loader import render_to_string
+from django.http import HttpResponse
+from django.conf import settings
+import os
+from xhtml2pdf import pisa # pdf download
+import logging
+logger = logging.getLogger(__name__)
+logger = logging.getLogger('console')
+
 
 # Create your views here.
 
-class ProjectSearchView(ProjectHeaderBaseCRUDView1):
+class ProjectSearchView(ProjectHeaderBaseCRUDView):
     model = ProjectHeader
     form_class = ProjectSearchModelForm
 
@@ -76,27 +85,30 @@ def project_header_receipt(request, po_id):
 
 @api_view(['GET'])
 def project_list(request):
-    # projects = ProjectHeader.objects.all()
+    logger.info("project_list API called")
+    try:
+        projects = Project.objects.all()
+        logger.debug(f"Total projects fetched: {projects.count()}")  
 
-    # data = []
-    # for i in projects:
-    #     data.append({
-    #         "id": i.id,
-    #         "code": i.code,
-    #         "name" : i.project_name
-    #     })
+        data = []
+        for i in projects:
+            data.append({
+                "id": i.id,
+                "code": i.project_id,
+                "name" : i.name
+            })
 
-    projects = Project.objects.all()
+        logger.info("project_list API executed successfully")
+        return Response({"data": data})
 
-    data = []
-    for i in projects:
-        data.append({
-            "id": i.id,
-            "code": i.project_id,
-            "name" : i.name
-        })
+    except Exception as e:
+        logger.exception("Error occurred in project_list API")
+        return Response(
+            {"message": "Something went wrong while fetching projects"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
 
-    return Response({"data": data})
+        
 
 class BOMSearchView(BOMHeaderBaseCRUDView):
     model = BOMHeader
@@ -153,16 +165,13 @@ def bom_header_receipt(request, po_id):
 
 # ---------------- ProjectHeader CRUD ----------------
 class ProjectHeaderCrudView(BaseCRUDView):
-    #import pdb; pdb.set_trace();
     model = ProjectHeader
     form_class = ProjectHeaderModelForm
     FieldList = (
-        ('code', 'Project Code'),
-        ('project_name', 'Project Name'),
-        ('customer', 'Customer'),
-        ('location', 'Location'),
-        ('sub_location', 'SubLocation'),
-        ('item_status', 'Item Status'),
+        ('project__project_id', 'Project Code'),
+        ('project__name', 'Project Name'),
+        ('customer__company_name1', 'Customer'),
+        ('location__name', 'Location'),
         ('updated_at', 'Updated at'),
     )
 
@@ -445,3 +454,40 @@ class ProjectIssueVoucherBaseView(ProjectIssueVoucherCRUDView):
         return {
             
         }
+    
+
+def issue_voucher_pdf(request, pk=None, issue_voucher_number='', report_type=''):
+    
+    voucher = get_object_or_404(
+        GoodsMovementHeader,
+        issue_voucher_number=issue_voucher_number
+    )
+
+    items = voucher.items.all()
+    # for item in items:
+    #     item.inventory_qty = Inventory.objects.filter(
+    #         product=item.product
+    #     ).aggregate(total=Sum('quantity'))['total'] or 0
+
+    watermark_path = os.path.join(settings.BASE_DIR, 'static/default/img/priya-tr.png')
+
+    context = {
+        "voucher": voucher,
+        "items": items,
+        "project": voucher.project,
+        "watermark_path":watermark_path
+    }
+
+    template = "project/issue_voucher_pdf.html"
+    html = render_to_string(template, context)
+    #html = template.render(context)
+
+    response = HttpResponse(content_type="application/pdf")
+    response['Content-Disposition'] = f'filename="IssueVoucher_{issue_voucher_number}.pdf"'
+
+    pisa_status = pisa.CreatePDF(html, dest=response)
+
+    if pisa_status.err:
+        return HttpResponse(f'We had some errors <pre>{html}</pre>')
+
+    return response

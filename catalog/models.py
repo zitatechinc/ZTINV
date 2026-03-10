@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel, ScraperBaseModel,AttributeBaseModel
+from core.models import CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel, ScraperBaseModel,AttributeBaseModel, UOM_CHOICES
 from location.models import Country
 import json
 from django.core.exceptions import ValidationError
@@ -29,6 +29,14 @@ class Category(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -68,6 +76,14 @@ class ProductType(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -107,6 +123,14 @@ class ProductGroup(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -148,6 +172,14 @@ class Attribute(AttributeBaseModel,UserLogBaseModel, TimeStampBaseModel):
     
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         slug = slugify(self.name)
@@ -184,6 +216,14 @@ class Brand(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
     
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -221,6 +261,14 @@ class Manufacturer(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -257,6 +305,14 @@ class Languages(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
     
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -279,28 +335,34 @@ class Languages(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
         super().save(*args, **kwargs)
 
 class Product(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
+    # Note : Material Code nothing but code and Product Description nothing but name 
     category = models.ForeignKey(Category, on_delete=models.PROTECT, null=True, verbose_name='Category Name')
     product_type = models.ForeignKey(ProductType, on_delete=models.PROTECT,  null=True, verbose_name='Product Type')
     product_group = models.ForeignKey(ProductGroup, null=True, on_delete=models.PROTECT,  verbose_name='Product Group')
-    brand = models.ForeignKey(Brand, on_delete=models.PROTECT, null=True, verbose_name='Brand Name')
+    brand = models.ForeignKey(Brand, on_delete=models.PROTECT, blank=True,null=True, verbose_name='Brand Name')
     manufacturer = models.ForeignKey(Manufacturer,  on_delete=models.PROTECT, null=True, verbose_name='Manufacturer Name')
-    language = models.ForeignKey(Languages, on_delete=models.PROTECT, null=True, verbose_name='Language')
-    country = models.ForeignKey(Country, on_delete=models.PROTECT, null=True, verbose_name='Country Origin')
+    language = models.ForeignKey(Languages, on_delete=models.PROTECT,blank=True, null=True, verbose_name='Language')
+    country = models.ForeignKey(Country, on_delete=models.PROTECT, blank=True,null=True, verbose_name='Country Origin')
+    unit_of_measure = models.ForeignKey('ims.Units', on_delete=models.PROTECT,verbose_name='Unit of Measure')
+    procurementtype = models.ForeignKey('ims.ProcurementType',  on_delete=models.PROTECT,verbose_name='Procurement Type')
+    specification = models.CharField(max_length=100, verbose_name='Product Specification')
+    model_number = models.CharField(max_length=25, verbose_name='Part No/Drawing No')
+    source_of_make = models.CharField(max_length=25,verbose_name='Make')
+    
     long_description = models.TextField(blank=True, verbose_name='Long Description')
     short_description = models.TextField(blank=True, verbose_name='Short Description')
-    unit_of_measure = models.CharField(max_length=20, blank=True, null=True,  verbose_name='Unit of Measure')
-    mpin = models.CharField(max_length=12, blank=True, null=True, verbose_name='MPIN', help_text='Enter your 4-digit MPIN for secure transactions.')
-    upc = models.CharField(max_length=4, blank=True, null=True, verbose_name='UPC', help_text='Enter the 4-digit Universal Product Code (UPC).')
-    isbn = models.CharField(max_length=120, blank=True,  null=True, verbose_name='ISBN')
-    ean = models.CharField(max_length=13, blank=True,  null=True, verbose_name='EAN', help_text='Enter the 13-digit European Article Number (EAN).')
     notes = models.TextField(blank=True, verbose_name='Notes')
+    # upload columns
     image = models.ImageField(upload_to=f'products/', blank=True, null=True, verbose_name='Product Image')
+    file = models.FileField(upload_to=f'products/',blank=True, null=True, verbose_name='Specification File')
+    # Optional columns for Future requirements
     serialnumber_status = models.IntegerField(default=0, verbose_name="Serial Number Status", null=True, choices=SERIALIZED_STATUS_CHOICES)
     prefix = models.CharField(max_length=120, blank=True,  null=True, verbose_name='Serial Number Prefix')
-    
-    model_number = models.CharField(max_length=25, blank=True, null=True,  verbose_name='Model Number')
-    source_of_make = models.CharField(max_length=25, blank=True, null=True,  verbose_name='Source of Make')
     material_code = models.CharField(max_length=25, blank=True, null=True,  verbose_name='Material Code')
+    mpin = models.CharField(max_length=12, blank=True, null=True, verbose_name='MPIN', help_text='Enter your 4-digit MPIN for secure transactions.')
+    upc = models.CharField(max_length=4, blank=True, null=True, verbose_name='UPC', help_text='Enter the 4-digit Universal Product Code (UPC).')
+    isbn = models.CharField(max_length=120, blank=True, null=True, verbose_name='ISBN')
+    ean = models.CharField(max_length=13, blank=True,  null=True, verbose_name='EAN', help_text='Enter the 13-digit European Article Number (EAN).')
     
     class Meta:
         ordering = ['-updated_at']
@@ -312,6 +374,17 @@ class Product(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
             ("can_view_product", "Can View product"),
             ("can_delete_product", "Can Delete product"),
         ]
+
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
     
     def display_name(self):
         return self.name.title()
@@ -341,8 +414,6 @@ class Product(CatalogBaseModel,UserLogBaseModel, TimeStampBaseModel):
         if hasattr(self, "code") and self.code:
             self.code = self.code.strip().upper()
         super().save(*args, **kwargs)
-    def __str__(self):
-        return f"{self.name} ({self.code})"
 
 class ProductLinks(TimeStampBaseModel, UserLogBaseModel):
     url = models.TextField(blank=True)
@@ -381,6 +452,14 @@ class ProductAttribute(TimeStampBaseModel, UserLogBaseModel):
     def __str__(self):
        return f"{self.attribute.name} ({self.value})"
     
+    @property
+    def audit_name(self):
+        return self.attribute.name
+
+    @property
+    def audit_code(self):
+        return None
+    
     # def __str__(self):
     #     return f"{self.name} ({self.code})"
 
@@ -401,6 +480,18 @@ class ProductUpload(TimeStampBaseModel,UserLogBaseModel):
    
     def __str__(self):
         return f"ProductUpload #{self.id}"
+    
+    @property
+    def audit_name(self):
+        return f"ProductUpload #{self.id}"
+
+    @property
+    def audit_code(self):
+        return None
+
+    @staticmethod
+    def get_status_col_name():
+        return "status"
     
     class Meta:
         

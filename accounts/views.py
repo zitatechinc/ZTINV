@@ -16,6 +16,7 @@ from django.contrib.auth import update_session_auth_hash
 from django.contrib.auth.forms import SetPasswordForm
 from django.utils import timezone
 import pytz
+from django.views.generic.detail import DetailView
 
 class CustomLoginView(FormView):
     template_name = "accounts/login.html"
@@ -128,3 +129,14 @@ def change_password_view(request, pk):
 def home(request):
     return render(request, 'core/home.html', {"page_title" : "Home"})
 
+
+class UserPermissionView(LoginRequiredMixin, DetailView):
+    model = User
+    template_name = "accounts/user_permissions.html"
+    context_object_name = "user_obj"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["page_title"] = "User Permissions"
+        context["model_name"] = "User Permissions"
+        return context

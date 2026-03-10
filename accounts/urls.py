@@ -7,7 +7,7 @@ user_crud = views.UserCRUDView()
 #user_password = views.ChangePasswordView()
 
 from accounts import views
-
+from .views import UserPermissionView
 
 
 urlpatterns = [
@@ -24,5 +24,6 @@ urlpatterns = [
     path('user/<int:pk>/view', views.UserCRUDView.as_view(), name='user-view'),
     #path('user/<int:pk>/changepassword', views.change_password_view, name='user-changepassword'),
     path('user/<int:pk>/changepassword', views.ChangePasswordView.as_view(), name='user-changepassword'),
+    path('user/<int:pk>/permissions/',UserPermissionView.as_view(),name='user-permissions-view'),
 
 ]

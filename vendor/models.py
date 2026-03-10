@@ -1,5 +1,5 @@
 from django.db import models
-from core.models import TimeStampBaseModel, VendorBaseModel, CatalogBaseModel, UserLogBaseModel, PurchaseOrderBaseModel
+from core.models import NormalizeCodeMixin,TimeStampBaseModel, VendorBaseModel, CatalogBaseModel, UserLogBaseModel, PurchaseOrderBaseModel
 from location.models import Country, Location, SubLocation
 from accounts.models import User
 from catalog.models import Product, Languages
@@ -27,6 +27,14 @@ class VendorType(CatalogBaseModel, VendorBaseModel, UserLogBaseModel, TimeStampB
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -47,9 +55,8 @@ class VendorType(CatalogBaseModel, VendorBaseModel, UserLogBaseModel, TimeStampB
         if hasattr(self, "code") and self.code:
             self.code = self.code.strip().upper()
         super().save(*args, **kwargs)
-
-        
-class Vendor(VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
+     
+class Vendor(NormalizeCodeMixin,VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
     code = models.CharField(
         max_length=100,
         verbose_name="Code",
@@ -58,8 +65,8 @@ class Vendor(VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
     )
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     vendor_type = models.ForeignKey(VendorType, on_delete=models.PROTECT,  null=True, verbose_name='Vendor Type')
-    company_name1 = models.CharField(max_length=250, verbose_name='Company Name1', unique=True)
-    company_name2 = models.CharField(max_length=250, verbose_name='Company Name2',blank=True,null=True)
+    company_name1 = models.CharField(max_length=250, verbose_name='Company Name 1', unique=True)
+    company_name2 = models.CharField(max_length=250, verbose_name='Company Name 2',blank=True,null=True)
     dba = models.CharField(max_length=250, blank=True,verbose_name='DBA (Doing Business AS)')
     search_keywords = models.CharField(max_length=250,verbose_name='Search Keywords', blank=True,null=True)
     language = models.ForeignKey(Languages, on_delete=models.PROTECT, null=True, blank=True, verbose_name='Language')
@@ -146,6 +153,14 @@ class Vendor(VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
     
     def __str__(self):
         return f"{self.company_name1} - ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.company_name1
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -208,6 +223,15 @@ class VendorAttachment(VendorBaseModel,TimeStampBaseModel, UserLogBaseModel):
     @property
     def get_name(self):
         return str(self.file)
+    
+    @property
+    def audit_name(self):
+        return self.file
+
+    @property
+    def audit_code(self):
+        return self.attachment_type
+
 
     class Meta:
         
@@ -218,7 +242,6 @@ class VendorAttachment(VendorBaseModel,TimeStampBaseModel, UserLogBaseModel):
             ("can_view_vendorattachment", "Can View vendorattachment"),
             ("can_delete_vendorattachment", "Can Delete vendorattachment"),
         ]
-
 
 class VendorBank(VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
     vendor = models.ForeignKey(Vendor, on_delete=models.PROTECT, related_name='vendorbank_account')
@@ -242,6 +265,14 @@ class VendorBank(VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
     @property
     def get_name(self):
         return str(self.account_number)
+    
+    @property
+    def audit_name(self):
+        return self.bank_name
+
+    @property
+    def audit_code(self):
+        return self.account_number
 
     class Meta:
         ordering = ['-updated_at']
@@ -252,7 +283,6 @@ class VendorBank(VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
             ("can_view_vendorbank", "Can View vendorbank"),
             ("can_delete_vendorbank", "Can Delete vendorbank"),
         ]
-
 
 class VendorTax(VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
     name = models.CharField(max_length=120)
@@ -270,6 +300,14 @@ class VendorTax(VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
     @property
     def get_name(self):
         return str(self.name)
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return None
 
     class Meta:
         ordering = ['-updated_at']
@@ -281,7 +319,6 @@ class VendorTax(VendorBaseModel, TimeStampBaseModel, UserLogBaseModel):
             ("can_view_vendortax", "Can View vendortax"),
             ("can_delete_vendortax", "Can Delete vendortax"),
         ]
-
 
 class ProductVendor(VendorBaseModel,TimeStampBaseModel,UserLogBaseModel):
     product = models.ForeignKey(Product, on_delete=models.CASCADE)
@@ -304,6 +341,14 @@ class ProductVendor(VendorBaseModel,TimeStampBaseModel,UserLogBaseModel):
 
     def __str__(self):
         return f"{self.product.name} ↔ {self.vendor.company_name1}"
+    
+    @property
+    def audit_name(self):
+        return f"{self.product.name} ↔ {self.vendor.company_name1}"
+
+    @property
+    def audit_code(self):
+        return self.product.code
 
 class VendorUpload(TimeStampBaseModel,UserLogBaseModel):
     STATUS_CHOICES = [
@@ -320,9 +365,17 @@ class VendorUpload(TimeStampBaseModel,UserLogBaseModel):
     success_records = models.IntegerField(default=0)
     failed_records = models.IntegerField(default=0)
    
-
     def __str__(self):
         return f"VendorUpload #{self.id}"
+    
+    @property
+    def audit_name(self):
+        return self.file
+
+    @property
+    def audit_code(self):
+        return None
+    
     class Meta:
         
         ordering = ['-updated_at']

@@ -6,8 +6,6 @@ from core.models import STATUS_CHOICES
 from django.utils import timezone
 import pytz
 
-
-
 # Create your models here.
 class User(AbstractUser):
     first_name = models.CharField(max_length=100, verbose_name="First Name")
@@ -31,6 +29,14 @@ class User(AbstractUser):
     @property
     def get_name(self):
         return self.username
+    
+    @property
+    def audit_name(self):
+        return self.first_name
+
+    @property
+    def audit_code(self):
+        return None
 
     @property
     def status_name(self):

@@ -65,7 +65,8 @@
                   <div class="col-md-6">
                      <div class="form-floating mb-3">
                         {{ form.name }}
-                        <label for="floatingName" class="form-label">{{ form.name.label_tag }}</label>
+                        <label for="{{ form.name.id_for_label }}">Product Description <span class="text-danger">*</span></label>
+                        <!-- <label for="floatingName" class="form-label">{{ form.name.label_tag }}</label> -->
                         {% if form.name.errors %}
                         <ul class="errorlist" style="list-style: none !important;" class="text-danger">
                            {% for error in form.name.errors %}
@@ -78,7 +79,8 @@
                   <div class="col-md-6">
                      <div class="form-floating mb-3">
                         {{ form.code }}
-                        <label for="floatingName" class="form-label">{{ form.code.label_tag }}</label>
+                        <label for="{{ form.code.id_for_label }}" class="form-label">Material Code <span class="text-danger">*</span></label>
+                        <!-- <label for="floatingName" class="form-label">{{ form.code.label_tag }}</label> -->
                         {% if form.code.errors %}
                         <ul class="errorlist" style="list-style: none !important;" class="text-danger">
                            {% for error in form.code.errors %}
@@ -121,7 +123,20 @@
                </div>
 
                <div class="row">
-                  <div class="col-md-3">
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
+                        {{ form.procurementtype }}
+                        <label for="floatingName" class="form-label">{{ form.procurementtype.label_tag }}</label>
+                        {% if form.procurementtype.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.procurementtype.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <!-- <div class="col-md-3">
                      <div class="form-floating mb-3">
                         {{ form.upc }}
                         <label for="floatingName" class="form-label">{{ form.upc.label_tag}}</label>
@@ -173,37 +188,10 @@
                         </ul>
                         {%endif%}
                      </div>
-                  </div>
+                  </div> -->
 
-                   <div class="col-md-3">
-                     <div class="form-floating mb-3">
-                        {{ form.serialnumber_status }}
-                        <label for="floatingName" class="form-label">{{ form.serialnumber_status.label_tag }}</label>
-                        {% if form.serialnumber_status.errors %}
-                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
-                           {% for error in form.serialnumber_status.errors %}
-                           <li class="text-danger">{{ error }}</li>
-                           {% endfor %}
-                        </ul>
-                        {%endif%}
-                     </div>
-                  </div>
 
                   <div class="col-md-3">
-                     <div class="form-floating mb-3">
-                        {{ form.prefix }}
-                        <label for="floatingName" class="form-label">{{ form.prefix.label_tag }}</label>
-                        {% if form.prefix.errors %}
-                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
-                           {% for error in form.prefix.errors %}
-                           <li class="text-danger">{{ error }}</li>
-                           {% endfor %}
-                        </ul>
-                        {%endif%}
-                     </div>
-                  </div>
-
-                  <!-- <div class="col-md-3">
                      <div class="form-floating mb-3">
                         {{ form.model_number }}
                         <label for="floatingName" class="form-label">{{ form.model_number.label_tag }}</label>
@@ -231,7 +219,36 @@
                      </div>
                   </div>
 
+                  <!-- specification -->
+
                   <div class="col-md-3">
+                     <div class="form-floating mb-3">
+                        {{ form.specification }}
+                        <label for="floatingName" class="form-label">{{ form.specification.label_tag }}</label>
+                        {% if form.specification.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.specification.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+                  <div class="col-md-3">
+                     <div class="form-group mb-3" style="margin-left: 5px;">
+                        <div><label for="floatingName" class="form-label" >{{ form.file.label_tag }}</label></div>
+                        {{ form.file }}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.file.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        <div>
+                        </div>
+                     </div>
+                  </div>
+
+                  <!-- <div class="col-md-3">
                      <div class="form-floating mb-3">
                         {{ form.material_code }}
                         <label for="floatingName" class="form-label">{{ form.material_code.label_tag }}</label>
@@ -244,13 +261,12 @@
                         {%endif%}
                      </div>
                   </div> -->
-
                </div>
             
 
                 <div class="row">
                   <div class="col-md-12 mb-2">
-                     <h6>Masters Information</h6>
+                     <h6>Manufacturer Information</h6>
                   </div>
                </div>
 
@@ -332,7 +348,7 @@
                </div>
 
                <div class="row">
-                  <div class="col-md-12 mb-2 mt-4">
+                  <div class="col-md-12 mb-2">
                      <h6>Addtional Information</h6>
                   </div>
                </div>
@@ -395,6 +411,41 @@
                </div>
                    
                <div class="row">
+                  <div class="col-md-12 mb-2">
+                     <h6>Serialization Information</h6>
+                  </div>
+               </div>
+               <div class="row">
+                  <div class="col-md-3">
+                     <div class="form-floating mb-3">
+                        {{ form.serialnumber_status }}
+                        <label for="floatingName" class="form-label">{{ form.serialnumber_status.label_tag }}</label>
+                        {% if form.serialnumber_status.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.serialnumber_status.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+
+                  <div class="col-md-3">
+                     <div class="form-floating mb-3">
+                        {{ form.prefix }}
+                        <label for="floatingName" class="form-label">{{ form.prefix.label_tag }}</label>
+                        {% if form.prefix.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                           {% for error in form.prefix.errors %}
+                           <li class="text-danger">{{ error }}</li>
+                           {% endfor %}
+                        </ul>
+                        {%endif%}
+                     </div>
+                  </div>
+               </div>
+
+               <div class="row">
                   <div class="col-md-12 mb-2 mt-3">
                      <h6>Attachments Information</h6>
                   </div>
@@ -413,6 +464,7 @@
                         </div>
                      </div>
                   </div>
+
 
                   {% if object.pk %}
                   <div class="col-md-6">
@@ -471,103 +523,146 @@
 {% endblock pagecss %}
 
 {% block pagejs %}
+
+<script src="{% static 'default/js/select2.min.js' %}"></script>
+
 <script type="text/javascript">
-   var room = 1;
+/* ============================
+   Product URL Dynamic Fields
+============================ */
+var room = 1;
+
 function product_url_fields() {
     room++;
     var objTo = document.getElementById('product_url_fields')
     var divtest = document.createElement("div");
-   divtest.setAttribute("class", "form-group removeclass-"+room);
-   var rdiv = 'removeclass'+room;
-   divtest.innerHTML = '<div class="row"><div class="form-floating mb-2 col-md-11"><input placeholder="Specify URL" type="text" name="url" value="" maxlength="100" class="form-control" ><label for="floatingName" class="form-label"><label for="id_url" >URL</label></label></div><div class="col-md-1 mt-3"><button class="btn btn-danger btn-sm" type="button"  onclick="remove_product_url_fields('+ room +');"> <span class="fa fa-minus" aria-hidden="true"></span></button></div></div>'
 
-objTo.appendChild(divtest)
+    divtest.setAttribute("class", "form-group removeclass-" + room);
 
+    divtest.innerHTML =
+        '<div class="row">' +
+        '<div class="form-floating mb-2 col-md-11">' +
+        '<input placeholder="Specify URL" type="text" name="url" value="" maxlength="100" class="form-control">' +
+        '<label class="form-label">URL</label>' +
+        '</div>' +
+        '<div class="col-md-1 mt-3">' +
+        '<button class="btn btn-danger btn-sm" type="button" onclick="remove_product_url_fields(' + room + ');">' +
+        '<span class="fa fa-minus"></span>' +
+        '</button>' +
+        '</div>' +
+        '</div>';
+
+    objTo.appendChild(divtest);
 }
-   function remove_product_url_fields(rid) {
-      $('.removeclass-'+rid).remove();
-   }
 
-   $('#id_serialnumber_status').change(function() {
-        let status = $(this).val();
-        if (status === '1') {
-            $('#id_prefix').prop('disabled', false);
-        } else {
-            $('#id_prefix').prop('disabled', true).val('');
+function remove_product_url_fields(rid) {
+    $('.removeclass-' + rid).remove();
+}
+
+/* ============================
+   Serial Number Toggle
+============================ */
+$('#id_serialnumber_status').change(function () {
+    let status = $(this).val();
+    if (status === '1') {
+        $('#id_prefix').prop('disabled', false);
+    } else {
+        $('#id_prefix').prop('disabled', true).val('');
+    }
+}).trigger('change');
+
+
+/* ============================
+   Creatable Select2 Helper
+============================ */
+function initializeCreatableSelect2(selector, appLabel, modelName, ajaxUrl, placeholderText) {
+
+    $(selector).select2({
+        width: '100%',
+        placeholder: placeholderText || "Select or type to add",
+        allowClear: true,
+        tags: true,
+        ajax: {
+            url: ajaxUrl,
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    app_label: appLabel,
+                    model: modelName,
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return { results: data.results };
+            },
+            cache: true
         }
-    }).trigger('change'); // Trigger on load
-</script>
+    }).on('select2:select', function (e) {
 
-<script src="{% static 'default/js/select2.min.js' %}"></script>
+        var data = e.params.data;
 
-<script>
-	$(document).ready(function () {
-		$('#id_product_type').select2({
-			placeholder: "Select a product type",
-			allowClear: false ,// Optional: enables a clear button
-			width: '100%'
-		});
-	});
-</script>
+        if (!data.id || data.id === data.text) {
 
-<script>
-	$(document).ready(function () {
-		$('#id_product_group').select2({
-			placeholder: "Select a product group",
-			allowClear: false ,// Optional: enables a clear button
-			width: '100%'
-		});
-	});
-</script>
+            $.ajax({
+                url: ajaxUrl,
+                type: "POST",
+                data: {
+                    app_label: appLabel,
+                    model: modelName,
+                    name: data.text,
+                    csrfmiddlewaretoken: "{{ csrf_token }}"
+                },
+                success: function (response) {
+                    var newOption = new Option(response.text, response.id, true, true);
+                    $(selector).append(newOption).trigger('change');
+                },
+                error: function () {
+                    alert("Unable to create record.");
+                }
+            });
+        }
+    });
+}
 
-<script>
-	$(document).ready(function () {
-		$('#id_category').select2({
-			placeholder: "Select a category",
-			allowClear: false ,// Optional: enables a clear button
-			width: '100%'
-		});
-	});
-</script>
 
-<script>
-	$(document).ready(function () {
-		$('#id_manufacturer').select2({
-			placeholder: "Select a manufacturer",
-			allowClear: false ,// Optional: enables a clear button
-			width: '100%'
-		});
-	});
-</script>
+/* ============================
+   Document Ready
+============================ */
+$(document).ready(function () {
+    /* 🔥 Creatable ForeignKeys */
+    initializeCreatableSelect2('#id_product_type', 'catalog', 'ProductType', '/catalog/ajax/create-fk/', 'Select or add product type');
+    initializeCreatableSelect2('#id_product_group', 'catalog', 'ProductGroup', '/catalog/ajax/create-fk/', 'Select or add product group');
+    initializeCreatableSelect2('#id_category', 'catalog', 'Category', '/catalog/ajax/create-fk/', 'Select or add category');
+    initializeCreatableSelect2('#id_manufacturer', 'catalog', 'Manufacturer', '/catalog/ajax/create-fk/', 'Select or add manufacturer');
+    initializeCreatableSelect2('#id_brand', 'catalog', 'Brand', '/catalog/ajax/create-fk/', 'Select or add brand');
 
-<script>
-	$(document).ready(function () {
-		$('#id_brand').select2({
-			placeholder: "Select a brand",
-			allowClear: false ,// Optional: enables a clear button
-			width: '100%'
-		});
-	});
+    initializeCreatableSelect2('#id_language', 'catalog', 'Languages', '/catalog/ajax/create-fk/', 'Select or add language');
+    initializeCreatableSelect2('#id_country', 'location', 'Country', '/catalog/ajax/create-fk/', 'Select or add country');
+
+});
+
 </script>
 
 <script>
-	$(document).ready(function () {
-		$('#id_language').select2({
-			placeholder: "Select a language",
-			allowClear: false ,// Optional: enables a clear button
-			width: '100%'
-		});
-	});
-</script>
+   $(document).ready(function() {
+        // Apply Select2 to the location field
+        $('#id_unit_of_measure').select2({
+            placeholder: "Select a Unit of Measure",
+            allowClear: false ,// Optional: enables a clear button
+            width: '100%'
+        });
+    });
 
-<script>
-	$(document).ready(function () {
-		$('#id_country').select2({
-			placeholder: "Select a country",
-			allowClear: false ,// Optional: enables a clear button
-			width: '100%'
-		});
-	});
+    $(document).ready(function() {
+        // Apply Select2 to the location field
+        $('#id_procurementtype').select2({
+            placeholder: "Select a ProcurementType",
+            allowClear: false ,// Optional: enables a clear button
+            width: '100%'
+        });
+    });
+
 </script>
 
 {% endblock pagejs %}

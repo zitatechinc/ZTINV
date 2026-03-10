@@ -36,11 +36,11 @@
 
                         <div class="col-md-6">
                             <div class="form-floating mb-3">
-                                {{ form.customer }}
-                                <label class="form-label">{{ form.customer.label_tag }}</label>
-                                {% if form.customer.errors %}
+                                {{ form.location }}
+                                <label class="form-label">{{ form.location.label_tag }}</label>
+                                {% if form.location.errors %}
                                     <ul class="errorlist list-unstyled text-danger">
-                                        {% for error in form.customer.errors %}
+                                        {% for error in form.location.errors %}
                                             <li>{{ error }}</li>
                                         {% endfor %}
                                     </ul>
@@ -53,42 +53,11 @@
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-floating mb-3">
-                                {{ form.location }}
-                                <label class="form-label">{{ form.location.label_tag }}</label>
-                                {% if form.location.errors %}
-                                    <ul class="errorlist list-unstyled text-danger">
-                                        {% for error in form.location.errors %}
-                                            <li>{{ error }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endif %}
-                            </div>
-                        </div>
-
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
                                 {{ form.sub_location }}
                                 <label class="form-label">{{ form.sub_location.label_tag }}</label>
                                 {% if form.sub_location.errors %}
                                     <ul class="errorlist list-unstyled text-danger">
                                         {% for error in form.sub_location.errors %}
-                                            <li>{{ error }}</li>
-                                        {% endfor %}
-                                    </ul>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Sub Location & Item Status -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-floating mb-3">
-                                {{ form.item_status }}
-                                <label class="form-label">{{ form.item_status.label_tag }}</label>
-                                {% if form.item_status.errors %}
-                                    <ul class="errorlist list-unstyled text-danger">
-                                        {% for error in form.item_status.errors %}
                                             <li>{{ error }}</li>
                                         {% endfor %}
                                     </ul>
@@ -113,6 +82,7 @@
 
                     <!-- Description & Search Keywords -->
                     <div class="row">
+                    
                         <div class="col-md-6">
                             <div class="form-floating mb-3">
                                 {{ form.description }}
@@ -142,6 +112,35 @@
                         </div>
                     </div>
 
+                    <div class="row">
+                        <!-- <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.item_status }}
+                                <label class="form-label">{{ form.item_status.label_tag }}</label>
+                                {% if form.item_status.errors %}
+                                    <ul class="errorlist list-unstyled text-danger">
+                                        {% for error in form.item_status.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div> -->
+
+                        <!-- <div class="col-md-6">
+                            <div class="form-floating mb-3">
+                                {{ form.customer }}
+                                <label class="form-label">{{ form.customer.label_tag }}</label>
+                                {% if form.customer.errors %}
+                                    <ul class="errorlist list-unstyled text-danger">
+                                        {% for error in form.customer.errors %}
+                                            <li>{{ error }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% endif %}
+                            </div>
+                        </div> -->
+                    </div>
                 </div>
             </div>
         </div>
@@ -175,45 +174,77 @@
 {% endblock pagecss %}
 
 {% block pagejs %}
-<script>
-    $(document).ready(function() {
-        // Apply Select2 to the location field
-        $('#id_project').select2({
-            placeholder: "Select a project",
-            allowClear: false ,// Optional: enables a clear button
-            width: '100%'
-        });
-    });
-
-    $(document).ready(function() {
-        // Apply Select2 to the location field
-        $('#id_customer').select2({
-            placeholder: "Select a customer",
-            allowClear: false ,// Optional: enables a clear button
-            width: '100%'
-        });
-    });
-
-    $(document).ready(function() {
-        // Apply Select2 to the location field
-        $('#id_location').select2({
-            placeholder: "Select a location",
-            allowClear: false ,// Optional: enables a clear button
-            width: '100%'
-        });
-    });
-
-    $(document).ready(function() {
-        // Apply Select2 to the location field
-        $('#id_sub_location').select2({
-            placeholder: "Select a sub location",
-            allowClear: false ,// Optional: enables a clear button
-            width: '100%'
-        });
-    });
-</script>
 
 <script src="{% static 'default/js/select2.min.js' %}"></script>
+
+<script>
+
+function initializeCreatableSelect2(selector, appLabel, modelName, ajaxUrl, placeholderText) {
+
+    $(selector).select2({
+        width: '100%',
+        placeholder: placeholderText,
+        allowClear: true,
+        tags: true,
+        ajax: {
+            url: ajaxUrl,
+            dataType: 'json',
+            delay: 250,
+            cache: false,
+            data: function(params) {
+                return {
+                    app_label: appLabel,
+                    model: modelName,
+                    q: params.term
+                };
+            },
+            processResults: function(data) {
+                return { results: data.results };
+            }
+        }
+    });
+}
+
+$(document).ready(function () {
+
+    // 🔥 Creatable ForeignKeys
+    //initializeCreatableSelect2('#id_project','project','ProjectHeader','/catalog/ajax/create-fk/',"Select or add a project");
+    initializeCreatableSelect2('#id_customer','customer','Customer','/catalog/ajax/create-fk/',"Select or add a customer");
+    initializeCreatableSelect2('#id_location','location','Location','/catalog/ajax/create-fk/',"Select or add a location");
+    // initializeCreatableSelect2('#id_sub_location','location','SubLocation','/catalog/ajax/create-fk/',"Select or add a sub location");
+
+
+    // =====================
+    // Location → Sub Location
+    // =====================
+    $('#id_sub_location').select2({ placeholder:"Select or add a sub location", width:'100%' });
+
+    $('#id_location').on('change', function(){
+
+        var stateId = $(this).val();
+
+        $('#id_sub_location').empty().trigger('change');
+
+        if(stateId){
+            $.get("/location/ajax/get-sublocations/",
+                { state_id: stateId },
+                function(data){
+
+                    $.each(data.sublocations, function(i,v){
+                        $('#id_sub_location').append(
+                            new Option(v.name, v.id, false, false)
+                        );
+                    });
+
+                    $('#id_sub_location').trigger('change.select2');
+                }
+            );
+        }
+    });
+
+});
+
+</script>
 
 {% endblock pagejs %}
 

@@ -1,22 +1,26 @@
 {% extends 'core/base.html' %}
-
+{% load humanize %}
 {% block content %}
+
 <form method="post" action="{{ form_action_url }}" novalidate>
     {% csrf_token %}
-    
+
     <!-- Edit Button (small, top-right) -->
-    <div class="row mb-2 mt-0">
-        <div class="col-6 col-md-6">
-            <!-- You can leave this section empty as per your requirement -->
-        </div>
-        <div class="col-6 col-md-6">
-            <div class="button-group" style="float:right;">
-                <a title="Issue Voucher" href="{% url 'project-issue-voucher' object.pk %}" class="btn btn-sm btn-default" >Issue Voucher</a>
-                <button type="button" title="Edit" 
+    <div class="row mb-2 mt-2">
+        <div class="col-12 text-end">
+            <div class="button-group">
+                <a title="Issue Voucher"
+                href="{% url 'project-issue-voucher' object.pk %}"
+                class="btn btn-sm btn-default">
+                    Issue Voucher
+                </a>
+
+                <button type="button"
+                        title="Edit"
                         class="btn btn-sm app-btn-primary edit-link"
                         data-url="{% url 'project-header-update' object.pk %}">
                     <i class="fa fa-edit"></i> Edit
-                </button>  
+                </button>
             </div>
         </div>
     </div>
@@ -24,10 +28,11 @@
     <!-- Content Section -->
     <div class="row">
         <div class="col-12 col-md-12">
-            <div class="app-card app-card-settings shadow-md">
-                {% include 'project/project_menu.html' %}
-                <br>
-                {% include 'core/auditlog.html' %}
+            <div class="app-card app-card-settings shadow-md p-4">
+                <div class="app-card-body ps-2">
+                    {% include 'project/project_menu.html' %}
+                    {% include 'core/auditlog.html'%}
+                </div>
             </div>
         </div>
     </div>

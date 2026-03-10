@@ -68,7 +68,7 @@ urlpatterns = [
     path('voucher_search/create', views.VoucherSearchView.as_view(),  name='voucher-search-create'),
     #path('<int:project_id>/voucher_search/create', views.VoucherSearchView.as_view(),  name='voucher-search-create'),
 
-
+    path("issuevoucher-pdf/<int:pk>/<str:issue_voucher_number>/<str:report_type>/", views.issue_voucher_pdf, name='issue-voucher-pdf'),
 
     path('<int:po_id>/voucher_header_receipt/update', views.voucher_header_receipt, name='voucher_header_receipt'),
 

@@ -97,8 +97,7 @@
                             </div>
 
                             <!-- Masters Information -->
-                            <div class="row mt-4">
-                                <div class="col-md-12 mb-2"><h6>Masters Information</h6></div>
+                            <div class="row mt-4"><div class="col-md-12 mb-2"><h6>Manufacturer Information</h6></div>
                             </div>
                             <div class="row mb-2">
                                 <div class="col-md-4">
@@ -135,19 +134,30 @@
                             <!-- Additional Information -->
                             <div class="row mt-4"><div class="col-md-12 mb-2"><h6>Additional Information</h6></div></div>
                             <div class="row">
-                                <div class="col-md-4"><strong>{{ form.mpin.label_tag }} :</strong> {{ object.mpin }}</div>
-                                <div class="col-md-4"><strong>{{ form.upc.label_tag }} :</strong> {{ object.upc }}</div>
+                                <!-- <div class="col-md-4"><strong>{{ form.upc.label_tag }} :</strong> {{ object.upc }}</div>
                                 <div class="col-md-4"><strong>{{ form.isbn.label_tag }} :</strong> {{ object.isbn }}</div>
                                 <div class="col-md-4"><strong>{{ form.ean.label_tag }} :</strong> {{ object.ean }}</div>
-                                <div class="col-md-4"><strong>{{ form.model_number.label_tag }}:</strong> {{ object.model_number }}</div>
-                                <div class="col-md-4"><strong>{{ form.source_of_make.label_tag }}:</strong> {{ object.source_of_make }}</div>
-                                <div class="col-md-4"><strong>{{ form.material_code.label_tag }}:</strong> {{ object.material_code }}</div>
-                                <div class="col-md-4"><strong>{{ form.notes.label_tag }} : </strong>{{ object.notes }}</div>
+                                <div class="col-md-4"><strong>{{ form.mpin.label_tag }} :</strong> {{ object.mpin }}</div> -->
+                                <div class="col-md-4"><strong>{{ form.model_number.label_tag }} :</strong> {{ object.model_number }}</div>
+                                <div class="col-md-4"><strong>{{ form.source_of_make.label_tag }} :</strong> {{ object.source_of_make }}</div>
+                                <div class="col-md-4"><strong>{{ form.procurementtype.label_tag }} :</strong> {{ object.procurementtype }}</div>
+                                <div class="col-md-4"><strong>{{ form.specification.label_tag }} :</strong> {{ object.specification }}</div>
+                                <div class="col-md-4"><strong>{{ form.file.label_tag }} :</strong> {{ object.file }}</div>
+                                <div class="col-md-4"><strong>{{ form.short_description.label_tag }} : </strong>{{ object.short_description }}</div>
                                 <div class="col-md-4"><strong>{{ form.long_description.label_tag }} : </strong>{{ object.long_description }}</div>
+                                <div class="col-md-4"><strong>{{ form.notes.label_tag }} : </strong>{{ object.notes }}</div>
+                                <div class="col-md-4"><strong>{{ form.search_keywords.label_tag }} : </strong>{{ object.search_keywords }}</div>
                             </div>
+                            <!-- Serialization Information -->
+                            <div class="row mt-4"><div class="col-md-12 mb-2"><h6>Serialization Information</h6></div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-4"><strong>{{ form.serialnumber_status.label_tag }} :</strong> {{ object.serialnumber_status }}</div>
+                                <div class="col-md-4"><strong>{{ form.prefix.label_tag }} :</strong> {{ object.prefix }}</div>
+                            </div> <br>
 
                             <!-- Include Audit Log Information -->
-                            {% include 'core/auditlog.html' %}
+                            {% include 'core/auditlog1.html' %}
 
                             <!-- Attachments -->
                             {% if object.pk %}

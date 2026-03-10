@@ -5,7 +5,7 @@ from django.core.paginator import Paginator
 from django.utils.decorators import method_decorator
 from django.contrib.auth.decorators import login_required
 from .forms import PurchaseOrderTypeModelForm, PurchaseOrderTypeStatusModelForm, PurchaseOrderHeaderModelForm, PurchaseOrderItemModelForm,PONumberForm,GoodsReceiverModelForm,QualityManagementModelForm, GoodsSearchForm,InventorySearchModelForm
-from .models import PurchaseOrderType, PurchaseOrderStatus, PurchaseOrderHeader, PurchaseOrderItem
+from .models import PurchaseOrderType, PurchaseOrderStatus, PurchaseOrderHeader, PurchaseOrderItem,PurchaseOrderHistoryRejection,PurchaseOrderHistoryDocument
 from django.utils import timezone
 from django.db import transaction
 from application.models import AppSettings
@@ -30,10 +30,19 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from xhtml2pdf import pisa # pdf download
 
+from ims.models import Purchase_Order, Procurement,ProcurementType, SourceOfMake
+from datetime import datetime
+from django.core.exceptions import ObjectDoesNotExist
+import os
+
+from rest_framework import status
+import logging
+logger = logging.getLogger(__name__)
+logger = logging.getLogger('console')
+
 @login_required
 def create_po(request):
     return render(request, 'inventory/create_po.html', {"page_title" : "Create Purchase Order"})
-
 
 class PurchaseOrderTypeCRUDView(BaseCRUDView):
     model = PurchaseOrderType
@@ -97,7 +106,6 @@ class PurchaseOrderItemsCRUDView(VendorPOBaseCRUDView):
             
         }
 
-
 def goods_receiver(request):
     schedules = None
     po_item_list = None
@@ -115,7 +123,6 @@ def goods_receiver(request):
         #"po_header": po_header,
         "po_item_list": po_item_list,
     })
-
 
 class GoodsReceiverCrudView(GoodsReceiverBaseCRUDView):
     model = PurchaseOrderHeader
@@ -169,6 +176,73 @@ class POReportCrudView(POReportBaseCRUDView):
         }
 
 
+from django.db.models.functions import Substr, Cast
+from django.db.models import Max, IntegerField
+
+def generate_prv_number(po_header, gmh_obj, prefix):
+    try:
+        # Get Purchase Order Header
+        po_obj = get_object_or_404(PurchaseOrderHeader, pk=po_header.id)
+                    
+        #po_obj_pk = PurchaseOrderHeader.objects.get(pk=pk)
+        po = Purchase_Order.objects.get(po_number=po_obj.code)
+
+        proc_obj = Procurement.objects.get(id=po.procurement_id)
+    except ObjectDoesNotExist as e:
+        raise ValueError(f"Required record not found: {e}")
+
+    #Determine Category Number
+    category_number = None
+    if proc_obj.pr_events == 'Online_order':
+        category_number = 5
+    elif proc_obj.category_events == 'Sub_Contract':
+        category_number = 3
+    elif proc_obj.category_events == 'Service_Contract':
+        category_number = 6
+    elif proc_obj.category_events == 'Meslova_Material':
+        category_number = 7
+    else:
+        try:
+            proc_type_obj = ProcurementType.objects.get(id=proc_obj.procurement_type_id)
+            source_type_obj = SourceOfMake.objects.get(id=proc_obj.import_indigenous_id)
+        except ObjectDoesNotExist as e:
+            raise ValueError(f"Related record missing: {e}")
+        if proc_type_obj.Procurement_name == 'Capital':
+            category_number = 4
+        elif proc_type_obj.Procurement_name == 'Revenue':
+            if source_type_obj.source_type == 'Imported':
+                category_number = 1
+            elif source_type_obj.source_type == 'Indigenous':
+                category_number = 2
+    
+    # Final safety check
+    if category_number is None:
+        raise ValueError("Unable to determine category number.")
+
+    #get the current year’s last two digits
+    year_last_two = datetime.now().strftime("%y")
+    #generate 4 digit number
+    gmh_id = f"{gmh_obj.pk:04d}"
+
+    if prefix == 'GM':
+        reference_number = f"PRV{category_number}{gmh_id}{year_last_two}"
+    elif prefix =='QM':
+        latest_seq = (
+            PurchaseOrderHistory.objects
+            .filter(reference_number__startswith='IRV')
+            .annotate(seq=Cast(Substr('reference_number', 5, 4), IntegerField()))
+            .order_by('-updated_at')
+            .values_list('seq', flat=True)
+            .first()
+        )
+        next_seq = (latest_seq or 0) + 1
+        formatted_seq = f"{next_seq:04d}" if next_seq else ""
+        print(latest_seq, formatted_seq)
+
+        reference_number = f"IRV{category_number}{formatted_seq}{year_last_two}"
+    return reference_number
+
+
 def process_goods_receipt(
     po_item,
     po_header,
@@ -181,6 +255,10 @@ def process_goods_receipt(
     sub_location=None,
     gm_text="",
     user=None,
+    reference_number=None,
+    document_number=None,
+    gr_number= None,
+    gr_file=None,
 ):
     """
     Process a Goods Movement for a Purchase Order.
@@ -302,10 +380,12 @@ def process_goods_receipt(
             print(f"GM-{po_header.code}-{po_item.line_number}")
 
         
-            document_number =GoodsMovementHeader.objects.filter(
-                po_header=po_header,
-                po_item=po_item                   
-            )
+            # document_number =GoodsMovementHeader.objects.filter(
+            #     po_header=po_header,
+            #     po_item=po_item                   
+            # )
+
+            gmi_list = GoodsMovementItem.objects.all()
             
             if gm_type in ("Goods Receipt", "Receipt"):
                 prefix = "GM"
@@ -315,21 +395,11 @@ def process_goods_receipt(
                 prefix = "GM"
 
             if prefix:
-                increment_number = len(document_number) + 1 if len(document_number) > 0 else 1
+                increment_number = len(gmi_list) + 1 if len(gmi_list) > 0 else 1
                 gm_code = f"{prefix}-{po_header.code}-{po_item.line_number}_{increment_number}"
-
-
-            print("document_number:",gm_code)
+    
             gm_item = GoodsMovementItem.objects.create(
-                document_number=GoodsMovementHeader.objects.create(
-                    code=gm_code,
-                    category=gm_type,
-                    gm_date=gm_date,
-                    gm_posting_date=gm_date,
-                    po_header=po_header,
-                    po_item=po_item,
-                    description=gm_text
-                ),
+                document_number=document_number,
                 code=gm_code,
                 item_number=po_item.line_number,
                 product=po_item.item,
@@ -350,7 +420,12 @@ def process_goods_receipt(
                 po_history_type = "QM"
             else:
                 po_history_type = "WA"
-            PurchaseOrderHistory.objects.create(
+
+            # is_exists = PurchaseOrderHistory.objects.filter(gr_number__iexact=gr_number).exists()
+            # if is_exists:
+            #     raise ValidationError("GR Number already exists");
+            
+            po_history =PurchaseOrderHistory.objects.create(
                 po_header=po_header,
                 po_line_number=po_item.line_number,
                 product=po_item,
@@ -363,7 +438,10 @@ def process_goods_receipt(
                 po_line_amount=Decimal(gm_quantity) * po_item.unit_price,
                 uom=po_item.uom,
                 po_good_qty = already_inspected_qty - quality_already_rejected,
-                po_rejected_qty = quality_already_rejected
+                po_rejected_qty = quality_already_rejected,
+                reference_number=reference_number,
+                gr_number= gr_number,
+                gr_file=gr_file,
             )
 
             # -----------------------------
@@ -393,85 +471,118 @@ def process_goods_receipt(
                 print(f"Generated Serials for {product.name}: {serial_list}")
 
 
-            return gm_item  # return created GM Item
+            return po_history  # return created GM Item
 
     except ValidationError as ve:
         # Rollback transaction on known validation issues
-        raise ve
+        #raise ve
+        raise ValidationError(f"ve: {', '.join(ve.messages)}")
     except Exception as e:
         # Rollback transaction on unexpected issues
         raise ValidationError(f"Error processing PO Goods Movement: {str(e)}")
 
 def bulk_goods_receipt(request, po_id):
     po_obj = get_object_or_404(PurchaseOrderHeader, id=po_id)
-
     if request.method == "POST":
         item_errors = {}
         processed = 0
         ht_items_list = []
-        for item in po_obj.items.all():
-            field_name = f"qty_being_received_{item.id}"
-            qty_str = request.POST.get(field_name, "0")
 
-            already_rejected_field_name = f"quality_already_rejected_{item.id}"
-            already_rejected_qty_str = request.POST.get(already_rejected_field_name, "0")
+        #new
+        document_number =GoodsMovementHeader.objects.filter(
+            po_header=po_obj                  
+        )
+        prefix = "GM"
+        gm_date_str = date.today().strftime("%Y-%m-%d")
 
-            already_inspected_field_name = f"quality_already_inspected_{item.id}"
-            already_inspected_qty_str = request.POST.get(already_inspected_field_name, "0")
+        if prefix:
+            increment_number = len(document_number) + 1 if len(document_number) > 0 else 1
+            gm_code = f"{prefix}-{po_obj.code}-{increment_number}"
 
-            try:
-                qty_being_received = float(qty_str)
-            except ValueError:
-                qty_being_received = 0
+        gm_obj = GoodsMovementHeader.objects.create(
+                code=gm_code,
+                category='Goods Receipt',
+                gm_date=gm_date_str,
+                gm_posting_date=gm_date_str,
+                po_header=po_obj
+            )
 
-            try:
-                quality_already_rejected = float(already_rejected_qty_str)
-            except ValueError:
-                quality_already_rejected = 0
+        reference_number = generate_prv_number(po_obj, gm_obj, prefix)
+        
+        gr_number = request.POST.get('gr_number', "")
+        gr_file = request.FILES.get('gr_file')
+        
+        try:
+            for item in po_obj.items.all():
+                field_name = f"qty_being_received_{item.id}"
+                qty_str = request.POST.get(field_name, "0")
 
-            try:
-                already_inspected_qty = float(already_inspected_qty_str)
-            except ValueError:
-                already_inspected_qty = 0    
+                already_rejected_field_name = f"quality_already_rejected_{item.id}"
+                already_rejected_qty_str = request.POST.get(already_rejected_field_name, "0")
 
-            # Collect row-specific errors
-            row_errors = []
+                already_inspected_field_name = f"quality_already_inspected_{item.id}"
+                already_inspected_qty_str = request.POST.get(already_inspected_field_name, "0")
 
-            if qty_being_received < 0:
-                row_errors.append("Quantity cannot be negative.")
+                try:
+                    qty_being_received = float(qty_str)
+                except ValueError:
+                    qty_being_received = 0
 
-            if qty_being_received > float(item.yet_to_be_received):
-                row_errors.append(
-                    f"Quantity ({qty_being_received}) exceeds yet to be received ({item.yet_to_be_received})."
-                )
+                try:
+                    quality_already_rejected = float(already_rejected_qty_str)
+                except ValueError:
+                    quality_already_rejected = 0
 
-            if float(item.already_received_qty) + float(qty_being_received) > float(item.quantity):
-                row_errors.append(
-                    f"Total received ({float(item.already_received_qty) + float(qty_being_received)}) "
-                    f"cannot exceed ordered quantity ({item.quantity})."
-                )
+                try:
+                    already_inspected_qty = float(already_inspected_qty_str)
+                except ValueError:
+                    already_inspected_qty = 0    
 
-            if row_errors:
-                item_errors[item.id] = row_errors
-                continue    
-            
-            # Process valid rows
-            if qty_being_received > 0 or quality_already_rejected > 0 or already_inspected_qty > 0:
-                gm_date_str = date.today().strftime("%Y-%m-%d")
-                process_goods_receipt(
-                    po_header=po_obj,
-                    po_item=item,
-                    gm_date=gm_date_str,
-                    gm_type="Goods Receipt",
-                    gm_quantity=qty_being_received,
-                    quality_already_rejected= quality_already_rejected,
-                    already_inspected_qty=already_inspected_qty,
-                    location=item.po_location,
-                    sub_location=item.sub_location,
-                    user=request.user,
-                )
-                processed += 1
-                ht_items_list.append(item.pk)
+                # Collect row-specific errors
+                row_errors = []
+
+                if qty_being_received < 0:
+                    row_errors.append("Quantity cannot be negative.")
+
+                if qty_being_received > float(item.yet_to_be_received):
+                    row_errors.append(
+                        f"Quantity ({qty_being_received}) exceeds yet to be received ({item.yet_to_be_received})."
+                    )
+
+                if float(item.already_received_qty) + float(qty_being_received) > float(item.quantity):
+                    row_errors.append(
+                        f"Total received ({float(item.already_received_qty) + float(qty_being_received)}) "
+                        f"cannot exceed ordered quantity ({item.quantity})."
+                    )
+
+                if row_errors:
+                    item_errors[item.id] = row_errors
+                    continue    
+                
+                # Process valid rows
+                if qty_being_received > 0 or quality_already_rejected > 0 or already_inspected_qty > 0:
+                    # gm_date_str = date.today().strftime("%Y-%m-%d")
+                    process_goods_receipt(
+                        
+                        po_item=item,
+                        po_header=po_obj,
+                        gm_date=gm_date_str,
+                        gm_type="Goods Receipt",
+                        gm_quantity=qty_being_received,
+                        quality_already_rejected= quality_already_rejected,
+                        already_inspected_qty=already_inspected_qty,
+                        location=item.po_location,
+                        sub_location=item.sub_location,
+                        user=request.user,
+                        reference_number=reference_number,
+                        document_number=gm_obj,
+                        gr_number= gr_number,
+                        gr_file=gr_file,
+                    )
+                    processed += 1
+                    ht_items_list.append(item.pk)
+        except Exception as e:
+            print(e)
          # -----------------------------------
         #  Update PO Header Status
         # -----------------------------------
@@ -490,7 +601,7 @@ def bulk_goods_receipt(request, po_id):
         request.session["item_errors"] = item_errors
         request.session["last_po_id"] = po_id
         request.session['ht_items_list']=ht_items_list
-
+        
         # Summary message
         if processed and not item_errors:
             messages.success(request, f"✅ {processed} items processed successfully.")
@@ -501,86 +612,358 @@ def bulk_goods_receipt(request, po_id):
 
     return redirect(f"{reverse('goods-receiver-create')}?po_id={po_id}")
 
+# from django.db import transaction
+
+# @transaction.atomic
+# def process_goods_receipt(
+#     po_item,
+#     po_header,
+#     gm_date,
+#     gm_quantity,
+#     quality_already_rejected,
+#     already_inspected_qty,
+#     gm_type,
+#     location=None,
+#     sub_location=None,
+#     gm_text="",
+#     user=None,
+# ):
+
+#     gm_quantity = Decimal(gm_quantity)
+#     rejected_qty = Decimal(quality_already_rejected)
+#     inspected_qty = Decimal(already_inspected_qty)
+
+#     if rejected_qty > inspected_qty:
+#         raise ValidationError("Rejected qty cannot exceed inspected qty.")
+
+#     good_qty = inspected_qty - rejected_qty
+
+#     # ----------------------------
+#     # Update PO Item
+#     # ----------------------------
+#     po_item.already_received_qty += gm_quantity
+#     po_item.yet_to_be_received_qty = po_item.quantity - po_item.already_received_qty
+
+#     po_item.good_qty += good_qty
+#     po_item.rejected_qty += rejected_qty
+#     aldy_rec_qty = int(po_item.already_received_qty)
+#     ins_qty = po_item.good_qty + po_item.rejected_qty
+#     po_item.total_qty_inspected =  aldy_rec_qty - ins_qty
+
+#     if int(po_item.total_qty_inspected) < (int(quality_already_rejected) + int(already_inspected_qty)):
+#         raise ValidationError(
+#             "Rejected Quantity & Inspected Qty must not be greater than Received Quantity."
+#         )
+
+#     # Item status
+#     if po_item.yet_to_be_received_qty <= 0:
+#         po_item.item_status = "CLOSED"
+#     elif po_item.already_received_qty > 0:
+#         po_item.item_status = "PARTIAL"
+#     else:
+#         po_item.item_status = "OPEN"
+
+#     # Inspection status
+#     if po_item.good_qty + po_item.rejected_qty >= po_item.quantity:
+#         po_item.qty_inspection_status = "CLOSED"
+#     elif po_item.good_qty > 0 or po_item.rejected_qty > 0:
+#         po_item.qty_inspection_status = "PARTIAL"
+#     else:
+#         po_item.qty_inspection_status = "OPEN"
+
+#     po_item.save()
+
+#     # ----------------------------
+#     # Inventory Update (Good Qty Only)
+#     # ----------------------------
+#     inventory, _ = Inventory.objects.get_or_create(
+#         product=po_item.item,
+#         location=location,
+#         sub_location=sub_location,
+#         inventory_type="FG",
+#         defaults={"quantity": Decimal("0.00")},
+#     )
+
+#     inventory.quantity += good_qty
+
+#     if inventory.quantity < 0:
+#         raise ValidationError("Inventory cannot be negative.")
+
+#     inventory.save()
+
+#     # ----------------------------
+#     # Create Goods Movement
+#     # ----------------------------
+#     count = GoodsMovementHeader.objects.filter(
+#         po_header=po_header,
+#         po_item=po_item
+#     ).count() + 1
+
+#     gm_code = f"QM-{po_header.code}-{po_item.line_number}-{count}"
+
+#     gm_header = GoodsMovementHeader.objects.create(
+#         code=gm_code,
+#         category=gm_type,
+#         gm_date=gm_date,
+#         gm_posting_date=gm_date,
+#         po_header=po_header,
+#         po_item=po_item,
+#         description=gm_text,
+#     )
+
+#     GoodsMovementItem.objects.create(
+#         document_number=gm_header,
+#         code=gm_code,
+#         item_number=po_item.line_number,
+#         product=po_item.item,
+#         location=location,
+#         sub_location=sub_location,
+#         quantity=good_qty,
+#         uom=po_item.uom,
+#         gm_type=gm_type,
+#         gm_item_text=gm_text,
+#     )
+
+#     # ----------------------------
+#     # Create PO History
+#     # ----------------------------
+#     po_history = PurchaseOrderHistory.objects.create(
+#         po_header=po_header,
+#         po_line_number=po_item.line_number,
+#         product=po_item,
+#         po_history_number=po_item.history.count() + 1,
+#         po_history_type="QM",
+#         description=gm_text,
+#         gm_header=gm_header,
+#         po_history_date=gm_date,
+#         po_quantity=gm_quantity,
+#         po_line_amount=gm_quantity * po_item.unit_price,
+#         uom=po_item.uom,
+#         po_good_qty=good_qty,
+#         po_rejected_qty=rejected_qty,
+#     )
+
+#     return po_history
+
+# def quality_management_receipt(request, po_id):
+#     po_obj = get_object_or_404(PurchaseOrderHeader, id=po_id)
+
+#     if request.method == "POST":
+#         item_errors = {}
+#         processed = 0
+#         ht_items_list = []
+#         for item in po_obj.items.all():
+#             field_name = f"qty_being_received_{item.id}"
+#             data = request.POST
+#             print("data",data)
+
+#             qty_str = request.POST.get(field_name, "0")
+
+#             already_rejected_field_name = f"quality_already_rejected_{item.id}"
+#             already_rejected_qty_str = request.POST.get(already_rejected_field_name, "0")
+
+#             already_inspected_field_name = f"quality_already_inspected_{item.id}"
+#             already_inspected_qty_str = request.POST.get(already_inspected_field_name, "0")
+#             qm_notes = request.POST.get(f'qm_notes_{item.pk}','')
+
+#             try:
+#                 qty_being_received = float(qty_str)
+#             except ValueError:
+#                 qty_being_received = 0
+
+#             try:
+#                 quality_already_rejected = float(already_rejected_qty_str)
+#             except ValueError:
+#                 quality_already_rejected = 0
+
+#             try:
+#                 already_inspected_qty = float(already_inspected_qty_str)
+#             except ValueError:
+#                 already_inspected_qty = 0    
+
+#             # Collect row-specific errors
+#             row_errors = []
+
+#             if qty_being_received < 0:
+#                 row_errors.append("Quantity cannot be negative.")
+
+#             if qty_being_received > float(item.yet_to_be_received):
+#                 row_errors.append(
+#                     f"Quantity ({qty_being_received}) exceeds yet to be received ({item.yet_to_be_received})."
+#                 )
+
+#             if float(item.already_received_qty) + float(qty_being_received) > float(item.quantity):
+#                 row_errors.append(
+#                     f"Total received ({float(item.already_received_qty) + float(qty_being_received)}) "
+#                     f"cannot exceed ordered quantity ({item.quantity})."
+#                 )
+
+#             if row_errors:
+#                 item_errors[item.id] = row_errors
+#                 continue    
+#             item.qm_notes= qm_notes
+#             # Process valid rows
+#             if qty_being_received > 0 or quality_already_rejected > 0 or already_inspected_qty > 0:
+#                 gm_date_str = date.today().strftime("%Y-%m-%d")
+#                 process_goods_receipt(
+#                     po_header=po_obj,
+#                     po_item=item,
+#                     gm_date=gm_date_str,
+#                     gm_type="Quality Management",
+#                     gm_quantity=qty_being_received,
+#                     quality_already_rejected= quality_already_rejected,
+#                     already_inspected_qty=already_inspected_qty,
+#                     location=item.po_location,
+#                     sub_location=item.sub_location,
+#                     user=request.user,
+#                 )
+#                 processed += 1
+#                 ht_items_list.append(item.pk)
+#          # -----------------------------------
+#         #  Update PO Header Status
+#         # -----------------------------------
+#         all_items = po_obj.items.all()
+#         statuses = [item.qty_inspection_status for item in all_items]
+
+#         if all(s == "CLOSED" for s in statuses):
+#             po_obj.qm_header_status = PurchaseOrderStatus.objects.get(name="CLOSED")
+#         elif all(s == "OPEN" for s in statuses):
+#             po_obj.qm_header_status = PurchaseOrderStatus.objects.get(name="OPEN")
+#         else:
+#             po_obj.qm_header_status = PurchaseOrderStatus.objects.get(name="PARTIAL")
+
+#         po_obj.save()
+#         # Save errors into session for re-render
+#         request.session["item_errors"] = item_errors
+#         request.session["last_po_id"] = po_id
+#         request.session['ht_items_list']=ht_items_list
+
+#         # Summary message
+#         if processed and not item_errors:
+#             messages.success(request, f"✅ {processed} items processed successfully.")
+#         elif processed and item_errors:
+#             messages.warning(request, f"⚠️ {processed} items processed, but some errors exist.")
+#         elif not processed and not item_errors:
+#             messages.info(request, "ℹ️ No quantities entered.")
+
+#     return redirect(f"{reverse('quality-management-create')}?po_id={po_id}")
+
+
+# from decimal import Decimal
+# from django.shortcuts import get_object_or_404, redirect
+# from django.contrib import messages
+# from django.urls import reverse
+# from django.utils import timezone
 
 def quality_management_receipt(request, po_id):
+
     po_obj = get_object_or_404(PurchaseOrderHeader, id=po_id)
 
     if request.method == "POST":
+
         item_errors = {}
         processed = 0
-        ht_items_list = []
+
+        #new
+        document_number =GoodsMovementHeader.objects.filter(
+            po_header=po_obj                  
+        )
+        prefix = "QM"
+        gm_date_str = date.today().strftime("%Y-%m-%d")
+
+        if prefix:
+            increment_number = len(document_number) + 1 if len(document_number) > 0 else 1
+            gm_code = f"{prefix}-{po_obj.code}-{increment_number}"
+
+        gm_obj = GoodsMovementHeader.objects.create(
+                code=gm_code,
+                category='Quality Management',
+                gm_date=gm_date_str,
+                gm_posting_date=gm_date_str,
+                po_header=po_obj
+            )
+
+        reference_number = generate_prv_number(po_obj, gm_obj, prefix)
+
+
         for item in po_obj.items.all():
-            field_name = f"qty_being_received_{item.id}"
-            data = request.POST
-            print("data",data)
 
-            qty_str = request.POST.get(field_name, "0")
-
-            already_rejected_field_name = f"quality_already_rejected_{item.id}"
-            already_rejected_qty_str = request.POST.get(already_rejected_field_name, "0")
-
-            already_inspected_field_name = f"quality_already_inspected_{item.id}"
-            already_inspected_qty_str = request.POST.get(already_inspected_field_name, "0")
-            qm_notes = request.POST.get(f'qm_notes_{item.pk}','')
+            qty_str = request.POST.get(f"qty_being_received_{item.id}", "0")
+            print("qty_str:",qty_str)
+            inspected_str = request.POST.get(f"quality_already_inspected_{item.id}", "0")
+            rejected_str = request.POST.get(f"quality_already_rejected_{item.id}", "0")
+            qm_notes = request.POST.get(f"qm_notes_{item.id}", "")
 
             try:
-                qty_being_received = float(qty_str)
-            except ValueError:
-                qty_being_received = 0
+                qty = Decimal(qty_str)
+                inspected = Decimal(inspected_str)
+                rejected = Decimal(rejected_str)
+            except:
+                item_errors[item.id] = ["Invalid numeric values"]
+                continue
+
+            # Basic validations
+            if qty < 0:
+                item_errors[item.id] = ["Quantity cannot be negative"]
+                continue
+
+            if rejected > inspected:
+                item_errors[item.id] = ["Rejected qty cannot exceed inspected qty"]
+                continue
+
+            if qty == 0 and inspected == 0:
+                continue
 
             try:
-                quality_already_rejected = float(already_rejected_qty_str)
-            except ValueError:
-                quality_already_rejected = 0
-
-            try:
-                already_inspected_qty = float(already_inspected_qty_str)
-            except ValueError:
-                already_inspected_qty = 0    
-
-            # Collect row-specific errors
-            row_errors = []
-
-            if qty_being_received < 0:
-                row_errors.append("Quantity cannot be negative.")
-
-            if qty_being_received > float(item.yet_to_be_received):
-                row_errors.append(
-                    f"Quantity ({qty_being_received}) exceeds yet to be received ({item.yet_to_be_received})."
-                )
-
-            if float(item.already_received_qty) + float(qty_being_received) > float(item.quantity):
-                row_errors.append(
-                    f"Total received ({float(item.already_received_qty) + float(qty_being_received)}) "
-                    f"cannot exceed ordered quantity ({item.quantity})."
-                )
-
-            if row_errors:
-                item_errors[item.id] = row_errors
-                continue    
-            item.qm_notes= qm_notes
-            # Process valid rows
-            if qty_being_received > 0 or quality_already_rejected > 0 or already_inspected_qty > 0:
-                gm_date_str = date.today().strftime("%Y-%m-%d")
-                process_goods_receipt(
-                    po_header=po_obj,
+                history = process_goods_receipt(
                     po_item=item,
-                    gm_date=gm_date_str,
+                    po_header=po_obj,
+                    gm_date=timezone.now().date(),
+                    gm_quantity=qty,
+                    quality_already_rejected=rejected,
+                    already_inspected_qty=inspected,
                     gm_type="Quality Management",
-                    gm_quantity=qty_being_received,
-                    quality_already_rejected= quality_already_rejected,
-                    already_inspected_qty=already_inspected_qty,
                     location=item.po_location,
                     sub_location=item.sub_location,
+                    gm_text=qm_notes,
                     user=request.user,
+                    reference_number=reference_number,
+                    document_number=gm_obj
                 )
+
+                # ----------------------------
+                # Save Rejection Breakdown
+                # ----------------------------                
+                rejection_codes_str = request.POST.get(f'rejection_code_{item.id}', '')                
+                rejection_ids = [code.strip() for code in rejection_codes_str.split(',') if code.strip()]
+                for code_id in rejection_ids:
+                    PurchaseOrderHistoryRejection.objects.create(
+                        po_history=history,
+                        rejection_code_id=code_id
+                        
+                    )
+
+                # ----------------------------
+                # Save Single Document
+                # ----------------------------
+                file = request.FILES.get(f"qm_document_{item.id}")                
+
+                if file:
+                    PurchaseOrderHistoryDocument.objects.create(
+                        po_history=history,
+                        document=file
+                        
+                    )
+
                 processed += 1
-                ht_items_list.append(item.pk)
-         # -----------------------------------
-        #  Update PO Header Status
-        # -----------------------------------
-        all_items = po_obj.items.all()
-        statuses = [item.qty_inspection_status for item in all_items]
+
+            except Exception as e:
+                item_errors[item.id] = [str(e)]
+
+        # ----------------------------
+        # Update PO Header Status
+        # ----------------------------
+        statuses = [i.qty_inspection_status for i in po_obj.items.all()]
 
         if all(s == "CLOSED" for s in statuses):
             po_obj.qm_header_status = PurchaseOrderStatus.objects.get(name="CLOSED")
@@ -590,18 +973,13 @@ def quality_management_receipt(request, po_id):
             po_obj.qm_header_status = PurchaseOrderStatus.objects.get(name="PARTIAL")
 
         po_obj.save()
-        # Save errors into session for re-render
-        request.session["item_errors"] = item_errors
-        request.session["last_po_id"] = po_id
-        request.session['ht_items_list']=ht_items_list
 
-        # Summary message
-        if processed and not item_errors:
-            messages.success(request, f"✅ {processed} items processed successfully.")
-        elif processed and item_errors:
-            messages.warning(request, f"⚠️ {processed} items processed, but some errors exist.")
-        elif not processed and not item_errors:
-            messages.info(request, "ℹ️ No quantities entered.")
+        if processed:
+            messages.success(request, f"{processed} items processed successfully.")
+        elif not item_errors:
+            messages.info(request, "No quantities entered.")
+        else:
+            messages.warning(request, "Some rows contain errors.")
 
     return redirect(f"{reverse('quality-management-create')}?po_id={po_id}")
 
@@ -807,86 +1185,122 @@ def inspection_receipt_view(request):
     return render(request, 'inventory/inspection_receipt.html', context)
 
 
-def quality_management_pdf(request,pk=None):
+def quality_management_pdf(request,pk=None, prv_number='', report_type=''):
     
-    po_obj = get_object_or_404(PurchaseOrderHeader, pk=pk)
-    context ={"po_obj":po_obj}
-    #grouped_items = build_grouped_items(po_obj)
+    try:
+        # Get Purchase Order Header
+        po_obj = get_object_or_404(PurchaseOrderHeader, pk=pk)
+        
+        # history_items = PurchaseOrderHistory.objects.filter(po_header_id=po_obj,reference_number=prv_number)
+        history_items = PurchaseOrderHistory.objects.filter(
+            po_header_id=po_obj,
+            reference_number=prv_number
+        ).order_by('updated_at')
 
-   
-    html = render_to_string('inventory/inspection_receipt.html', context)
+        po = Purchase_Order.objects.get(po_number=po_obj.code)
+
+        proc_obj = Procurement.objects.get(id=po.procurement_id)
+    except ObjectDoesNotExist as e:
+        raise ValueError(f"Required record not found: {e}")
+
+    watermark_path = os.path.join(settings.BASE_DIR, 'static/default/img/priya-tr.png')
+
+    #watermark_path = settings.STATIC_URL + 'default/priya-tr.png'
+
+    if report_type == 'IRV':
+        po_obj.name = f"{proc_obj.user.first_name} - {proc_obj.user.last_name}"
+        template = 'inventory/inspection_receipt.html'
+        filename = f'INSPECTION_CUM_RECEIPT_DOCUMENT_{prv_number}.pdf'
+    else:
+        po_obj.name = f"{proc_obj.user.first_name} - {proc_obj.user.last_name}"
+        template = 'inventory/PRV.html'
+        filename = f'PROVISION_CUM_RECEIPT_DOCUMENT_{prv_number}.pdf'
+
+    context = {
+        "po_obj": po_obj,
+        "watermark_path": watermark_path,
+        "prv_number":prv_number,
+        "history_items": history_items
+    }
+
+    html = render_to_string(template, context)
     response = HttpResponse(content_type='application/pdf')
-    response['Content-Disposition'] = 'inline; filename="inspection_receipt.pdf"'
+    response['Content-Disposition'] = f'inline; filename="{filename}"'
 
     pisa_status = pisa.CreatePDF(html, dest=response)
+
     if pisa_status.err:
         return HttpResponse(f'We had some errors <pre>{html}</pre>')
+
     return response
 
 
-# views.py
-# from django.shortcuts import render
-# from django.http import JsonResponse
-# from django.views.decorators.http import require_GET
-# from django.utils.dateparse import parse_date
-# from .models import PurchaseOrderItem
+def purchase_order_list(request,pk=None):
+
+    refs = PurchaseOrderHistory.objects.filter(
+        po_header_id=pk,
+        reference_number__isnull=False
+    ).values_list('reference_number', flat=True)
+
+    distinct_refs = list(set(refs))
+
+    print(distinct_refs)
+    return Response({"data": distinct_refs})
 
 
+@api_view(['GET'])
+def purchase_order_list(request, pk=None):
+    logger.info("purchase_order_list API called")
 
-# def po_item_report_page(request):
-#     """
-#     Returns the HTML page
-#     """
-#     return render(request, "templates/inventory/po_item_report.html")
+    try:
+        if not pk:
+            return Response(
+                {"message": "PO Header ID is required"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        distinct_refs = list(
+            PurchaseOrderHistory.objects
+            .filter(
+                po_header_id=pk,
+                reference_number__isnull=False
+            )
+            .exclude(reference_number='')
+            .values_list('reference_number', flat=True)
+            .distinct()
+        )
+
+        logger.info("purchase_order_list API executed successfully")
+
+        return Response(
+            {"data": list(set(distinct_refs))},
+            status=status.HTTP_200_OK
+        )
+
+    except Exception as e:
+        logger.exception("Error occurred in purchase_order_list API")
+        return Response(
+            {"message": "Something went wrong while fetching reference numbers"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+    
+from django.template.loader import get_template
+from django.http import HttpResponse
+from xhtml2pdf import pisa
 
 
-# # 🔹 2. API VIEW
-# @require_GET
-# def purchase_order_item_report_api(request):
-#     """
-#     Returns JSON data based on start_date and end_date
-#     """
-#     start_date = request.GET.get("start_date")
-#     end_date = request.GET.get("end_date")
+def download_voucher_pdf(request):
 
-#     if not start_date or not end_date:
-#         return JsonResponse(
-#             {"error": "start_date and end_date are required"},
-#             status=400
-#         )
+    template = get_template("inventory/issue_voucher.html")
 
-#     start_date = parse_date(start_date)
-#     end_date = parse_date(end_date)
+    html = template.render({
+        "iv_no":"IV001",
+        "iv_date":"01-03-2026"
+    })
 
-#     if not start_date or not end_date:
-#         return JsonResponse(
-#             {"error": "Invalid date format. Use YYYY-MM-DD"},
-#             status=400
-#         )
+    response = HttpResponse(content_type="application/pdf")
+    response['Content-Disposition'] = 'attachment; filename="issue_voucher.pdf"'
 
-#     items = PurchaseOrderItem.objects.filter(
-#         created_at__date__range=(start_date, end_date)
-#     ).select_related(
-#         "po_header", "item"
-#     ).order_by("-created_at")
+    pisa.CreatePDF(html,dest=response)
 
-#     results = []
-#     for item in items:
-#         results.append({
-#             "id": item.id,
-#             "code": item.code,
-#             "line_number": item.line_number,
-#             "product": str(item.item),
-#             "quantity": float(item.quantity),
-#             "uom": item.uom,
-#             "unit_price": float(item.unit_price),
-#             "total_price": float(item.total_price or 0),
-#             "item_status": item.item_status,
-#             "created_at": item.created_at.strftime("%Y-%m-%d %H:%M"),
-#         })
-
-#     return JsonResponse({
-#         "count": len(results),
-#         "results": results
-#     })
-
+    return response

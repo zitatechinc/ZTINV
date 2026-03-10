@@ -10,3 +10,4 @@ def get_field(obj, field_name):
 @register.filter
 def get_item(dictionary, key):
     return dictionary.get(key)
+

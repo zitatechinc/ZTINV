@@ -9,6 +9,20 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         themes_data = [
             {
+                "name": "Meslova Default", 
+                "bg_color": "#f5f6fe",
+                "font_family": '"Segoe UI", SegoeUI, "Helvetica Neue", Helvetica, Arial, sans-serif',
+                "heading_font_color": "#555",
+                "page_title_font_color": "#555",
+                "menu_bg_color": "#fafafa",
+                "menu_font_color": "#555",
+                "sidebar_bg_color": "#fafafa",
+                "sidebar_font_color": "#555",
+                "footer_bg_color": "#fafafa",
+                "footer_font_color": "#555",
+                "status": 1,
+            },
+            {
                 "name": "Modern Light",
                 "bg_color": "#f4f6f9",
                 "font_family": '"Segoe UI", SegoeUI, "Helvetica Neue", Helvetica, Arial, sans-serif',

@@ -17,38 +17,31 @@
 
                 <!-- LEFT: Form section -->
                 <div class="col-md-4">
-
-                    <!-- Vendor -->
-                    <div class="mb-3">
-                        <label class="form-label">
-                            {{ form.vendor.label }}
-                        </label>
-                        {{ form.vendor }}
-
-                        {% if form.vendor.errors %}
-                            <ul class="list-unstyled text-danger mt-1">
-                                {% for error in form.vendor.errors %}
-                                    <li>{{ error }}</li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
-                    </div>
+                    <div class="form-floating mb-3">
+                                {{ form.vendor }}
+                                <label for="floatingName" class="form-label">{{ form.vendor.label_tag }}</label>
+                                {% if form.vendor.errors %}
+                                <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                                    {% for error in form.vendor.errors %}
+                                    <li class="text-danger">{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {%endif%}
+                            </div>
+                 
 
                     <!-- Status -->
-                    <div class="mb-3">
-                        <label class="form-label">
-                            {{ form.status.label }}
-                        </label>
-                        {{ form.status }}
-
-                        {% if form.status.errors %}
-                            <ul class="list-unstyled text-danger mt-1">
-                                {% for error in form.status.errors %}
-                                    <li>{{ error }}</li>
-                                {% endfor %}
-                            </ul>
-                        {% endif %}
-                    </div>
+                     <div class="form-floating mb-3">
+                                {{ form.status }}
+                                <label for="floatingName" class="form-label">{{ form.status.label_tag }}</label>
+                                {% if form.status.errors %}
+                                <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                                    {% for error in form.status.errors %}
+                                    <li class="text-danger">{{ error }}</li>
+                                    {% endfor %}
+                                </ul>
+                                {%endif%}
+                            </div>
 
                     <!-- Save button -->
                     <button type="button" id="openSaveModal" class="btn btn-sm app-btn-primary">

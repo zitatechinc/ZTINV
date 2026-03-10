@@ -23,13 +23,13 @@
                     <h3>Brand Information</h3><br>
                     <!-- Brand Information Fields -->
                     <div class="col-md-4">
-                        <strong>Name:</strong> {{ object.name }}
+                        <strong>Name :</strong> {{ object.name }}
                     </div>
                     <div class="col-md-4">
-                        <strong>Code:</strong> {{ object.code }}
+                        <strong>Code :</strong> {{ object.code }}
                     </div>
                     <div class="col-md-4">
-                        <strong>Status:</strong>
+                        <strong>Status :</strong>
                         <span class="badge 
                             {% if object.status == 1 %}
                                 bg-success
@@ -41,6 +41,12 @@
                         ">
                             {{ object.status_name }}
                         </span>
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Description :</strong> {{ object.description }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Search Keywords :</strong> {{ object.search_keywords }}
                     </div>
                 </div>
 

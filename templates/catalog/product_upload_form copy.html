@@ -1,0 +1,107 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+<form id="uploadForm" method="post" action="{{ form_action_url }}" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <!-- Top Buttons -->
+    <div class="row mb-3 mt-2">
+        <div class="col-12 text-end">
+            <div class="button-group">
+                <a href="/media/product_sample_file.xlsx" class="btn btn-sm app-btn-primary">
+                    <i class="fa fa-download"></i> Sample File
+                </a>
+                <button type="submit" class="btn btn-sm app-btn-success">
+                    <i class="fa fa-upload"></i> Upload
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="app-card app-card-settings shadow-md">
+                <div class="app-card-body p-4">
+
+                    <h5 class="mb-3">Product Bulk Upload</h5>
+
+                    <p class="text-muted">
+                        Upload Excel (.xlsx) OR ZIP (Excel + Images).
+                        Images are optional if uploading Excel separately.
+                    </p>
+
+                    <!-- Excel / ZIP -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Upload Excel or ZIP</label>
+                        {{ form.file }}
+                        <small class="text-muted d-block mt-1">
+                            Supported formats: .xlsx or .zip
+                        </small>
+                    </div>
+
+                    <!-- Optional Images -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Upload Images (Optional)</label>
+                        <input 
+                            type="file" 
+                            name="images" 
+                            multiple 
+                            accept=".jpg,.jpeg,.png"
+                            class="form-control form-control-sm w-auto d-inline-block"
+                            style="max-width: 300px;"
+                        />
+                        <small class="text-muted d-block mt-1">
+                            Required only if Excel contains image_file_name values.
+                            Skip this if uploading ZIP file.
+                        </small>
+                    </div>
+
+                    <!-- Processing Section -->
+                    <div id="processingSection" style="display:none;">
+
+                        <div class="progress mt-3" style="height: 25px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-success"
+                                 role="progressbar"
+                                 style="width: 100%">
+                                Uploading & Processing...
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-3">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="mt-2 mb-0">Please wait while we process your file...</p>
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</form>
+
+{% endblock %}
+
+{% block pagecss %}
+<style>
+.progress-bar {
+    font-weight: bold;
+}
+</style>
+{% endblock %}
+
+{% block pagejs %}
+<script>
+document.getElementById("uploadForm").addEventListener("submit", function() {
+
+    // Disable submit button to prevent double click
+    document.querySelector("button[type='submit']").disabled = true;
+
+    // Show processing section
+    document.getElementById("processingSection").style.display = "block";
+
+});
+</script>
+{% endblock %}

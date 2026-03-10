@@ -15,24 +15,31 @@
 </div>
 
 <div class="col-12 col-md-12">
-    <div class="app-card app-card-settings shadow-md">
+    <div class="app-card app-card-settings shadow-md p-4">
         <!-- Include the Vendor Menu -->
         {% include 'vendor/vendor_menu.html' %}
         
-        <div class="app-card-body p-4">
+        <div class="app-card-body ps-2">
             <!-- Bank Information -->
-            <div class="row mb-4">
-                <h6 class="mb-3">Bank Information</h6>
+            <div class="row mt-2">
+                <h6 class="">Bank Information</h6>
 
                 <div class="col-md-4"><strong>Account Holder Name :</strong> {{ object.account_holder_name }}</div>
                 <div class="col-md-4"><strong>Account Number :</strong> {{ object.account_number }}</div>
-                <div class="col-md-4"><strong>Account Type :</strong> {{ object.account_type }}</div>
+                <div class="col-md-4"><strong>Routing Number :</strong> {{ object.routing_number }}</div>
 
+                <div class="col-md-4"><strong>Account Type :</strong> {{ object.account_type }}</div>
                 <div class="col-md-4"><strong>Bank Name :</strong> {{ object.bank_name }}</div>
                 <div class="col-md-4"><strong>Branch Name :</strong> {{ object.branch_name }}</div>
-                <div class="col-md-4"><strong>IFSC Code :</strong> {{ object.ifsc_code }}</div>
 
+                <div class="col-md-4"><strong>IFSC Code :</strong> {{ object.ifsc_code }}</div>
+                <div class="col-md-4"><strong>MICR Code :</strong> {{ object.micr_code }}</div>
+                <div class="col-md-4"><strong>SWIFT Code :</strong> {{ object.swift_code }}</div>
+
+                <div class="col-md-4"><strong>Address :</strong> {{ object.address }}</div>
                 <div class="col-md-4"><strong>IS Primary :</strong> {{ object.primary }}</div>
+                <div class="col-md-4"><strong>Phone Number :</strong> {{ object.phone_number }}</div>
+
                 <div class="col-md-4">
                         <strong>Status:</strong>
                         <span class="badge 
@@ -49,7 +56,7 @@
                     </div>
             </div>
             <!-- Include Audit Log Information -->
-            {% include 'core/auditlog.html' %}
+           {% include 'core/project_audit_log.html' %}
         </div>
     </div>
 </div>

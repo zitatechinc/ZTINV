@@ -1,0 +1,146 @@
+{% extends 'core/base.html' %}
+{% block content %}
+
+<div class="container-fluid">
+
+    <!-- USER HEADER -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-body d-flex justify-content-between align-items-center">
+            <div>
+                <h3 class="mb-1 fw-bold">{{ user_obj.first_name }} {{ user_obj.last_name }}</h3>
+                <small class="text-muted">{{ user_obj.email }}</small>
+            </div>
+
+            <div>
+                {% if user_obj.is_superuser %}
+                    <span class="badge bg-danger px-4 py-3 rounded-pill" style="font-size: 1.3rem;">
+                        Superuser
+                    </span>
+                {% elif user_obj.is_staff %}
+                    <span class="badge bg-primary px-4 py-3 rounded-pill" style="font-size: 1.3rem;">
+                        Staff
+                    </span>
+                {% else %}
+                    <span class="badge bg-secondary px-4 py-3 rounded-pill" style="font-size: 1.3rem;">
+                        User
+                    </span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- SUMMARY CARDS -->
+    <div class="row text-center mb-4">
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="text-muted fw-bold">Total Permissions</h5>
+                    <h2 class="fw-bold">
+                        {% if user_obj.is_superuser %}
+                            All
+                        {% else %}
+                            {{ user_obj.get_all_permissions|length }}
+                        {% endif %}
+                    </h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="text-muted fw-bold">Groups</h5>
+                    <h2 class="fw-bold">{{ user_obj.groups.count }}</h2>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4 mb-3">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="text-muted fw-bold">Direct Permissions</h5>
+                    <h2 class="fw-bold">{{ user_obj.user_permissions.count }}</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PERMISSION DETAILS -->
+    <div class="card shadow">
+        <div class="card-header bg-light fw-bold">
+            <i class="fa fa-key me-2"></i> Permission Details
+        </div>
+
+        <div class="card-body">
+
+            {% if user_obj.is_superuser %}
+                <div class="alert alert-danger text-center fw-bold" 
+                    style="font-size: 1.5rem; padding: 1rem 1.5rem; border-radius: 0.5rem;">
+                    This user is a <span style="font-weight: 900;">Superuser</span> and has <span style="font-weight: 900;">all system permissions</span>.
+                </div>
+            {% else %}
+
+                <!-- GROUP PERMISSIONS ACCORDION -->
+                {% if user_obj.groups.count > 0 %}
+                    <div class="accordion mb-4" id="permissionAccordion">
+                        {% for group in user_obj.groups.all %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                                    <button class="accordion-button collapsed"
+                                            type="button"
+                                            data-bs-toggle="collapse"
+                                            data-bs-target="#collapse{{ forloop.counter }}"
+                                            aria-expanded="false"
+                                            aria-controls="collapse{{ forloop.counter }}">
+                                        {{ group.name }}
+                                        <span class="badge bg-secondary ms-2">
+                                            {{ group.permissions.count }}
+                                        </span>
+                                    </button>
+                                </h2>
+
+                                <div id="collapse{{ forloop.counter }}"
+                                     class="accordion-collapse collapse"
+                                     aria-labelledby="heading{{ forloop.counter }}"
+                                     data-bs-parent="#permissionAccordion">
+                                    <div class="accordion-body">
+                                        {% if group.permissions.count > 0 %}
+                                            {% for perm in group.permissions.all %}
+                                                <span class="badge bg-primary m-1 px-3 py-2 rounded-pill">
+                                                    {{ perm.name }}
+                                                </span>
+                                            {% endfor %}
+                                        {% else %}
+                                            <p class="text-muted mb-0">No permissions assigned to this group.</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <p class="text-muted fw-bold mb-4">User does not belong to any group.</p>
+                {% endif %}
+
+                <!-- DIRECT PERMISSIONS -->
+                <div>
+                    <h5 class="fw-bold mb-3">Direct Permissions</h5>
+                    {% if user_obj.user_permissions.count > 0 %}
+                        {% for perm in user_obj.user_permissions.all %}
+                            <span class="badge bg-info m-1 px-3 py-2 rounded-pill">
+                                {{ perm.name }}
+                            </span>
+                        {% endfor %}
+                    {% else %}
+                        <p class="text-muted">No direct permissions assigned.</p>
+                    {% endif %}
+                </div>
+
+            {% endif %}
+
+        </div>
+    </div>
+
+</div>
+
+{% endblock %}

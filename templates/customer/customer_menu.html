@@ -12,6 +12,10 @@
         {{ object.company_name2 }}
     </div>
     <div class="col-md-4">
+        <strong>{{ form.code.label_tag }} :</strong>  
+        {{ object.code }}
+    </div>
+    <div class="col-md-4">
         <strong>Status:</strong>
         <span class="badge 
             {% if object.status == 1 %}

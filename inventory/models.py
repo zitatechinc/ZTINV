@@ -1,17 +1,17 @@
 from django.db import models
 from django.apps import apps
-from core.models import TimeStampBaseModel, VendorBaseModel, UserLogBaseModel, PurchaseOrderBaseModel
+from core.models import NormalizeCodeMixin,TimeStampBaseModel, VendorBaseModel, UserLogBaseModel, PurchaseOrderBaseModel,AttributeBaseModel,UOM_CHOICES
 from location.models import Country, Location, SubLocation
 from accounts.models import User
 from vendor.models import Vendor
 from catalog.models import Product, Languages
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
-from django.db.models import Sum
-
+from django.db.models import Sum, Min, Max
+from auditlog.registry import auditlog
 
 # Create your models here.
-class PurchaseOrderType(PurchaseOrderBaseModel,UserLogBaseModel, TimeStampBaseModel):
+class PurchaseOrderType(NormalizeCodeMixin,PurchaseOrderBaseModel,UserLogBaseModel, TimeStampBaseModel):
     name = models.CharField(
         max_length=250,
         unique=True,
@@ -40,6 +40,14 @@ class PurchaseOrderType(PurchaseOrderBaseModel,UserLogBaseModel, TimeStampBaseMo
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -61,7 +69,7 @@ class PurchaseOrderType(PurchaseOrderBaseModel,UserLogBaseModel, TimeStampBaseMo
             self.code = self.code.strip().upper()
         super().save(*args, **kwargs)
 
-class PurchaseOrderStatus(PurchaseOrderBaseModel,UserLogBaseModel, TimeStampBaseModel):
+class PurchaseOrderStatus(NormalizeCodeMixin,PurchaseOrderBaseModel,UserLogBaseModel, TimeStampBaseModel):
     name = models.CharField(
         max_length=250,
         unique=True,
@@ -90,6 +98,14 @@ class PurchaseOrderStatus(PurchaseOrderBaseModel,UserLogBaseModel, TimeStampBase
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -112,21 +128,6 @@ class PurchaseOrderStatus(PurchaseOrderBaseModel,UserLogBaseModel, TimeStampBase
         super().save(*args, **kwargs)
 
 
-UOM_CHOICES = [
-    ("PCS", "Pieces"),
-    ("KG", "Kilogram"),
-    ("LTR", "Liter"),
-    ("EA","Each"),
-    ("DZ","Dozen"),
-    ("BOX","Box"),
-    ("SET","Set"),
-    ('Nos', 'Nos')
-]
-
-# def UOM_CHOICES():
-#     Units = apps.get_model('ims', 'Units')
-#     return [(u.unit, u.unit) for u in Units.objects.all()]
-
 ITEM_STATUS_CHOICES = [
     ("OPEN", "Open"),
     ("CLOSED", "Closed"),
@@ -141,6 +142,7 @@ GM_CATEGORY_CHOICES = [
     ("Stock Transfer", "Stock Transfer"),
     ("Reversal / Cancellation", "Reversal / Cancellation"),
     ("Subcontracting / Special", "Subcontracting / Special"),
+    ("Issue","Issue"),
     ("Other", "Other"),
 ]
 
@@ -178,7 +180,7 @@ INVENTORY_TYPE_CHOICES = [
 # ----------------------------
 # PurchaseOrderHeader
 # ----------------------------
-class PurchaseOrderHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class PurchaseOrderHeader(NormalizeCodeMixin,PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     code = models.CharField(
         max_length=100,
         verbose_name="PO Number",
@@ -249,6 +251,73 @@ class PurchaseOrderHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBas
     def getItems(self):
         return PurchaseOrderItem.objects.filter(po_header_id=self.pk)
 
+    def getItemsWithOpenStatus(self):
+        return PurchaseOrderItem.objects.filter(po_header_id=self.pk).exclude(item_status='OPEN')
+
+    def getQtyItemsWithOpenStatus(self):
+        return PurchaseOrderItem.objects.filter(po_header_id=self.pk).exclude(qty_inspection_status='OPEN')
+
+    # def getReferenceGRNUmbers(self):        
+    #     distinct_refs = (
+    #         PurchaseOrderHistory.objects
+    #         .filter(
+    #             po_header_id=self.pk,
+    #             po_history_type='GR'
+    #         )
+    #         .exclude(reference_number__isnull=True)
+    #         .exclude(reference_number='')
+    #         .values_list('reference_number', flat=True)
+    #         .distinct()
+    #     )
+    #     return list(set(distinct_refs))
+
+    def getReferenceGRNUmbers(self):
+        distinct_refs = (
+            PurchaseOrderHistory.objects
+            .filter(
+                po_header_id=self.pk,
+                po_history_type='GR'
+            )
+            .exclude(reference_number__isnull=True)
+            .exclude(reference_number='')
+            .values('reference_number')
+            .annotate(created_at=Max('created_at'))
+            .order_by('-created_at')
+        )
+
+        return distinct_refs
+
+
+    # def getReferenceQMNUmbers(self):        
+    #     distinct_refs = (
+    #         PurchaseOrderHistory.objects
+    #         .filter(
+    #             po_header_id=self.pk,
+    #             po_history_type='QM'
+    #         )
+    #         .exclude(reference_number__isnull=True)
+    #         .exclude(reference_number='')
+    #         .values_list('reference_number', flat=True).order_by('-created_at')
+    #         .distinct()
+    #     )
+    #     return list(set(distinct_refs))
+
+    def getReferenceQMNUmbers(self):
+        distinct_refs = (
+            PurchaseOrderHistory.objects
+            .filter(
+                po_header_id=self.pk,
+                po_history_type='QM'
+            )
+            .exclude(reference_number__isnull=True)
+            .exclude(reference_number='')
+            .values('reference_number')
+            .annotate(created_at=Max('created_at'))
+            .order_by('-created_at')
+        )
+
+        return distinct_refs
+
     def clean(self):
         if self.code:
             normalized_code = self.code.strip().upper()
@@ -266,11 +335,19 @@ class PurchaseOrderHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBas
     @property
     def get_name(self):
         return self.code
+    
+    @property
+    def audit_name(self):
+        return self.vendor.company_name1
+
+    @property
+    def audit_code(self):
+        return self.code
 
 # ----------------------------
 # PurchaseOrderItem
 # ----------------------------
-class PurchaseOrderItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class PurchaseOrderItem(NormalizeCodeMixin,PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     code = models.CharField(
         max_length=100,
         verbose_name="PO Item Line Number",
@@ -294,10 +371,10 @@ class PurchaseOrderItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseM
         max_digits=12, decimal_places=2, default=0,
         verbose_name="Quantity"
     )
-    uom = models.CharField(
-        max_length=10, choices=UOM_CHOICES,
-        verbose_name="Units of Measure"
-    )
+
+    uom = models.ForeignKey('ims.Units', 
+            on_delete=models.PROTECT,
+            verbose_name='Unit of Measure')
     unit_price = models.DecimalField(
         max_digits=12, decimal_places=3,
         verbose_name="Unit Price"
@@ -383,11 +460,18 @@ class PurchaseOrderItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseM
     @property
     def yet_to_be_received(self):
         return self.quantity - self.already_received_qty
+    @property
+    def audit_name(self):
+        return self.po_header
+
+    @property
+    def audit_code(self):
+        return self.code
 
 # ----------------------------
 # GoodsMovementHeader
 # ----------------------------
-class GoodsMovementHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class GoodsMovementHeader(NormalizeCodeMixin,PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     code = models.CharField(
         max_length=100,
         verbose_name="GM Document",
@@ -412,11 +496,28 @@ class GoodsMovementHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBas
         PurchaseOrderHeader,
         on_delete=models.PROTECT,
         verbose_name="PO Reference",
-        related_name="goods_movements"
+        related_name="goods_movements",null=True,
+        blank=True,
     )
     po_item = models.ForeignKey(
         PurchaseOrderItem, on_delete=models.PROTECT,
-        related_name="gm_items", verbose_name="PO Item"
+        related_name="gm_items", verbose_name="PO Item",null=True,
+        blank=True,
+    )
+    voucher = models.ForeignKey(
+        "project.VoucherHeader",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="goods_movements"
+    )
+ 
+    project = models.ForeignKey(
+        "project.ProjectHeader",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="goods_movements"
     )
 
     description = models.TextField(
@@ -424,6 +525,14 @@ class GoodsMovementHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBas
         blank=True, null=True
     )
     slug = models.SlugField(max_length=255, unique=True, blank=True)
+    issue_voucher_number = models.CharField(
+        max_length=50,
+        verbose_name="Issue Voucher Number",
+        null=True,
+        blank=True,
+        unique=True,
+        db_index=True
+    )
 
     class Meta:
         ordering = ['-created_at']
@@ -442,6 +551,14 @@ class GoodsMovementHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBas
     @property
     def get_name(self):
         return self.code
+    
+    @property
+    def audit_name(self):
+        return None
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def save(self, *args, **kwargs):
         if self.code:
@@ -451,11 +568,10 @@ class GoodsMovementHeader(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBas
         self.full_clean()
         super().save(*args, **kwargs)
 
-
 # ----------------------------
 # GoodsMovementItem
 # ----------------------------
-class GoodsMovementItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
+class GoodsMovementItem(NormalizeCodeMixin,PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
     code = models.CharField(
         max_length=100,
         verbose_name="GM Item Number",
@@ -487,10 +603,10 @@ class GoodsMovementItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseM
         max_digits=12, decimal_places=2, blank=True, null=True,
         verbose_name="GM Quantity"
     )
-    uom = models.CharField(
-        max_length=10, choices=UOM_CHOICES, verbose_name="Units of Measure"
-    )
-    
+
+    uom = models.ForeignKey('ims.Units', 
+            on_delete=models.PROTECT,
+            verbose_name='Unit of Measure')
     gm_type = models.CharField(
         max_length=60, choices=GM_TYPE_CHOICES, verbose_name="GM Type"
     )
@@ -498,6 +614,21 @@ class GoodsMovementItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseM
         verbose_name="GM Item Text", blank=True, null=True
     )
     slug = models.SlugField(max_length=255, unique=True, blank=True)
+    project = models.ForeignKey(
+        "project.ProjectHeader",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="gm_items"
+    )
+ 
+    project_component = models.ForeignKey(
+        "project.ProjectComponent",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="gm_items"
+    )
 
     class Meta:
         ordering = ['-created_at']
@@ -516,6 +647,14 @@ class GoodsMovementItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseM
     @property
     def get_name(self):
         return self.code
+    
+    @property
+    def audit_name(self):
+        return None
+
+    @property
+    def audit_code(self):
+        return self.code
 
     def save(self, *args, **kwargs):
         if self.code:
@@ -525,7 +664,6 @@ class GoodsMovementItem(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseM
             self.slug = slugify(self.code)
         self.full_clean()
         super().save(*args, **kwargs)
-
 
 # ----------------------------
 # PurchaseOrderHistory
@@ -569,12 +707,15 @@ class PurchaseOrderHistory(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBa
     po_line_amount = models.DecimalField(
         max_digits=15, decimal_places=3, verbose_name="PO Line Amount"
     )
-    uom = models.CharField(
-        max_length=10, choices=UOM_CHOICES, verbose_name="Units of Measure"
-    )
 
+    uom = models.ForeignKey('ims.Units', 
+            on_delete=models.PROTECT,
+            verbose_name='Unit of Measure')
     po_good_qty = models.PositiveIntegerField(verbose_name="PO Good Qty", default=0)
     po_rejected_qty = models.PositiveIntegerField(verbose_name="PO Rejected Qty", default=0)
+    reference_number = models.CharField(max_length=100, null=True, blank=True)
+    gr_number = models.CharField(max_length=100, null=True, blank=True, verbose_name='GR Number')
+    gr_file = models.FileField(upload_to=f'gr_docs/',blank=True, null=True, verbose_name='GR File')
 
     class Meta:
         ordering = ['-updated_at']
@@ -593,7 +734,198 @@ class PurchaseOrderHistory(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBa
     @property
     def get_name(self):
         return self.po_header.code
+ 
+    @property
+    def rejection_codes_list(self):
+        """
+        Returns list of rejection code strings
+        Example: ['RC01', 'RC02']
+        """
+        return list(
+            self.rejections.values_list(
+                "rejection_code__code",
+                flat=True
+            )
+        )
 
+    @property
+    def audit_name(self):
+        return None
+    @property
+    def rejection_codes_display(self):
+    
+        codes = self.rejection_codes_list
+        return ", ".join(codes) if codes else ""
+    @property
+    def audit_code(self):
+        return self.po_header.code
+
+        
+    @property
+    def rejection_code_name_list(self):
+        """
+        Returns list of dicts:
+        [
+            {"code": "RC01", "name": "Damage"},
+            {"code": "RC02", "name": "Quality Mismatch"},
+        ]
+        """
+        return list(
+            self.rejections.values(
+                "rejection_code__code",
+                "rejection_code__name"
+            )
+        )
+
+    @property
+    def rejection_code_name_display(self):
+        """
+        Returns formatted string:
+        'RC01 - Damage, RC02 - Quality Mismatch'
+        """
+        items = self.rejection_code_name_list
+        if not items:
+            return ""
+
+        return ", ".join(
+            f"{i['rejection_code__code']} - {i['rejection_code__name']}"
+            for i in items
+        )
+
+    @property
+    def documents_list(self):
+        """
+        Returns queryset of documents
+        """
+        return self.documents.all()
+
+    @property
+    def document_urls(self):
+        """
+        Returns list of file URLs
+        """
+        return [
+            doc.document.url
+            for doc in self.documents.all()
+            if doc.document
+        ]
+
+class RejectionCode(AttributeBaseModel,UserLogBaseModel,TimeStampBaseModel):
+    """Master table for rejection codes"""
+    
+    class Meta:
+        ordering = ['name']
+        verbose_name = "RejectionCode"
+        verbose_name_plural = f"{verbose_name} List"
+        permissions = [
+            ("can_create_rejectioncode", "Can Create rejectioncode"),
+            ("can_edit_rejectioncode", "Can Edit rejectioncode"),
+            ("can_view_rejectioncode", "Can View rejectioncode"),
+            ("can_delete_rejectioncode", "Can Delete rejectioncode"),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
+
+    def clean(self):
+        # Ensure slug is unique BEFORE saving
+        slug = slugify(self.name)
+        if RejectionCode.objects.exclude(pk=self.pk).filter(slug=slug).exists():
+            raise ValidationError({"name": "RejectionCode with this Name already exists."})
+
+        if self.code:
+            normalized_code = self.code.strip().upper()
+            if RejectionCode.objects.exclude(pk=self.pk).filter(code=normalized_code).exists():
+                raise ValidationError({"code": "Code already exists."})
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            self.slug = slugify(self.name)
+        self.full_clean()
+
+        if hasattr(self, "code") and self.code:
+            self.code = self.code.strip().upper()
+        super().save(*args, **kwargs)
+
+class PurchaseOrderHistoryRejection(UserLogBaseModel, TimeStampBaseModel):
+    """
+    Stores rejection breakdown for each inspection (PO History record)
+    """
+
+    po_history = models.ForeignKey(
+        "PurchaseOrderHistory",
+        on_delete=models.CASCADE,
+        related_name="rejections",
+        verbose_name="PO History"
+    )
+
+    rejection_code = models.ForeignKey(
+        RejectionCode,
+        on_delete=models.PROTECT,
+        related_name="history_rejections",
+        verbose_name="Rejection Code"
+    )
+
+    rejected_qty = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        verbose_name="Rejected Quantity"
+    )
+
+    remarks = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Remarks"
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "PO History Rejection"
+        verbose_name_plural = "PO History Rejections"
+
+    def __str__(self):
+        return f"{self.po_history.po_header.code} - {self.rejection_code.code}"
+
+class PurchaseOrderHistoryDocument(UserLogBaseModel, TimeStampBaseModel):
+    """
+    Stores documents related to a specific inspection (PO History)
+    """
+
+    po_history = models.ForeignKey(
+        "PurchaseOrderHistory",
+        on_delete=models.CASCADE,
+        related_name="documents",
+        verbose_name="PO History"
+    )
+
+    document = models.FileField(
+        upload_to="qm_documents/%Y/%m/",
+        verbose_name="Document"
+    )
+
+    description = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name="Document Description"
+    )
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "PO History Document"
+        verbose_name_plural = "PO History Documents"
+
+    def __str__(self):
+        return f"Document for {self.po_history.po_header.code}"
 
 # ----------------------------
 # Inventory
@@ -612,9 +944,13 @@ class Inventory(PurchaseOrderBaseModel, TimeStampBaseModel, UserLogBaseModel):
         verbose_name="Material",
         related_name="inventory_items"
     )
-    uom = models.CharField(
-        max_length=10, choices=UOM_CHOICES, verbose_name="Units of Measure"
-    )
+    # uom = models.CharField(
+    #     max_length=10, choices=UOM_CHOICES, verbose_name="Units of Measure"
+    # )
+    uom = models.ForeignKey('ims.Units', 
+            on_delete=models.PROTECT,blank=True, null=True,
+            verbose_name='Unit of Measure')
+    
     inventory_type = models.CharField(
         max_length=100,
         choices=INVENTORY_TYPE_CHOICES,
@@ -658,7 +994,6 @@ class Inventory(PurchaseOrderBaseModel, TimeStampBaseModel, UserLogBaseModel):
     #@property
     # def get_name(self):
     #     return self.code
-
 
 
 class SerialNumber(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel):
@@ -747,7 +1082,15 @@ class SerialNumber(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel)
     @property
     def get_name(self):
         return self.serial_number
+     
+    @property
+    def audit_name(self):
+        return self.serial_number
 
+    @property
+    def audit_code(self):
+        return None
+    
     def clean(self):
         if self.serial_number:
             normalized_serial = self.serial_number.strip().upper()
@@ -761,3 +1104,14 @@ class SerialNumber(PurchaseOrderBaseModel, UserLogBaseModel, TimeStampBaseModel)
             self.slug = slugify(self.serial_number)
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+auditlog.register(PurchaseOrderType)
+auditlog.register(PurchaseOrderStatus)
+auditlog.register(PurchaseOrderHeader)
+auditlog.register(PurchaseOrderItem)
+auditlog.register(GoodsMovementHeader)
+auditlog.register(GoodsMovementItem)
+auditlog.register(PurchaseOrderHistory)
+auditlog.register(Inventory)
+auditlog.register(SerialNumber)

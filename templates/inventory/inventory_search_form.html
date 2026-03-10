@@ -53,7 +53,7 @@
                 <td class="td-2">{{ group.1 }}</td>
               {% endif %}
               <th class="td-1">QTY</th>
-              <td class="td-2">{{ group.2 }}</td>
+              <td class="td-2">{{ group.2 |floatformat:0}}</td>
               <th class="td-1">Serial Number</th>
               <td class="td-2">
                 {% if group.3 == 1 %}
@@ -84,9 +84,9 @@
                     <th>SubLocation Code</th>
                     <th>SubLocation Name</th>
                     <!-- <th>UOM</th> -->
-                     <th>Type</th>
-                    <th>Quantity</th>                
-
+                    <th>Quantity</th> 
+                    <th>Type</th>
+                                  
                     <!-- <th>Type</th>
                     <th>Quantity</th> -->
                     <th>Action</th>
@@ -96,8 +96,8 @@
                     <th>SubLocation Code</th>
                     <th>SubLocation Name</th>
                     <!-- <th>UOM</th> -->
-                    <th>Type</th>
                     <th>Quantity</th>
+                    <th>Type</th>
                     <!-- <th>Type</th>
                     <th>Quantity</th> -->
                     
@@ -119,8 +119,8 @@
                           {{ inv.quantity|floatformat:0 }}
                         </a>
                       </td> -->
-                      <td>Quality Management</td>
                       <td>{{ inv.quantity|floatformat:0 }}</td>
+                      <td>Quality Management</td>
                       <!-- <td>Issue Voucher</td>
                       <td>{{ inv.issued_qty|floatformat:0 }}</td> -->
                       <td>

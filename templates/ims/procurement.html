@@ -353,7 +353,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
             response.products.forEach(function (p) {
                 $("#product").append(
-        `<option value="${p.id}" data-id="${p.name}" vendor-id="${p.vendor}">
+        `<option value="${p.id}" data-id="${p.name}" data-source_of_make = "${p.source_of_make}" data-code="${p.code}" data-model_number="${p.model_number}" data-specification="${p.specification}"  data-unit_of_measure="${p.unit_of_measure_id}" data-id="${p.id}" data-prname="${p.procurement_type}" data-prcode="${p.procurement_code}" vendor-id="${p.vendor}">
             ${p.name} - ${p.code}
         </option>`
     );
@@ -619,7 +619,7 @@ document.addEventListener("DOMContentLoaded", function () {
       var departments = $("#departments").val();
       var specification=$("#specifications").val();
       var unit=$("#unit").val();
-      var units=$("#unit option:selected").data("id");
+      var units=$("#unit option:selected").text();
       var partno=$("#partno").val();
       var materialcode=$("#materialcode").val();
       var role=$("#recommending_authority").val();
@@ -920,7 +920,7 @@ document.addEventListener("DOMContentLoaded", function () {
       <td style="display:none;"><input type="checkbox" class="procurement-checkbox" checked data-index="${particularsArray.length - 1}"></td>
       <td>${particularsArray.length}</td>
       <td>${delivery}</td>
-      <td>${createExpandableText(product)}</td>
+      <td>${product}</td>
       <td>${units}</td>
       <td>${createExpandableText(partno)}</td>
       <td>${createExpandableText(make)}</td>
@@ -1693,7 +1693,26 @@ if (particular.quotation_upload instanceof File) {
     fullText.style.display = isExpanded ? 'none' : 'inline';
     link.textContent = isExpanded ? 'Show More' : 'Show Less';
   }
+   
+                $("#product").on("change", function(){
 
+                    var selected = $(this).find(":selected");
+
+                    var specification = selected.data("specification");
+                    var make = selected.data("source_of_make");
+                    var unit = selected.data("unit_of_measure");
+                    var partno = selected.data("model_number");
+                    var material = selected.data("code");
+                    var prcode = selected.data('prcode')
+
+                    $("#specifications").val(specification);
+                    $("#make").val(make);
+                    $("#unit").val(unit);
+                    $("#partno").val(partno);
+                    $("#materialcode").val(material);
+                    $("#procurement_type").val(prcode);
+                });
+              
   //The below function is used for updating particulars for specific procurement in the particular table
   function updateParticular(index) {
     ///debugger;
@@ -1706,11 +1725,11 @@ if (particular.quotation_upload instanceof File) {
     try {
       // Input Extraction
       var product = $("#product option:selected").data("id");
-      var unit = document.getElementsByName('unit')[0].value;
+      var unit = document.getElementsByName('unit').value;
       var productid=document.getElementById('product').value;
       var units = $("#unit option:selected").data("id");
       var materialcode = document.getElementById('materialcode').value;
-      var partno = document.getElementsByName('partno')[0].value;
+      var partno = document.getElementsByName('partno').value;
       var totalQty = document.getElementsByName('total_qty_required')[0].value;
       var estimatedValue = document.getElementsByName('estimated_value')[0].value;
 
@@ -1907,6 +1926,8 @@ if (particular.quotation_upload instanceof File) {
         row.cells[2].textContent = $("#delivery option:selected").attr("data-id");
         row.cells[3].innerHTML = createExpandableText(product);
         row.cells[4].innerHTML = $("#unit option:selected").data("id");
+
+        row.cells[4].innerHTML = createExpandableText(unit);
         row.cells[5].innerHTML = createExpandableText(partno);
         row.cells[6].innerHTML = createExpandableText(make);
         row.cells[7].textContent = totalQty;
@@ -2586,7 +2607,7 @@ if (particular.quotation_upload instanceof File) {
                         newRow.append('<td>' + (index + 1) + '</td>');
                         newRow.append('<td>' + (particular.delivery_name || '') + '</td>');
                         newRow.append('<td>' + createExpandableText(particular.product_name || '') + '</td>');
-                        newRow.append('<td>' + (particular.units || '') + '</td>');
+                        newRow.append('<td>' + (particular.unit || '') + '</td>');
                         newRow.append('<td>' + createExpandableText(particular.partno || '') + '</td>');
                         newRow.append('<td>' + createExpandableText(particular.make || '') + '</td>');
                         newRow.append('<td>' + (particular.total_qty_required || '') + '</td>');
@@ -3584,6 +3605,7 @@ if (particular.quotation_upload instanceof File) {
   </div>
     
     <!-- Procurement form divided by 2 parts (Procurments/Particulars)-->
+
     <form id="procurementForm"  enctype="multipart/form-data"  method="POST">
       {% csrf_token %}
 
@@ -3596,7 +3618,9 @@ if (particular.quotation_upload instanceof File) {
             <h5 style="color:#007080; margin-top:10px;text-decoration: underline;"><b>Procurements</b></h5>
           <div class ="row1">
             <div class='row'>
+
               <!-- Procurement types-->
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="procurement_type" class="form-label d-inline-flex align-items-center">
                     <b>Select Procurement Type:</b><span class="text-danger ms-1">*</span>
@@ -3607,7 +3631,7 @@ if (particular.quotation_upload instanceof File) {
                               Revenue – Procurement for routine use and day-to-day operational needs of the company."></i>
                 </label>
             
-                <select id="procurement_type" name="procurement_type" class="form-select mt-1" required>
+                <select id="procurement_type" name="procurement_type" class="form-select mt-1" required disabled>
                     <option value="" disabled selected hidden>Select Procurement Type</option>
                     {% for type in procurement_types %}
                         <option value="{{ type.Procurement_code }}" data-prtype="{{type.Procurement_code}}" data-type="{{ type.Procurement_name }}">
@@ -3617,8 +3641,8 @@ if (particular.quotation_upload instanceof File) {
                 </select>
             </div>
             
-            
             <!-- Departments -->
+
             <div class="col-12 col-sm-6 col-lg-3 mt-2" id="dept">
               <label for="departments" class="form-label"><b>Select Departments:</b><span class="text-danger">*</span>
                 <i class="fas fa-info-circle ms-2"
@@ -3644,6 +3668,7 @@ if (particular.quotation_upload instanceof File) {
             </div>
           
             <!--Import/Indigenous -->
+
             <div class="col-12 col-sm-6 col-lg-3 mt-2">
               <label for="import_indigenous" class="form-label"><b>Select (Import/Indigenous):</b><span class="text-danger">*</span>
                 <i class="fas fa-info-circle ms-2"
@@ -3664,6 +3689,7 @@ if (particular.quotation_upload instanceof File) {
             </div>
           
             <!-- Tender Types -->
+
             {% comment %} <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="tender_type" class="form-label"><b>Select Tender Type:</b><span class="text-danger">*</span>
                     <i class="fas fa-info-circle ms-2"
@@ -3684,6 +3710,7 @@ if (particular.quotation_upload instanceof File) {
             </div> {% endcomment %}
 
             <!--Location -->
+
             <div class="col-12 col-sm-6 col-lg-3 mt-2">
               <label for="location" class="form-label"><b>Location:</b><span class="text-danger">*</span>
                   <i class="fas fa-info-circle ms-2"
@@ -3723,6 +3750,7 @@ if (particular.quotation_upload instanceof File) {
 
 
             <!-- Projects -->
+
             <div class="col-12 col-sm-6 col-lg-3 mt-2" id='proj'>
               <label for="project" class="form-label"><b>Select Project: </b><span class="text-danger">*</span> 
                 <i class="fas fa-info-circle ms-2"
@@ -3738,6 +3766,7 @@ if (particular.quotation_upload instanceof File) {
             </div>
 
             <!-- Display Allocated Budget -->
+
             <div class="col-12 col-sm-6 col-lg-3 mt-2" id="budget-container" style="display:none;" >
               <label for="budget" class="form-label" ><b>Allocated Budget:</b> 
                 <i class="fas fa-info-circle ms-2"
@@ -3748,6 +3777,7 @@ if (particular.quotation_upload instanceof File) {
             </div>
 
             <!-- Display Remaining Budget -->
+
             <div class="col-12 col-sm-6 col-lg-3 mt-2">
               <label for="remaining-budget" class="form-label"><b>Remaining Budget:</b> 
                 <i class="fas fa-info-circle ms-2"
@@ -3787,7 +3817,8 @@ if (particular.quotation_upload instanceof File) {
               {% endfor %}
             </div>
             
-          <!-- Location -->
+          <!-- Tender Type -->
+
           <div class="col-12 col-sm-6 col-lg-3 mt-2">
                   <label for="tender_type" class="form-label"><b>Select Tender Type:</b><span class="text-danger">*</span>
                       <i class="fas fa-info-circle ms-2"
@@ -3806,7 +3837,9 @@ if (particular.quotation_upload instanceof File) {
                   {% endfor %}
                 </select>
               </div> 
+
           <!-- Source of Supplies -->
+
           <div class="col-12 col-sm-6 col-lg-3 mt-2">
             <label for="source_of_supplies" class="form-label"><b>Source of Supplies:</b> 
               <i class="fas fa-info-circle ms-2"
@@ -3820,7 +3853,9 @@ if (particular.quotation_upload instanceof File) {
               {% endfor %}
             </select>
           </div>
-          <!-- Earlier Procurement Details -->   
+
+          <!-- Earlier Procurement Details -->  
+
           <div class="col-12 col-sm-6 col-lg-3 mt-2">
             <label for="earlier_procurement_details" class="form-label"><b>Earlier Procurement Details:</b>
               <i class="fas fa-info-circle ms-2"
@@ -3831,6 +3866,7 @@ if (particular.quotation_upload instanceof File) {
           </div>
 
           <!-- Acceptance Criteria Required -->  
+
           <div class="col-12 col-sm-6 col-lg-3 mt-2">
             <label for="quality_certificates_required" class="form-label"><b>Acceptance Criteria Required:</b><span class="text-danger">*</span> 
               <i class="fas fa-info-circle ms-2"
@@ -3855,7 +3891,9 @@ if (particular.quotation_upload instanceof File) {
               title="Should clearly describe the procurement purpose for easy search and be at least 50 characters long."></i></label>
             <input type="text" id="procurement_title" class="form-control">
           </div>
+
           <!-- Select user -->  
+
           <div class="col-12 col-sm-6 col-lg-3 mt-2">
             <label for="recommending_authority" class="form-label"><b>Select User:</b><span class="text-danger">*</span> 
               <i class="fas fa-info-circle ms-2"
@@ -3871,101 +3909,103 @@ if (particular.quotation_upload instanceof File) {
                   {% endfor %}
               </select>
           </div>
-            <!-- Delivery Section -->
-            <div class="col-12 col-sm-6 col-lg-3 mt-2">
-              <label for="delivery_status" style="display: block; font-weight: bold; margin-bottom: 4px;">
-                Post Facto: <span class="text-danger">*</span>
-                <i class="fas fa-info-circle ms-2"
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="right"
-                  title="Select Yes if the procurement items have been delivered or the vendor has provided a quotation reference to the indentor; otherwise, select No."></i>
-              </label>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="is_delivered" id="delivered_yes" value="yes">
-                <label class="form-check-label" for="delivered_yes">Yes</label>
-              </div>
-              <div class="form-check form-check-inline">
-                <input class="form-check-input" type="radio" name="is_delivered" id="delivered_no" value="no" checked>
-                <label class="form-check-label" for="delivered_no">No</label>
-              </div>
+
+          <!-- Delivery Section -->
+
+          <div class="col-12 col-sm-6 col-lg-3 mt-2">
+            <label for="delivery_status" style="display: block; font-weight: bold; margin-bottom: 4px;">
+              Post Facto: <span class="text-danger">*</span>
+              <i class="fas fa-info-circle ms-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="Select Yes if the procurement items have been delivered or the vendor has provided a quotation reference to the indentor; otherwise, select No."></i>
+            </label>
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="is_delivered" id="delivered_yes" value="yes">
+              <label class="form-check-label" for="delivered_yes">Yes</label>
             </div>
-
-            <!-- Online Order Section -->
-            {% comment %} <div class="col-12 col-sm-6 col-lg-3 mt-2">
-              <label class="form-label"><b>Online Order:</b><span class="text-danger">*</span>
-                <i class="fas fa-info-circle ms-2"
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="right"
-                  title="Select Yes if the procurement items were ordered via an online website, otherwise select No."></i>
-              </label><br>
-
-              {% for code, display in pr_choices %}
-                <div class="form-check form-check-inline">
-                  <input class="form-check-input" 
-                        type="radio" 
-                        id="pr_event_{{ forloop.counter }}" 
-                        name="pr_event" 
-                        value="{{ code }}" 
-                        required
-                        {% if code == "Purchase_order" %}checked{% endif %}>
-                  <label class="form-check-label" for="pr_event_{{ forloop.counter }}">
-                    {% if code == "Online_order" %}
-                      Yes
-                    {% elif code == "Purchase_order" %}
-                      No
-                    {% else %}
-                      {{ display }}
-                    {% endif %}
-                  </label>
-                </div>
-              {% endfor %}
-            </div> {% endcomment %}
-
-            <div class="col-12 col-sm-6 col-lg-3 mt-2">
-              <label for="category_events" class="form-label"><b>Category Of Procurements:</b>
-                <span class="text-danger">*</span>
-                <i class="fas fa-info-circle ms-2"
-                  data-bs-toggle="tooltip"
-                  data-bs-placement="right"
-                  title="Select the category for procurement."></i>
-              </label>
-
-              <select id="category_events" name="category_events" class="form-select" required>
-                {% for value, label in category_choices %}
-                  <option value="{{ value }}" {% if value == 'None' %}selected{% endif %}>{{ label }}</option>
-                {% endfor %}
-              </select>
-
+            <div class="form-check form-check-inline">
+              <input class="form-check-input" type="radio" name="is_delivered" id="delivered_no" value="no" checked>
+              <label class="form-check-label" for="delivered_no">No</label>
             </div>
-
-
-
-          
           </div>
-          
-          
+
+          <!-- Online Order Section -->
+
+          {% comment %} <div class="col-12 col-sm-6 col-lg-3 mt-2">
+            <label class="form-label"><b>Online Order:</b><span class="text-danger">*</span>
+              <i class="fas fa-info-circle ms-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="Select Yes if the procurement items were ordered via an online website, otherwise select No."></i>
+            </label><br>
+
+            {% for code, display in pr_choices %}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" 
+                      type="radio" 
+                      id="pr_event_{{ forloop.counter }}" 
+                      name="pr_event" 
+                      value="{{ code }}" 
+                      required
+                      {% if code == "Purchase_order" %}checked{% endif %}>
+                <label class="form-check-label" for="pr_event_{{ forloop.counter }}">
+                  {% if code == "Online_order" %}
+                    Yes
+                  {% elif code == "Purchase_order" %}
+                    No
+                  {% else %}
+                    {{ display }}
+                  {% endif %}
+                </label>
+              </div>
+            {% endfor %}
+          </div> {% endcomment %}
+
+          <div class="col-12 col-sm-6 col-lg-3 mt-2">
+            <label for="category_events" class="form-label"><b>Category Of Procurements:</b>
+              <span class="text-danger">*</span>
+              <i class="fas fa-info-circle ms-2"
+                data-bs-toggle="tooltip"
+                data-bs-placement="right"
+                title="Select the category for procurement."></i>
+            </label>
+
+            <select id="category_events" name="category_events" class="form-select" required>
+              {% for value, label in category_choices %}
+                <option value="{{ value }}" {% if value == 'None' %}selected{% endif %}>{{ label }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          </div>
+
           <div style='border: 1px solid#007080; width: 100%; margin-top: 20px;'></div>
             <!-- Particulars Table -->
           <h5 style="color:#007080; margin-top:10px;text-decoration: underline;"><b>Item Details</b></h5>
           
             <div class='row'>
-               <!-- Units -->  
+
+            <!-- Units -->  
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="unit" class="form-label"><b>Select Units:</b><span class="text-danger">*</span>
                   <i class="fas fa-info-circle ms-2"
                   data-bs-toggle="tooltip"
                   data-bs-placement="right"
                   title="Select the measurement unit for the item."></i></label>
-                <select id="unit" name="unit" class="form-select">
+                 
+                <select id="unit" name="unit" class="form-select" disabled>
                     <option value="" disabled selected hidden>Select Units</option>
                     {% for unit in units %}
-                        <option value="{{ unit.id }}" data-id="{{ unit.unit }}">
+                        <option value="{{unit.id }}" data-id="{{ unit.id }}">
                             {{ unit.unit }}
                         </option>
                     {% endfor %}
                 </select>
               </div>
-             <!--Delivery Types  --> 
+
+            <!--Delivery Types  --> 
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="delivery" class="form-label"><b>Select Delivery Type:</b><span class="text-danger">*</span> 
                   <i class="fas fa-info-circle ms-2"
@@ -3981,22 +4021,51 @@ if (particular.quotation_upload instanceof File) {
                     {% endfor %}
                 </select>
               </div>
+
+              <!--Product Types  --> 
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="product" class="form-label"><b>Select Product Type:</b><span class="text-danger">*</span> 
                   <i class="fas fa-info-circle ms-2"
                   data-bs-toggle="tooltip"
                   data-bs-placement="right"
                   title="Select whether the particular is delivered in full or staggered (in multiple partial shipments) quantities"></i></label>
-                <select id="product" name="product" class="form-select">
+
+                <!-- <select id="product" name="product" class="form-select">
                     <option value="" disabled selected hidden>Select Product Type</option>
                     {% for product in product %}
                         <option value="{{ product.id }}" data-id="{{ product.name }}" vendor-id="{{product.vendor}}">
                             {{product.name}}-{{ product.code }} 
                         </option>
                     {% endfor %}
+                </select> -->
+                
+                <select id="product" name="product" class="form-select">
+                    <option value="" disabled selected hidden>Select Product Type</option>
+
+                    
+                    {% for p in product %}
+                        <option 
+                            value="{{ p.id }}"
+                            data-id="{{ p.id }}"
+                            data-name="{{ p.name }}"
+                            data-code="{{ p.code }}"
+                            data-source_of_make="{{ p.source_of_make }}"
+                            data-model_number="{{ p.model_number }}"
+                            data-specification="{{ p.specification }}"
+                            data-unit_of_measure="{{ p.unit_of_measure_id }}"
+                            data-prname="{{ p.procurementtype.Procurement_name }}"
+                            data-prcode="{{ p.procurementtype.Procurement_code }}"
+                            data-vendor="{{ p.vendor }}"
+                        >
+                            {{ p.name }} - {{ p.code }}
+                        </option>
+                        {% endfor %}
                 </select>
               </div>
+
               <!--Description--> 
+
               {% comment %} <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="description" class="form-label"><b>Description:</b><span class="text-danger">*</span>
                   <i class="fas fa-info-circle ms-2"
@@ -4005,35 +4074,42 @@ if (particular.quotation_upload instanceof File) {
                   title="Provide a brief description of the procurement."></i></label>
                 <input type="text" name="description" id="descriptionid" class="form-control" style="margin-top: 1px;" required>
               </div> {% endcomment %}
+
               <!--Part/Model No.-->
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="partno" class="form-label"><b>Part/Model No.:</b><span class="text-danger">*</span>
                   <i class="fas fa-info-circle ms-2"
                   data-bs-toggle="tooltip"
                   data-bs-placement="right"
                   title="Enter the part or model number of the item."></i></label>
-                <input type="text" name="partno" id="partno" class="form-control"  style="margin-top: 2px;"required>
+                <input type="text" name="partno" id="partno" class="form-control"  style="margin-top: 2px;"required disabled>
               </div>
+
               <!--Make-->
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="make" class="form-label"><b>Make:</b><span class="text-danger">*</span>
                   <i class="fas fa-info-circle ms-2"
                   data-bs-toggle="tooltip"
                   data-bs-placement="right"
                   title="Specify the material or composition of the item."></i></label>
-                <input type="text" id="make" class="form-control">
+                <input type="text" id="make" class="form-control" disabled>
               </div>
 
               <!--Material Code-->
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="material" class="form-label"><b>Material Code:if known,</b>
                   <i class="fas fa-info-circle ms-2"
                   data-bs-toggle="tooltip"
                   data-bs-placement="right"
                   title="Enter the material code if known."></i></label>
-                <input type="text" id="materialcode" class="form-control">
+                <input type="text" id="materialcode" class="form-control" disabled>
               </div>
+
               <!--Justification for Procurement-->
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="reasons_for_procurement" class="form-label">
                   <b>Justification for Procurement:</b><span style="color:red;">*</span>
@@ -4056,7 +4132,9 @@ if (particular.quotation_upload instanceof File) {
                 <!-- Display selected file name -->
                
               </div>
-              
+
+              <!--Quotation Reference-->
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="quotation_upload" class="form-label">
                   <b>Quotation Reference:</b>
@@ -4066,8 +4144,8 @@ if (particular.quotation_upload instanceof File) {
                   title="Attach the quotation if available; otherwise, select No."></i>
                 </label>
                
-              
-                <!-- Wrap file input and button in a flex container -->
+              <!-- Wrap file input and button in a flex container -->
+
                 <div class="d-flex align-items-center mt-2">
                   <input type="file" name="quotation_upload" id="quotation_upload" class="form-control">
                   <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12" id="quotationupload" style="display: none;">
@@ -4075,10 +4153,12 @@ if (particular.quotation_upload instanceof File) {
                   </button>
                 </div>
                 
-                <!-- Display selected file name -->
+              <!-- Display selected file name -->
                
               </div>
+
               <!-- Total Quantity Required -->
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="total_qty_required" class="form-label"><b>Total Quantity Required:</b><span class="text-danger">*</span>
                   <i class="fas fa-info-circle ms-2"
@@ -4108,53 +4188,54 @@ if (particular.quotation_upload instanceof File) {
                   title="The remaining budget will update based on the selected project and its related particulars."></i></label>
                 <input type="text" id="remaining-budget" value="" class="form-control" style="background-color: var(--bs-secondary-bg);" readonly>
               </div>
-            
+
+              <!--specifications-->
+
               <div class="col-12 col-sm-6 col-lg-3 mt-2">
                 <label for="specifications" class="form-label"><b>Specification:</b><span class="text-danger">*</span> 
                   <i class="fas fa-info-circle ms-2"
                   data-bs-toggle="tooltip"
                   data-bs-placement="right"
                   title="Provide detailed specifications; you can also upload a related file."></i></label>
-                <textarea name="Specification" id="specifications" class="form-control" style="height: 120px;" required></textarea>
+                <textarea name="Specification" id="specifications" class="form-control" style="height: 120px;" required disabled></textarea>
                 <div class="d-flex align-items-center mt-2">
-                  <input type="file" id="file-upload" name="specificationFile" class="form-control">
+                  <input type="file" id="file-upload" name="specificationFile" class="form-control" >
                   <button type="button" class="btn btn-sm btn-outline-secondary ms-2 file12" id="viewSpecification" style="display: none;">
                     <i class="fas fa-eye"></i>
                   </button>
                 </div>
               </div>
-                <!-- Quantity Section -->
-                <div class="col-12 col-sm-6 col-lg-3 mt-2" id="forquantity">
-                  <label class="control-label" for="checklistInput"><b>Quantity:</b><span class="text-danger">*</span> 
-                    <i class="fas fa-info-circle ms-2"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="right"
-                    title="If delivery type is staggered, add multiple quantities with expected delivery dates."></i></label>
-                  <div id="checklistContainer">
-                    <div class="checklist-item mb-2">
-                      <input type="number" class="form-control checklist-input" id="quantity" placeholder="Quantity" required oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-                    </div>
-                  </div>
-                  <button type="button" class="btn btn-primary btn-sm AddQuant" style="display: none;background-color:#007080;border-color:#007080;color:white;">Add</button>
-                </div>
+              <!-- Quantity Section -->
 
-                <div class="col-12 col-sm-6 col-lg-3 mt-2">
-                  <label for="items_to_be_positioned_by" class="form-label ms-sm-3">
-                    <b style="margin-left:-9px;">Items Required by:</b> <span style="color:red;">*</span>
-                    <i class="fas fa-info-circle ms-2"
-                    data-bs-toggle="tooltip"
-                    data-bs-placement="right"
-                    title="Specify the date by which the items are required."></i>
-                  </label>
-                  <div id="dateFieldsContainer"  class="ms-sm-3">
-                    <div class="date-field-item mb-2">
-                      <input type="date" id="firstpositioned_by" name="items_to_be_positioned_by" class="form-control" required style="margin-left: -12px; margin-top: -9px;">
-                    </div>
+              <div class="col-12 col-sm-6 col-lg-3 mt-2" id="forquantity">
+                <label class="control-label" for="checklistInput"><b>Quantity:</b><span class="text-danger">*</span> 
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="If delivery type is staggered, add multiple quantities with expected delivery dates."></i></label>
+                <div id="checklistContainer">
+                  <div class="checklist-item mb-2">
+                    <input type="number" class="form-control checklist-input" id="quantity" placeholder="Quantity" required oninput="this.value = this.value.replace(/[^0-9]/g, '')">
                   </div>
-                  
                 </div>
+                <button type="button" class="btn btn-primary btn-sm AddQuant" style="display: none;background-color:#007080;border-color:#007080;color:white;">Add</button>
+              </div>
 
-              
+              <div class="col-12 col-sm-6 col-lg-3 mt-2">
+                <label for="items_to_be_positioned_by" class="form-label ms-sm-3">
+                  <b style="margin-left:-9px;">Items Required by:</b> <span style="color:red;">*</span>
+                  <i class="fas fa-info-circle ms-2"
+                  data-bs-toggle="tooltip"
+                  data-bs-placement="right"
+                  title="Specify the date by which the items are required."></i>
+                </label>
+                <div id="dateFieldsContainer"  class="ms-sm-3">
+                  <div class="date-field-item mb-2">
+                    <input type="date" id="firstpositioned_by" name="items_to_be_positioned_by" class="form-control" required style="margin-left: -12px; margin-top: -9px;">
+                  </div>
+                </div>
+                
+              </div>
 
               <div class="row mt-2">
                 <div class="row mt-2">
@@ -4168,8 +4249,6 @@ if (particular.quotation_upload instanceof File) {
                 </div>
               </div>
             </div>
-          
-         
         </div>
       </div>
       </div>
@@ -4197,7 +4276,9 @@ if (particular.quotation_upload instanceof File) {
         </div>
       </div>
     </form>
+
     <!-- Particulars Table -->
+
     <div style=" width:95%; margin-left:30px; ">
       <h4 style="margin-top: 10px;"><b>Item Details</b></h4>
       <div class="table-responsive">
@@ -4287,16 +4368,12 @@ if (particular.quotation_upload instanceof File) {
           </div>
         </div>
       </div>
-
     </hr>
-
 
 {% endblock %}
 
 {% block styleblock %}
 <style>
-
-   
   .table-responsive {
     -webkit-overflow-scrolling: touch;
     
@@ -4330,8 +4407,6 @@ if (particular.quotation_upload instanceof File) {
     min-width: 0;
   }
   
-  
-  
     /* Ensure text wraps in Description and Reasons columns */
   #particularsTable td:nth-child(2), /* Description column */
   #particularsTable td:nth-child(5) { /* Reasons column */
@@ -4355,15 +4430,15 @@ if (particular.quotation_upload instanceof File) {
   #previewContent h4 {
     font-size: 16px;
   }
-  #procurement_type {
-    background-color: #f0f0f0; /* Light gray background */
-    color: #333; /* Dark text color for better contrast */
-  }
+  /* #procurement_type {
+    background-color: #f0f0f0;
+    color: #333; 
+  } */
 
-  #procurement_type {
-    background-color: #ffffff; /* White background for options */
-    color: #333; /* Dark text color for options */
-  }
+  /* #procurement_type {
+    background-color: #ffffff; 
+    color: #333; 
+  } */
     #import_indigenous {
 
       background-size: 12px;

@@ -89,7 +89,20 @@
                     </span>
                   </td>
                   <td class="cell"><span class="truncate">{{ eachRow.code }}</span></td>
-                  <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td>
+                  <!-- <td class="cell {{ eachRow.status_name }}">{{ eachRow.status_name }}</td> -->
+                  <td class="cell {{ eachRow.status_name|lower }}">
+                      <span class="badge 
+                          {% if eachRow.status == 1 %}
+                              bg-success
+                          {% elif eachRow.status == 0 %}
+                              bg-warning
+                          {% else %}
+                              bg-danger
+                          {% endif %}
+                      ">
+                          {{ eachRow.status_name }}
+                      </span>
+                  </td>
                   <td class="cell">{{ eachRow.last_modified_at }}</td>
                   <td class="cell">{{ eachRow.last_modified_user }}</td>
                   <td class="cell">
@@ -101,7 +114,7 @@
               {% endfor %}
             {% else %}
               <tr>
-                <td colspan="6"><h6 class="text-center">No Records found</h6></td>
+                <td colspan="6"><h6 class="text-center">No Records Found</h6></td>
               </tr>
             {% endif %}
           </tbody>

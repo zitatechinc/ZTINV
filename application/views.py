@@ -36,10 +36,6 @@ class AppSettingsCRUDView(BaseCRUDView):
             
         }
 
-
-
-
-
 class AuditLogCRUDView(BaseCRUDView):
     model = LogEntry
     form_class = None
@@ -48,6 +44,8 @@ class AuditLogCRUDView(BaseCRUDView):
     FieldList = (
         ("entity", "Entity"),
         ("user", "User"),
+        ("name","AuditName"),
+        ("code","AuditCode"),
         # ("column", "Column"),
         # ("value", "Old / New Value"),
         ("action", "Action"),
@@ -93,6 +91,21 @@ class AuditLogCRUDView(BaseCRUDView):
         for entry in page_obj:
             changes = entry.changes_dict or {}
 
+            # ✅ Get actual model class
+            model_class = entry.content_type.model_class()
+
+            audit_name = None
+            audit_code = None
+
+            if model_class:
+                try:
+                    instance = model_class.objects.filter(pk=entry.object_id).first()
+                    if instance:
+                        audit_name = getattr(instance, "audit_name", None)
+                        audit_code = getattr(instance, "audit_code", None)
+                except Exception:
+                    pass
+
             for column, (old, new) in changes.items():
 
                 # Python-level filtering only where unavoidable
@@ -105,15 +118,17 @@ class AuditLogCRUDView(BaseCRUDView):
                         or keyword in str(new).lower()
                     ):
                         continue
-
+                # print(dir(entry))
                 logs.append({
                     "EntityName": entry.content_type.model,
                     "RowID": entry.object_id,
                     "ColumnName": column,
+                    "AuditName": audit_name,
+                    "AuditCode": audit_code,
                     "OldValue": old,
                     "NewValue": new,
                     "Action": entry.get_action_display(),
-                    "User": entry.actor.username if entry.actor else None,
+                    "User": entry.actor.get_full_name() or entry.actor.get_username() if entry.actor else None,
                     "Timestamp": entry.timestamp,
                 })
 

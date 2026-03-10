@@ -213,7 +213,7 @@ class Command(BaseCommand):
     help = 'Generate 100 random vendors with realistic details including address and phone numbers'
 
     def handle(self, *args, **kwargs):
-        NUM_VENDORS = 100
+        NUM_VENDORS = 10
         status_choices = [choice[0] for choice in STATUS_CHOICES]
 
         # Fetch all vendor types from the database

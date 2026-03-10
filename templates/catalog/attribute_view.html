@@ -24,19 +24,26 @@
 
                     <!-- Attribute Fields -->
                     <div class="col-md-4">
-                        <strong>Name:</strong> {{ object.name }}
+                        <strong>Name :</strong> {{ object.name }}
                     </div>
                     <div class="col-md-4">
-                        <strong>Category:</strong> {% if object.category %}{{ object.category.name }}{% else %}N/A{% endif %}
+                        <strong>Code :</strong> {{ object.code }}
                     </div>
                     <div class="col-md-4">
-                        <strong>Product Type:</strong> {% if object.product_type %}{{ object.product_type.name }}{% else %}N/A{% endif %}
+                        <strong>Attribute Type :</strong> {{ object.attribute_type }}
                     </div>
                     <div class="col-md-4">
-                        <strong>Attribute Type:</strong> {{ object.attribute_type }}
+                        <strong>Product Type :</strong> {% if object.product_type %}{{ object.product_type.name }}{% else %}N/A{% endif %}
                     </div>
                     <div class="col-md-4">
-                        <strong>Status:</strong>
+                        <strong>Category Name :</strong> {% if object.category %}{{ object.category.name }}{% else %}N/A{% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Product Group :</strong> {% if object.product_group %}{{ object.product_group.name }}{% else %}N/A{% endif %}
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <strong>Status :</strong>
                         <span class="badge 
                             {% if object.status == 1 %}
                                 bg-success
@@ -49,6 +56,13 @@
                             {{ object.status_name }}
                         </span>
                     </div>
+                    <div class="col-md-4">
+                        <strong>Description :</strong> {{ object.description }}
+                    </div>
+                    <div class="col-md-4">
+                        <strong>Search Keywords :</strong> {{ object.search_keywords }}
+                    </div>
+                    
                 </div>
 
                 <!-- Include Audit Log Information -->

@@ -1,66 +1,105 @@
-  <div class="row p-4">
-  {% if object %}
-    
-<div class="col-md-12">
-        <h6>Project  Information</h6>
+<div class="row mb-3 ps-2">
+
+{% if object %}
+
+    <div class="col-md-12">
+        <h6>Project Information</h6>
     </div>
-                   
-      <div class="col-md-4">
-        <strong> <label>Project Code:</label> </strong>  
+
+    <div class="col-md-4">
+        <strong><label>Project Code :</label></strong>
         {{ object.project.project_id }}
     </div>
+
     <div class="col-md-4">
-        <strong> <label>Project Name:</label> </strong>   
+        <strong><label>Project Name :</label></strong>
         {{ object.project.name }}
     </div>
+
     <div class="col-md-4">
-        <strong> <label>Budget:</label> </strong>   
+        <strong><label>Budget :</label></strong>
         {{ object.project.get_allocated_budget }}
     </div>
+
     <div class="col-md-4">
-        <strong> <label>Total Cost:</label> </strong>   
+        <strong><label>Total Cost :</label></strong>
         {{ object.total_component_cost }}
     </div>
-     <div class="col-md-4">
-        <strong> <label>Customer Name:</label> </strong>   
+
+    <!-- <div class="col-md-4">
+        <strong><label>Customer Name :</label></strong>
         {{ object.customer.company_name1 }}
-    </div>
+    </div> -->
+
     <div class="col-md-4">
-        <strong> <label>Location:</label> </strong>   
+        <strong><label>Location :</label></strong>
         {{ object.location.name }}
     </div>
+
     <div class="col-md-4">
-        <strong> <label>SubLocation:</label> </strong>   
+        <strong><label>SubLocation :</label></strong>
         {{ object.sub_location.name }}
     </div>
+
     <div class="col-md-4">
-        <strong> <label>Status :</label> </strong>  
+        <strong><label>Status :</label></strong>
         {% if object.status_name == "Active" %}
-        <span class="badge bg-success">{{object.status_name}}</span>
+            <span class="badge bg-success">{{ object.status_name }}</span>
         {% elif object.status_name == "Inactive" %}
-            <span class="badge bg-danger">{{object.status_name}}</span>
+            <span class="badge bg-danger">{{ object.status_name }}</span>
         {% else %}
-            <span class="badge bg-secondary">{{object.status_name}}</span>
+            <span class="badge bg-secondary">{{ object.status_name }}</span>
         {% endif %}
     </div>
-<nav id="orders-table-tab" class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row mb-3 mt-2">
 
-    
-    
-    <a class="flex-sm-fill text-sm-center nav-link project-header-view " href="{% url 'project-header-view' object.pk %}">Project Details</a>
-    <a class="flex-sm-fill text-sm-center nav-link project-component-list project-component-update project-component-create project-component-view"  href="{%  url 'project-component-list' object.pk  %}">Components</a>
-    
-    
-</nav>
-    {%else%}
+    <div class="col-md-4">
+        <strong><label>Search Keywords :</label></strong>
+        {{ object.search_keywords }}
+    </div>
 
+    <div class="col-md-4">
+        <strong><label>Description :</label></strong>
+        {{ object.description }}
+    </div>
 
+    <!-- NAV -->
+    <div class="col-12 mt-3">
+        <nav id="orders-table-tab"
+             class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row">
 
-<nav id="orders-table-tab" class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row mb-3" style="">
-     <a class="flex-sm-fill text-sm-center nav-link project-header-view " href="{% url 'project-header-view' object.pk %}">Project Details</a>
-    <a class="flex-sm-fill text-sm-center nav-link project-item-list "  href="{%  url 'project-component-list' object.pk %}">Components</a>
-   
-    
-    
-</nav>
-    {%endif%}
+            <a class="flex-sm-fill text-sm-center nav-link project-header-view"
+               href="{% url 'project-header-view' object.pk %}">
+                Project Details
+            </a>
+
+            <a class="flex-sm-fill text-sm-center nav-link project-component-list project-component-update project-component-create project-component-view"
+               href="{% url 'project-component-list' object.pk %}">
+                Components
+            </a>
+
+        </nav>
+    </div>
+
+{% else %}
+
+    <!-- NAV INSIDE ELSE -->
+    <div class="col-12 mt-3">
+        <nav id="orders-table-tab"
+             class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row">
+
+            <a class="flex-sm-fill text-sm-center nav-link project-header-view"
+               href="{% url 'project-header-view' object.pk %}">
+                Project Details
+            </a>
+
+            <a class="flex-sm-fill text-sm-center nav-link project-item-list"
+               href="{% url 'project-component-list' object.pk %}">
+                Components
+            </a>
+
+        </nav>
+    </div>
+
+{% endif %}
+
+</div>

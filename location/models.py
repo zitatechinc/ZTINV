@@ -21,6 +21,14 @@ class Country(LocationBaseModel,UserLogBaseModel):
     def __str__(self):
         return f"{self.name} ({self.code})"
     
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
+    
     def clean(self):
         # Ensure slug is unique BEFORE saving
         slug = slugify(self.name)
@@ -40,7 +48,6 @@ class Country(LocationBaseModel,UserLogBaseModel):
         if hasattr(self, "code") and self.code:
             self.code = self.code.strip().upper()
         super().save(*args, **kwargs)
-
 
 class Location(LocationBaseModel,UserLogBaseModel):
 
@@ -64,6 +71,14 @@ class Location(LocationBaseModel,UserLogBaseModel):
 
     def __str__(self):
         return f"{self.name}"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
     
     def clean(self):
         # Ensure slug is unique BEFORE saving
@@ -102,6 +117,14 @@ class SubLocation(LocationBaseModel,UserLogBaseModel):
 
     def __str__(self):
         return f"{self.name} ({self.code})"
+    
+    @property
+    def audit_name(self):
+        return self.name
+
+    @property
+    def audit_code(self):
+        return self.code
     
     def clean(self):
         # Ensure slug is unique BEFORE saving

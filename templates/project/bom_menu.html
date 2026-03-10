@@ -1,53 +1,94 @@
-  <div class="row p-4">
-  {% if object %}
-    <div class="col-md-12">
-        <h6>BOM  Information</h6>
-    </div>
-                      
-      <div class="col-md-4">
-        <strong> <label>BOM Code:</label> </strong>  
-        {{ object.code }}
-    </div>
-    <div class="col-md-4">
-        <strong> <label>Project Name:</label> </strong>   
-        {{ object.project.project.name }} ({{object.project.project.id}})
-    </div>
-    <div class="col-md-4">
-        <strong>Status:</strong>
-        <span class="badge 
-            {% if object.status == 1 %}
-                bg-success
-            {% elif object.status == 0 %}
-                bg-warning
-            {% else %}
-                bg-danger
-            {% endif %}
-        ">
-            {{ object.status_name }}
-        </span>
-    </div>
+<div class="row mb-3 ps-2">
 
-<nav id="orders-table-tab" class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row mb-3 mt-2">
+    {% if object %}
 
-    
-    
-    <a class="flex-sm-fill text-sm-center nav-link bom-header-view " href="{% url 'bom-header-view' object.pk %}">BOM Details</a>
-    <a class="flex-sm-fill text-sm-center nav-link bom-item-list bom-item-create bom-item-update bom-item-view"  href="{%  url 'bom-item-list' object.pk  %}">Items</a>
-    <a class="flex-sm-fill text-sm-center nav-link bom-attachment-list bom-attachment-create bom-attachment-update bom-attachment-view" href="{%  url 'bom-attachment-list' object.pk %}">Attachments</a>
-    
-    <!-- <a class="flex-sm-fill text-sm-center nav-link bom_log_entry " href="/application/bom_log_entry/list?entity=bomitem">
-    Log History
-</a> -->
-</nav>
-    {%else%}
+        <div class="col-md-12">
+            <h6>BOM Information</h6>
+        </div>
 
+        <div class="col-md-4">
+            <strong><label>BOM Code :</label></strong>
+            {{ object.code }}
+        </div>
 
+        <div class="col-md-4">
+            <strong><label>Project Name :</label></strong>
+            {{ object.project.project.name }}
+        </div>
 
-<nav id="orders-table-tab" class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row mb-3" style="">
-     <a class="flex-sm-fill text-sm-center nav-link bom-header-view " href="{% url 'bom-header-view' object.pk %}">BOM Details</a>
-    <a class="flex-sm-fill text-sm-center nav-link bom-item-list"  href="{%  url 'bom-item-list' object.pk %}">Items</a>
-    <a class="flex-sm-fill text-sm-center nav-link bom-attachment-list " href="{%  url 'bom-attachment-list' object.pk %}">Attachments</a>
-    
-    
-</nav>
-    {%endif%}
+        <div class="col-md-4">
+            <strong><label>Status :</label></strong>
+            <span class="badge
+                {% if object.status == 1 %}
+                    bg-success
+                {% elif object.status == 0 %}
+                    bg-warning
+                {% else %}
+                    bg-danger
+                {% endif %}
+            ">
+                {{ object.status_name }}
+            </span>
+        </div>
+
+        <div class="col-md-4">
+            <strong><label>Search Keywords :</label></strong>
+            {{ object.search_keywords }}
+        </div>
+
+        <div class="col-md-4">
+            <strong><label>Description :</label></strong>
+            {{ object.description }}
+        </div>
+
+        <!-- NAV INSIDE IF -->
+        <div class="col-12 mt-3">
+            <nav id="orders-table-tab"
+                 class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row">
+
+                <a class="flex-sm-fill text-sm-center nav-link bom-header-view"
+                   href="{% url 'bom-header-view' object.pk %}">
+                    BOM Details
+                </a>
+
+                <a class="flex-sm-fill text-sm-center nav-link bom-item-list bom-item-create bom-item-update bom-item-view"
+                   href="{% url 'bom-item-list' object.pk %}">
+                    Items
+                </a>
+
+                <a class="flex-sm-fill text-sm-center nav-link bom-attachment-list bom-attachment-create bom-attachment-update bom-attachment-view"
+                   href="{% url 'bom-attachment-list' object.pk %}">
+                    Attachments
+                </a>
+
+            </nav>
+        </div>
+
+    {% else %}
+
+        <!-- NAV INSIDE ELSE -->
+        <div class="col-12">
+            <nav id="orders-table-tab"
+                 class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row mb-3">
+
+                <a class="flex-sm-fill text-sm-center nav-link bom-header-view"
+                   href="{% url 'bom-header-view' object.pk %}">
+                    BOM Details
+                </a>
+
+                <a class="flex-sm-fill text-sm-center nav-link bom-item-list"
+                   href="{% url 'bom-item-list' object.pk %}">
+                    Items
+                </a>
+
+                <a class="flex-sm-fill text-sm-center nav-link bom-attachment-list"
+                   href="{% url 'bom-attachment-list' object.pk %}">
+                    Attachments
+                </a>
+
+            </nav>
+        </div>
+
+    {% endif %}
+
+</div>

@@ -125,6 +125,20 @@
 
                   <div class="col-md-6">
                      <div class="form-floating mb-3">
+                        {{ form.description }}
+                        <label for="floatingMetaKeyword" class="form-label">{{ form.description.label_tag }}</label>
+                        {% if form.description.errors %}
+                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
+                            {% for error in form.description.errors %}
+                                <li class="text-danger">{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                     </div>
+                  </div>
+
+                  <div class="col-md-6">
+                     <div class="form-floating mb-3">
                         {{ form.search_keywords }}
                         <label for="floatingMetaKeyword" class="form-label">{{ form.search_keywords.label_tag }}</label>
                         {% if form.search_keywords.errors %}
@@ -137,19 +151,6 @@
                      </div>
                   </div>
 
-                  <div class="col-md-6">
-                     <div class="form-floating mb-3">
-                        {{ form.description }}
-                        <label for="floatingMetaKeyword" class="form-label">{{ form.description.label_tag }}</label>
-                        {% if form.description.errors %}
-                        <ul class="errorlist" style="list-style: none !important;" class="text-danger">
-                            {% for error in form.description.errors %}
-                                <li class="text-danger">{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                        {% endif %}
-                     </div>
-                  </div>
                </div>
 
             </div>
@@ -186,34 +187,110 @@
 
 <script src="{% static 'default/js/select2.min.js' %}"></script>
 
-<script>
-   $(document).ready(function () {
-      $('#id_product_type').select2({
-         placeholder: "Select a product type",
-         allowClear: false ,// Optional: enables a clear button
-         width: '100%'
-      });
-   });
-</script>
+<script type="text/javascript">
 
-<script>
-   $(document).ready(function () {
-      $('#id_category').select2({
-         placeholder: "Select a category",
-         allowClear: false ,// Optional: enables a clear button
-         width: '100%'
-      });
-   });
-</script>
+function initializeCreatableSelect2(selector, appLabel, modelName, ajaxUrl, placeholderText) {
 
-<script>
-   $(document).ready(function () {
-      $('#id_product_group').select2({
-         placeholder: "Select a product group",
-         allowClear: false ,// Optional: enables a clear button
-         width: '100%'
-      });
-   });
+    // Destroy if already initialized
+    if ($(selector).hasClass("select2-hidden-accessible")) {
+        $(selector).select2('destroy');
+    }
+
+    $(selector).select2({
+        width: '100%',
+        placeholder: placeholderText || "Select or type to add",
+        allowClear: true,
+        tags: true,
+        ajax: {
+            url: ajaxUrl,
+            dataType: 'json',
+            delay: 250,
+            data: function (params) {
+                return {
+                    app_label: appLabel,
+                    model: modelName,
+                    q: params.term
+                };
+            },
+            processResults: function (data) {
+                return { results: data.results };
+            },
+            cache: true
+        }
+    });
+
+    /* PRELOAD EXISTING VALUE */
+    var currentVal = $(selector).val();
+    var currentText = $(selector + " option:selected").text();
+
+    if (currentVal && currentText) {
+        var option = new Option(currentText, currentVal, true, true);
+        $(selector).append(option).trigger('change');
+    }
+
+    /* CREATE NEW FK */
+    $(selector).on('select2:select', function (e) {
+
+        var data = e.params.data;
+
+        if (!data.id || data.id === data.text) {
+
+            $.ajax({
+                url: ajaxUrl,
+                type: "POST",
+                data: {
+                    app_label: appLabel,
+                    model: modelName,
+                    name: data.text,
+                    csrfmiddlewaretoken: "{{ csrf_token }}"
+                },
+                success: function (response) {
+                    var newOption = new Option(response.text, response.id, true, true);
+                    $(selector).append(newOption).trigger('change');
+                },
+                error: function () {
+                    alert("Unable to create record.");
+                }
+            });
+        }
+    });
+}
+
+/* ============================
+   DOCUMENT READY
+============================ */
+
+$(document).ready(function () {
+
+    const attributeType = document.getElementById("id_attribute_type");
+    const productType = document.getElementById("id_product_type");
+    const category = document.getElementById("id_category");
+    const productGroup = document.getElementById("id_product_group");
+
+    function toggleFields() {
+        if (attributeType && attributeType.value === "Common") {
+            productType.disabled = true;
+            category.disabled = true;
+            productGroup.disabled = true;
+        } else {
+            productType.disabled = false;
+            category.disabled = false;
+            productGroup.disabled = false;
+        }
+    }
+
+    toggleFields();
+
+    if (attributeType) {
+        attributeType.addEventListener("change", toggleFields);
+    }
+
+    initializeCreatableSelect2('#id_product_type', 'catalog', 'ProductType', '/catalog/ajax/create-fk/', 'Select or add product type');
+    initializeCreatableSelect2('#id_product_group', 'catalog', 'ProductGroup', '/catalog/ajax/create-fk/', 'Select or add product group');
+    initializeCreatableSelect2('#id_category', 'catalog', 'Category', '/catalog/ajax/create-fk/', 'Select or add category');
+
+});
+
 </script>
 
 {% endblock pagejs %}

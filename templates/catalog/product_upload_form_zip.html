@@ -1,0 +1,83 @@
+{% extends 'core/base.html' %}
+
+{% block content %}
+
+<form method="post" action="{{ form_action_url }}" enctype="multipart/form-data" novalidate>
+    {% csrf_token %}
+
+    <div class="row mb-2 mt-2">
+        <div class="col-12 text-end">
+            <div class="button-group">
+
+                <!-- Sample File Download -->
+                <a href="/media/product_sample_file.xlsx" class="btn btn-sm app-btn-primary">
+                    <i class="fa fa-download fa-lg"></i> Sample File
+                </a>
+
+                <!-- Submit -->
+                <button type="submit" class="btn btn-sm app-btn-success">
+                    <i class="fa fa-upload fa-lg"></i> Upload
+                </button>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="app-card app-card-settings shadow-md">
+                <div class="app-card-body p-4">
+
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <h5 class="mb-0">Product Bulk Upload</h5>
+                            <small class="text-muted">
+                                Upload Excel (.xlsx) OR ZIP (Excel + Images).
+                                Images are optional.
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Excel or ZIP -->
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold">
+                                Upload Excel or ZIP File
+                            </label>
+                            {{ form.file }}
+                            <small class="text-muted d-block mt-1">
+                                Supported: .xlsx or .zip
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Optional Images -->
+                    <div class="row">
+                        <div class="col-md-12 mb-3">
+                            <label class="form-label fw-bold">
+                                Upload Product Images (Optional)
+                            </label>
+
+                            <input 
+                                type="file" 
+                                name="images" 
+                                multiple 
+                                accept=".jpg,.jpeg,.png"
+                                class="form-control"
+                            >
+
+                            <small class="text-muted d-block mt-1">
+                                Only needed if uploading Excel separately.
+                                Skip if uploading ZIP.
+                            </small>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+</form>
+
+{% endblock %}

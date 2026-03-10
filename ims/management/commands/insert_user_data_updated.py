@@ -3,7 +3,6 @@ from django.contrib.auth.models import Group
 from accounts.models import User
 
 
-
 class Command(BaseCommand):
     help = "Create default users for each group with password rm#123"
 

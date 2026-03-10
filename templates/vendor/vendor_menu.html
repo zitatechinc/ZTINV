@@ -1,19 +1,23 @@
-  <div class="row p-4">
+  <div class="row mb-3 ps-2">
   {% if vendor_obj %}
     <div class="col-md-12">
         <h6>Vendor Information</h6>
     </div>
                         
     <div class="col-md-4">
-        <strong><label>Company Name1 :</label></strong>  
+        <strong><label>Company Name 1 : </label></strong>  
         {{ vendor_obj.company_name1 }}
     </div>
     <div class="col-md-4">
-        <strong><label>Company Name2 :</label></strong>   
+        <strong><label>Company Name 2 : </label></strong>   
         {{ vendor_obj.company_name2 }}
     </div>
+     <div class="col-md-4">
+        <strong><label>Vendor Code : </label></strong>  
+        {{ vendor_obj.code }}
+    </div>
     <div class="col-md-4">
-        <strong><label>Status :</label></strong>
+        <strong><label>Status : </label></strong>
         <span class="badge 
             {% if vendor_obj.status == 1 %}
                 bg-success
@@ -26,42 +30,42 @@
             {{ vendor_obj.status_name }}
         </span>
     </div>
+   
     <div class="col-md-4">
-        <strong><label>Vendor Number :</label></strong>  
-        {{ vendor_obj.code }}
-    </div>
-    <div class="col-md-4">
-        <strong><label>Vendor Type :</label></strong>  
+        <strong><label>Vendor Type : </label></strong>  
         {{ vendor_obj.vendor_type }}
     </div>
     <div class="col-md-4">
-        <strong><label>DBA :</label></strong>  
+        <strong><label>DBA (Doing Business AS) : </label></strong>  
         {{ vendor_obj.dba }}
     </div>
     <div class="col-md-4">
-        <strong><label>Language :</label></strong>    
+        <strong><label>Payment Terms :</label> </strong>  
+        {{ vendor_obj.payment_terms }}
+    </div>
+    <div class="col-md-4">
+        <strong><label>Notes : </label></strong>   
+        {{ vendor_obj.notes }}
+    </div>
+    <div class="col-md-4">
+        <strong><label>Language : </label></strong>    
         {{ vendor_obj.language }}
     </div>
     <div class="col-md-4">
-        <strong><label>Notes :</label></strong>   
-        {{ vendor_obj.notes }}
-    </div>
-    
-    <div class="col-md-4">
-        <strong><label>Search Keywords :</label></strong>    
+        <strong><label>Search Keywords : </label></strong>    
         {{ vendor_obj.search_keywords }}
     </div>
  </div>
 
-<nav id="orders-table-tab" class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row" style="">
+<nav id="orders-table-tab" class="orders-table-tab app-nav-tabs nav shadow-sm flex-column flex-sm-row">
 
     
     
     <a class="flex-sm-fill text-sm-center nav-link vendor-view " href="{% url 'vendor-view' vendor_obj.pk %}">Vendor Details</a>
-    <a class="flex-sm-fill text-sm-center nav-link vendor-tax-list"  href="{%  url 'vendor-tax-list' vendor_obj.pk %}">Tax</a>
-    <a class="flex-sm-fill text-sm-center nav-link vendor-bank-list " href="{%  url 'vendor-bank-list' vendor_obj.pk %}">Banks</a>
-    <a class="flex-sm-fill text-sm-center nav-link vendor-attachment-list" href="{%  url 'vendor-attachment-list' vendor_obj.pk %}">Attachments</a>
-    <a class="flex-sm-fill text-sm-center nav-link vendor-product-list" href="{%  url 'vendor-product-list' vendor_obj.pk %}">Products</a>
+    <a class="flex-sm-fill text-sm-center nav-link vendor-tax-list vendor-tax-create vendor-tax-view"  href="{%  url 'vendor-tax-list' vendor_obj.pk %}">Tax</a>
+    <a class="flex-sm-fill text-sm-center nav-link vendor-bank-list vendor-bank-create vendor-bank-view " href="{%  url 'vendor-bank-list' vendor_obj.pk %}">Banks</a>
+    <a class="flex-sm-fill text-sm-center nav-link vendor-attachment-list vendor-attachment-create vendor-attachment-view" href="{%  url 'vendor-attachment-list' vendor_obj.pk %}">Attachments</a>
+    <a class="flex-sm-fill text-sm-center nav-link vendor-product-list vendor-product-create vendor-product-view" href="{%  url 'vendor-product-list' vendor_obj.pk %}">Products</a>
 </nav>
     {%else%}
 
@@ -70,15 +74,19 @@
     </div>
                         
       <div class="col-md-4">
-        <strong> {{ form.company_name1.label_tag }}:</strong>  
+        <strong> {{ form.company_name1.label_tag }} <label>:</label> </strong>  
         {{ object.company_name1 }}
     </div>
     <div class="col-md-4">
-        <strong> {{ form.company_name2.label_tag }}:</strong>  
+        <strong> {{ form.company_name2.label_tag }} <label>:</label> </strong>  
         {{ object.company_name2 }}
     </div>
     <div class="col-md-4">
-        <strong>{{ form.status.label_tag }}:</strong> 
+        <strong> <label>Vendor Code : </label> </strong>  
+        {{ object.code }}
+    </div>
+    <div class="col-md-4">
+        <strong>{{ form.status.label_tag }} <label>:</label> </strong> 
         <span class="badge 
             {% if object.status == 1 %}
                 bg-success
@@ -87,32 +95,33 @@
             {% else %}
                 bg-danger
             {% endif %}
-        ">
+            ">
             {{ object.status_name }}
         </span>
     </div>
-     <div class="col-md-4">
-        <strong> <label>Vendor Number :</label> </strong>  
-        {{ object.code }}
-    </div>
+     
     <div class="col-md-4">
-        <strong> {{ form.vendor_type.label_tag }}:</strong>  
+        <strong> {{ form.vendor_type.label_tag }} <label>:</label> </strong>  
         {{ object.vendor_type }}
     </div>
     <div class="col-md-4">
-        <strong> {{ form.dba.label_tag }}:</strong>  
+        <strong> {{ form.dba.label_tag }} <label>:</label> </strong>  
         {{ object.dba }}
     </div>
     <div class="col-md-4">
-        <strong> {{ form.notes.label_tag }}:</strong>  
+        <strong> {{ form.payment_terms.label_tag }} <label>:</label> </strong>  
+        {{ object.payment_terms }}
+    </div>
+    <div class="col-md-4">
+        <strong> {{ form.notes.label_tag }} <label>:</label> </strong>  
         {{ object.notes }}
     </div>
     <div class="col-md-4">
-        <strong> {{ form.language.label_tag }}:</strong>  
+        <strong> {{ form.language.label_tag }} <label>:</label> </strong>  
         {{ object.language }}
     </div>
     <div class="col-md-4">
-        <strong> {{ form.search_keywords.label_tag }}:</strong>  
+        <strong> {{ form.search_keywords.label_tag }} <label>:</label> </strong>  
         {{ object.search_keywords }}
     </div>
   </div>

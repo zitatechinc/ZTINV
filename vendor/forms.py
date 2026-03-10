@@ -4,7 +4,7 @@ from .models import (
     ProductVendor, VendorUpload
 )
 from catalog.models import Product
-from core.forms import VendorBaseModelForm, CodeReadonlyOnEditForm,CascadingLocationMixin
+from core.forms import VendorBaseModelForm, CodeReadonlyOnEditForm,CascadingLocationMixin,ProductVendorReadonlyOnEditForm
 import re
 
 phone_pattern = re.compile(r'^\d{10}$')
@@ -80,7 +80,7 @@ class VendorAttachmentModelForm(BaseActiveModelForm):
         exclude = ('created_user', 'updated_user', 'vendor')
 
 
-class ProductVendorModelForm(BaseActiveModelForm):
+class ProductVendorModelForm(BaseActiveModelForm,ProductVendorReadonlyOnEditForm):
     vendor = forms.ModelChoiceField(
         queryset=Vendor.objects.none(),
         widget=forms.Select(attrs={"class": "form-control select2-vendor"})
@@ -91,7 +91,7 @@ class ProductVendorModelForm(BaseActiveModelForm):
         exclude = ('created_user', 'updated_user', 'product')
 
 
-class VendorProductModelForm(BaseActiveModelForm):
+class VendorProductModelForm(BaseActiveModelForm,ProductVendorReadonlyOnEditForm):
     product = forms.ModelChoiceField(
         queryset=Product.objects.none(),
         widget=forms.Select(attrs={"class": "form-control select2-vendor"})

@@ -142,7 +142,6 @@ class QualityManagementModelForm(PurchaseOrderBaseModelForm):
             for po in PurchaseOrderHeader.objects.only("code")
         ]
 
-
 class POReceiveLineForm(forms.Form):
     item_id = forms.IntegerField(widget=forms.HiddenInput())
     qty_being_received = forms.DecimalField(
@@ -173,7 +172,6 @@ class POReceiveLineForm(forms.Form):
         if po_item.already_received_qty + qty > po_item.quantity:
             raise ValidationError("Total received cannot exceed ordered quantity.")
         return qty
-
 
 class POReceiveForm(forms.Form):
     item_id = forms.IntegerField(widget=forms.HiddenInput())
@@ -214,7 +212,6 @@ class POReceiveForm(forms.Form):
             raise ValidationError("Total received cannot exceed Ordered Quantity.")
 
         return qty
-
 
 class GoodsSearchForm(forms.Form):
     q = forms.CharField(
